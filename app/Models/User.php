@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -20,7 +22,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        'role_id',
+        'branch_id',
+        'is_active',
     ];
 
     /**
@@ -43,6 +49,88 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the user's role.
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the user's branch.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Get the user's permissions through their role.
+     */
+    public function permissions(): BelongsToMany
+    {
+        return $this->role->permissions();
+    }
+
+    /**
+     * Check if the user has a specific permission.
+     */
+    public function hasPermission(string $permissionName): bool
+    {
+        return $this->role && $this->role->hasPermission($permissionName);
+    }
+
+    /**
+     * Check if the user has a specific role.
+     */
+    public function hasRole(string $roleName): bool
+    {
+        return $this->role && $this->role->name === $roleName;
+    }
+
+    /**
+     * Check if the user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Check if the user is a branch manager.
+     */
+    public function isBranchManager(): bool
+    {
+        return $this->hasRole('branch_manager');
+    }
+
+    /**
+     * Check if the user is a cashier.
+     */
+    public function isCashier(): bool
+    {
+        return $this->hasRole('cashier');
+    }
+
+    /**
+     * Check if the user is a delivery boy.
+     */
+    public function isDeliveryBoy(): bool
+    {
+        return $this->hasRole('delivery_boy');
+    }
+
+    /**
+     * Scope to get only active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

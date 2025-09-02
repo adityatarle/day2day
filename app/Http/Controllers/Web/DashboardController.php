@@ -26,7 +26,7 @@ class DashboardController extends Controller
         ];
 
         // Get recent orders
-        $recent_orders = Order::with(['customer', 'products'])
+        $recent_orders = Order::with(['customer', 'orderItems.product'])
             ->latest()
             ->take(5)
             ->get();

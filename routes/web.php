@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\Web\ReportController;
+use App\Http\Controllers\Web\AdminController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -113,6 +114,29 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
         Route::get('/reports/profit-loss', [ReportController::class, 'profitLoss'])->name('reports.profitLoss');
         Route::get('/reports/analytics', [ReportController::class, 'analytics'])->name('reports.analytics');
+    });
+    
+    // Admin-only routes
+    Route::middleware('role:admin')->group(function () {
+        // User Management
+        Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
+        Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
+        Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+        Route::get('/admin/users/{user}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
+        Route::put('/admin/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+        
+        // Branch Management
+        Route::get('/admin/branches', [AdminController::class, 'branches'])->name('admin.branches');
+        Route::get('/admin/branches/create', [AdminController::class, 'createBranch'])->name('admin.branches.create');
+        Route::post('/admin/branches', [AdminController::class, 'storeBranch'])->name('admin.branches.store');
+        Route::get('/admin/branches/{branch}/edit', [AdminController::class, 'editBranch'])->name('admin.branches.edit');
+        Route::put('/admin/branches/{branch}', [AdminController::class, 'updateBranch'])->name('admin.branches.update');
+        Route::delete('/admin/branches/{branch}', [AdminController::class, 'deleteBranch'])->name('admin.branches.delete');
+        Route::get('/admin/branches/performance', [AdminController::class, 'branchPerformance'])->name('admin.branches.performance');
+        
+        // Role Management
+        Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles');
     });
     
     // User profile and settings

@@ -24,7 +24,25 @@ class InventoryController extends Controller
 
         $branches = Branch::all();
 
-        return view('inventory.index', compact('products', 'branches'));
+        // Calculate inventory statistics
+        $inventory_stats = [
+            'total_value' => Product::with(['branches'])->get()->sum(function ($product) {
+                return $product->branches->sum(function ($branch) use ($product) {
+                    return ($branch->pivot->current_stock ?? 0) * ($branch->pivot->selling_price ?? $product->selling_price);
+                });
+            }),
+            'in_stock' => Product::whereHas('branches', function ($query) {
+                $query->where('current_stock', '>', 0);
+            })->count(),
+            'low_stock' => Product::whereHas('branches', function ($query) {
+                $query->where('current_stock', '<=', \DB::raw('stock_threshold'));
+            })->count(),
+            'out_of_stock' => Product::whereHas('branches', function ($query) {
+                $query->where('current_stock', '<=', 0);
+            })->count(),
+        ];
+
+        return view('inventory.index', compact('products', 'branches', 'inventory_stats'));
     }
 
     /**

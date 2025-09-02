@@ -21,89 +21,120 @@
     <div class="min-h-screen flex">
         <!-- Sidebar -->
         <div class="hidden lg:flex lg:flex-shrink-0">
-            <div class="flex flex-col w-64 bg-gradient-to-b from-blue-800 to-blue-900">
+            <div class="flex flex-col w-72 bg-gradient-to-b from-slate-900 via-blue-900 to-indigo-900 shadow-2xl">
                 <!-- Logo -->
-                <div class="flex items-center justify-center h-16 px-4 bg-blue-900">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-leaf text-white text-xl"></i>
+                <div class="flex items-center justify-center h-20 px-6 bg-gradient-to-r from-blue-900 to-indigo-900 border-b border-blue-700/50">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg float-animation">
+                            <i class="fas fa-leaf text-white text-2xl"></i>
                         </div>
-                        <span class="text-white text-xl font-bold">FoodCo</span>
+                        <div>
+                            <span class="text-white text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">FoodCo</span>
+                            <p class="text-blue-200 text-xs font-medium">Management System</p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Navigation -->
-                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-                    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-tachometer-alt w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Dashboard</span>
+                <nav class="flex-1 px-6 py-8 space-y-3 overflow-y-auto custom-scrollbar">
+                    <a href="{{ route('dashboard') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('dashboard') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-tachometer-alt text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Dashboard</span>
                     </a>
 
-                    <a href="{{ route('products.index') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('products.*') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-box w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Products</span>
+                    <a href="{{ route('products.index') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('products.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('products.*') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-box text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Products</span>
                     </a>
 
-                    <a href="{{ route('orders.index') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('orders.*') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-shopping-cart w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Orders</span>
+                    <a href="{{ route('orders.index') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('orders.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('orders.*') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-shopping-cart text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Orders</span>
                     </a>
 
-                    <a href="{{ route('inventory.index') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('inventory.*') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-warehouse w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Inventory</span>
+                    <a href="{{ route('inventory.index') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('inventory.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('inventory.*') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-warehouse text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Inventory</span>
                     </a>
 
-                    <a href="{{ route('customers.index') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('customers.*') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-users w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Customers</span>
+                    <a href="{{ route('customers.index') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('customers.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('customers.*') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-users text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Customers</span>
                     </a>
 
                     <div class="relative">
-                        <button onclick="toggleSubmenu('vendors-submenu')" class="w-full flex items-center justify-between px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 hover:bg-blue-700 hover:text-white">
+                        <button onclick="toggleSubmenu('vendors-submenu')" class="group w-full flex items-center justify-between px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm">
                             <div class="flex items-center">
-                                <i class="fas fa-building w-5 h-5 mr-3"></i>
-                                <span class="font-medium">Vendors & Purchases</span>
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-blue-700/30 group-hover:bg-blue-600/50 transition-all duration-300">
+                                    <i class="fas fa-building text-lg"></i>
+                                </div>
+                                <span class="font-semibold text-lg">Vendors & Purchases</span>
                             </div>
-                            <i class="fas fa-chevron-down w-4 h-4 transition-transform duration-200" id="vendors-chevron"></i>
+                            <i class="fas fa-chevron-down w-4 h-4 transition-transform duration-300" id="vendors-chevron"></i>
                         </button>
-                        <div id="vendors-submenu" class="hidden ml-4 mt-2 space-y-1">
-                            <a href="{{ route('vendors.index') }}" class="flex items-center px-4 py-2 text-blue-200 rounded-lg transition-all duration-200 hover:bg-blue-700 hover:text-white {{ request()->routeIs('vendors.*') ? 'bg-blue-700 text-white' : '' }}">
-                                <i class="fas fa-user-tie w-4 h-4 mr-3"></i>
-                                <span class="text-sm">Vendors</span>
+                        <div id="vendors-submenu" class="hidden ml-6 mt-3 space-y-2">
+                            <a href="{{ route('vendors.index') }}" class="group flex items-center px-4 py-3 text-blue-200 rounded-xl transition-all duration-300 hover:bg-blue-700/50 hover:text-white {{ request()->routeIs('vendors.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : '' }}">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-blue-700/30 group-hover:bg-blue-600/50 transition-all duration-300">
+                                    <i class="fas fa-user-tie text-sm"></i>
+                                </div>
+                                <span class="text-sm font-medium">Vendors</span>
                             </a>
-                            <a href="{{ route('purchase-orders.index') }}" class="flex items-center px-4 py-2 text-blue-200 rounded-lg transition-all duration-200 hover:bg-blue-700 hover:text-white {{ request()->routeIs('purchase-orders.*') ? 'bg-blue-700 text-white' : '' }}">
-                                <i class="fas fa-file-invoice w-4 h-4 mr-3"></i>
-                                <span class="text-sm">Purchase Orders</span>
+                            <a href="{{ route('purchase-orders.index') }}" class="group flex items-center px-4 py-3 text-blue-200 rounded-xl transition-all duration-300 hover:bg-blue-700/50 hover:text-white {{ request()->routeIs('purchase-orders.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' : '' }}">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-blue-700/30 group-hover:bg-blue-600/50 transition-all duration-300">
+                                    <i class="fas fa-file-invoice text-sm"></i>
+                                </div>
+                                <span class="text-sm font-medium">Purchase Orders</span>
                             </a>
                         </div>
                     </div>
 
-                    <a href="{{ route('reports.index') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('reports.*') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-chart-bar w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Reports</span>
+                    <a href="{{ route('reports.index') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('reports.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('reports.*') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-chart-bar text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Reports</span>
                     </a>
 
-                    <a href="{{ route('billing.quickSale') }}" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 {{ request()->routeIs('billing.*') ? 'bg-blue-700 text-white shadow-lg' : 'hover:bg-blue-700 hover:text-white' }}">
-                        <i class="fas fa-plus-circle w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Quick Sale</span>
+                    <a href="{{ route('billing.quickSale') }}" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 {{ request()->routeIs('billing.*') ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl border border-blue-500/50' : 'hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm' }}">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 {{ request()->routeIs('billing.*') ? 'bg-white/20' : 'bg-blue-700/30 group-hover:bg-blue-600/50' }} transition-all duration-300">
+                            <i class="fas fa-plus-circle text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Quick Sale</span>
                     </a>
 
-                    <a href="#" class="flex items-center px-4 py-3 text-blue-100 rounded-lg transition-all duration-200 hover:bg-blue-700 hover:text-white">
-                        <i class="fas fa-code-branch w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Branches</span>
+                    <a href="#" class="group flex items-center px-5 py-4 text-blue-100 rounded-2xl transition-all duration-300 hover:bg-blue-700/50 hover:text-white hover:shadow-lg backdrop-blur-sm">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center mr-4 bg-blue-700/30 group-hover:bg-blue-600/50 transition-all duration-300">
+                            <i class="fas fa-code-branch text-lg"></i>
+                        </div>
+                        <span class="font-semibold text-lg">Branches</span>
                     </a>
                 </nav>
 
                 <!-- User Profile -->
-                <div class="p-4 border-t border-blue-700">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                            <span class="text-white font-semibold text-lg">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                <div class="p-6 border-t border-blue-700/50 bg-gradient-to-r from-blue-800/50 to-indigo-800/50 backdrop-blur-sm">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                <span class="text-white font-bold text-lg">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-blue-900"></div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                            <p class="text-xs text-blue-200 truncate">System Administrator</p>
+                            <p class="text-sm font-bold text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
+                            <p class="text-xs text-blue-200 truncate flex items-center">
+                                <i class="fas fa-crown mr-1"></i>
+                                System Administrator
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -113,35 +144,56 @@
         <!-- Main Content -->
         <div class="flex-1 flex flex-col">
             <!-- Top Navigation -->
-            <div class="bg-white shadow-sm border-b border-gray-200">
-                <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
+            <div class="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200/50">
+                <div class="flex items-center justify-between h-20 px-6 lg:px-8">
                     <!-- Mobile menu button -->
-                    <button type="button" class="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100" onclick="toggleMobileMenu()">
+                    <button type="button" class="lg:hidden p-3 rounded-2xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-300" onclick="toggleMobileMenu()">
                         <i class="fas fa-bars w-6 h-6"></i>
                     </button>
 
                     <!-- Page title -->
                     <div class="flex-1 px-4 lg:px-0">
-                        <h1 class="text-2xl font-semibold text-gray-900">@yield('title', 'Dashboard')</h1>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-tachometer-alt text-white text-sm"></i>
+                            </div>
+                            <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-600 bg-clip-text text-transparent">
+                                @yield('title', 'Dashboard')
+                            </h1>
+                        </div>
                     </div>
 
                     <!-- Right side -->
                     <div class="flex items-center space-x-4">
                         <!-- Notifications -->
-                        <button class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                            <i class="fas fa-bell w-5 h-5"></i>
-                        </button>
+                        <div class="relative">
+                            <button class="p-3 text-gray-400 hover:text-gray-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 rounded-2xl transition-all duration-300 group">
+                                <i class="fas fa-bell w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                                <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                            </button>
+                        </div>
 
                         <!-- Date -->
-                        <div class="hidden sm:block text-sm text-gray-500">
-                            {{ Carbon\Carbon::now()->format('M d, Y') }}
+                        <div class="hidden sm:block bg-gradient-to-r from-gray-50 to-blue-50 px-4 py-2 rounded-2xl border border-gray-200">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-calendar-alt text-gray-500 text-sm"></i>
+                                <span class="text-sm font-semibold text-gray-700">{{ Carbon\Carbon::now()->format('M d, Y') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="flex items-center space-x-3 bg-gradient-to-r from-gray-50 to-blue-50 px-4 py-2 rounded-2xl border border-gray-200">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                            </div>
+                            <span class="hidden md:block text-sm font-semibold text-gray-700">{{ auth()->user()->name ?? 'User' }}</span>
                         </div>
 
                         <!-- Logout -->
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
-                            <button type="submit" class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors duration-200">
-                                <i class="fas fa-sign-out-alt w-5 h-5"></i>
+                            <button type="submit" class="p-3 text-gray-400 hover:text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 rounded-2xl transition-all duration-300 group">
+                                <i class="fas fa-sign-out-alt w-5 h-5 group-hover:scale-110 transition-transform"></i>
                             </button>
                         </form>
                     </div>
@@ -149,7 +201,7 @@
             </div>
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto bg-gray-50">
+            <main class="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 custom-scrollbar">
                 @yield('content')
             </main>
         </div>

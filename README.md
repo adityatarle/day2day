@@ -1,61 +1,254 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🍎🥬 Fruit & Vegetable Business Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive, enterprise-grade business management system designed specifically for fruit and vegetable businesses with multiple branches. Built with Laravel 12 and modern web technologies.
 
-## About Laravel
+## ✨ Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 🔐 **Authentication & Authorization**
+- Multi-role user management (Admin, Branch Manager, Cashier, Delivery Boy)
+- Role-based access control (RBAC)
+- Secure API authentication with Laravel Sanctum
+- Session-based web authentication
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 🏢 **Multi-Branch Management**
+- Independent inventory per branch
+- Branch-specific pricing strategies
+- Branch-specific stock thresholds
+- Online availability control per branch
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 📦 **Advanced Inventory Management**
+- Real-time stock tracking
+- Batch-wise inventory management
+- Weight loss tracking (fresh produce)
+- Water loss tracking (vegetables)
+- Wastage tracking and analysis
+- Complimentary/adjustment tracking
+- Automatic "Sold Out" status
+- Low stock alerts
 
-## Learning Laravel
+### 🛒 **Comprehensive Sales Management**
+- **Online Orders** - Website/app integration
+- **On-Shop Orders** - Walk-in customer billing
+- **Wholesale Orders** - Bulk purchase management
+- **Delivery Tracking** - Real-time delivery status
+- **Return Management** - Customer returns and refunds
+- **Customer Adjustments** - Weight/price adjustments
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 🚚 **Delivery & Returns**
+- Delivery boy assignment and tracking
+- Real-time delivery status updates
+- Return processing and approval
+- Customer adjustment handling
+- Mobile app integration ready
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 💰 **Financial Management**
+- Expense tracking and categorization
+- Payment management (Cash, UPI, Card, Credit)
+- Credit management with customers and vendors
+- GST integration and tax calculation
+- Profit margin analysis
+- Financial reporting
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📊 **Business Intelligence**
+- Sales analytics and trends
+- Inventory performance metrics
+- Customer behavior analysis
+- Vendor performance tracking
+- Profit & Loss statements
+- Growth opportunity insights
 
-## Laravel Sponsors
+### 🔧 **System Features**
+- RESTful API with comprehensive endpoints
+- Modern web interface with responsive design
+- Real-time notifications and alerts
+- Data export (CSV, PDF, Excel)
+- Backup and recovery systems
+- Performance monitoring
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🚀 Quick Start
 
-### Premium Partners
+### Prerequisites
+- PHP 8.2+
+- Composer
+- MySQL/PostgreSQL/SQLite
+- Node.js & NPM
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Installation
+```bash
+# Clone the repository
+git clone <repository-url>
+cd fruit-vegetable-business-system
 
-## Contributing
+# Install dependencies
+composer install
+npm install
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Environment setup
+cp .env.example .env
+php artisan key:generate
 
-## Code of Conduct
+# Configure database in .env file
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Run migrations and seed data
+php artisan migrate
+php artisan db:seed
 
-## Security Vulnerabilities
+# Build assets
+npm run build
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Start the application
+php artisan serve
+```
 
-## License
+### Default Login
+- **Email**: admin@example.com
+- **Password**: password
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 📚 Documentation
+
+- **[System Documentation](SYSTEM_DOCUMENTATION.md)** - Comprehensive system overview
+- **[Quick Setup Guide](QUICK_SETUP_GUIDE.md)** - Get up and running quickly
+- **[API Documentation](routes/api.php)** - Complete API endpoint reference
+- **[Web Routes](routes/web.php)** - Web interface routes
+
+## 🏗️ System Architecture
+
+### Technology Stack
+- **Backend**: Laravel 12 (PHP 8.2+)
+- **Database**: MySQL/PostgreSQL/SQLite
+- **Authentication**: Laravel Sanctum
+- **Frontend**: Blade templates + modern CSS/JS
+- **API**: RESTful with role-based access control
+
+### Core Components
+```
+app/
+├── Models/          # Eloquent models with relationships
+├── Http/
+│   ├── Controllers/ # Business logic controllers
+│   └── Middleware/  # Authentication & authorization
+├── Database/
+│   ├── Migrations/  # Database schema
+│   └── Seeders/     # Initial data
+└── Resources/
+    └── Views/       # Web interface templates
+
+routes/
+├── api.php          # API endpoints
+└── web.php          # Web interface routes
+```
+
+## 🔑 API Endpoints
+
+### Authentication
+- `POST /api/login` - User authentication
+- `POST /api/logout` - User logout
+- `GET /api/profile` - User profile
+
+### Products & Inventory
+- `GET /api/products` - List products
+- `POST /api/products` - Create product
+- `GET /api/inventory` - Inventory status
+- `POST /api/inventory/add-stock` - Add stock
+
+### Orders & Sales
+- `GET /api/orders` - List orders
+- `POST /api/orders` - Create order
+- `GET /api/orders/statistics` - Sales statistics
+
+### Customers & Vendors
+- `GET /api/customers` - Customer management
+- `GET /api/vendors` - Vendor management
+- `GET /api/purchase-orders` - Purchase orders
+
+### Reports & Analytics
+- `GET /api/reports/sales` - Sales reports
+- `GET /api/reports/inventory` - Inventory reports
+- `GET /api/reports/profit-loss` - Financial reports
+
+## 🎯 Use Cases
+
+### For Business Owners
+- **Multi-branch management** with centralized control
+- **Real-time business insights** and performance metrics
+- **Financial tracking** and profit analysis
+- **Growth opportunities** identification
+
+### For Branch Managers
+- **Inventory optimization** and stock management
+- **Customer relationship** management
+- **Vendor performance** tracking
+- **Branch-specific** reporting and analytics
+
+### For Cashiers
+- **Quick billing** and order processing
+- **Customer service** and adjustments
+- **Payment processing** (Cash, UPI, Card, Credit)
+- **Sales tracking** and reporting
+
+### For Delivery Personnel
+- **Order delivery** tracking and management
+- **Return processing** and customer adjustments
+- **Mobile app** integration for field operations
+- **Real-time updates** and notifications
+
+## 🔒 Security Features
+
+- **Role-based access control** (RBAC)
+- **API authentication** with tokens
+- **Input validation** and sanitization
+- **SQL injection** prevention
+- **XSS protection**
+- **CSRF protection**
+- **Rate limiting**
+
+## 📱 Mobile Ready
+
+The system is designed with mobile-first approach:
+- **Responsive web interface** for all devices
+- **API endpoints** ready for mobile app integration
+- **Delivery boy mobile app** integration points
+- **Customer mobile app** ready architecture
+
+## 🌟 Key Benefits
+
+1. **Streamlined Operations** - Automate manual processes
+2. **Real-time Insights** - Make data-driven decisions
+3. **Multi-branch Support** - Scale your business efficiently
+4. **Inventory Optimization** - Reduce waste and improve margins
+5. **Customer Satisfaction** - Better service and tracking
+6. **Financial Control** - Monitor costs and profitability
+7. **Compliance Ready** - GST integration and reporting
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines for details.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+- **Documentation**: Check the documentation files
+- **Issues**: Report bugs and feature requests
+- **Community**: Join our community discussions
+
+## 🔮 Roadmap
+
+- [ ] Advanced analytics dashboard
+- [ ] Machine learning insights
+- [ ] Predictive analytics
+- [ ] Customer loyalty program
+- [ ] Advanced reporting
+- [ ] Mobile applications
+- [ ] API marketplace
+- [ ] Multi-currency support
+- [ ] Advanced inventory forecasting
+- [ ] Supplier portal
+
+---
+
+**Built with ❤️ for the fruit and vegetable business community**
+
+*Transform your fruit and vegetable business with enterprise-grade management tools designed specifically for your industry needs.*

@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\OrderController;
 use App\Http\Controllers\Web\InventoryController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\VendorController;
+use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\Web\ReportController;
 
 // Home page - redirects to login if not authenticated
@@ -74,11 +75,32 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin,branch_manager')->group(function () {
         Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
         Route::get('/vendors/create', [VendorController::class, 'create'])->name('vendors.create');
+        Route::post('/vendors', [VendorController::class, 'store'])->name('vendors.store');
         Route::get('/vendors/{vendor}', [VendorController::class, 'show'])->name('vendors.show');
         Route::get('/vendors/{vendor}/edit', [VendorController::class, 'edit'])->name('vendors.edit');
-        Route::get('/purchase-orders', [VendorController::class, 'purchaseOrders'])->name('vendors.purchaseOrders');
-        Route::get('/purchase-orders/create', [VendorController::class, 'createPurchaseOrder'])->name('vendors.createPurchaseOrder');
-        Route::get('/purchase-orders/{purchaseOrder}', [VendorController::class, 'showPurchaseOrder'])->name('vendors.showPurchaseOrder');
+        Route::put('/vendors/{vendor}', [VendorController::class, 'update'])->name('vendors.update');
+        Route::delete('/vendors/{vendor}', [VendorController::class, 'destroy'])->name('vendors.destroy');
+        Route::get('/vendors/{vendor}/analytics', [VendorController::class, 'analytics'])->name('vendors.analytics');
+        Route::get('/vendors/{vendor}/credit-management', [VendorController::class, 'creditManagement'])->name('vendors.credit-management');
+        Route::post('/vendors/{vendor}/credit-transaction', [VendorController::class, 'addCreditTransaction'])->name('vendors.addCreditTransaction');
+    });
+    
+    // Purchase Order management
+    Route::middleware('role:admin,branch_manager')->group(function () {
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+        Route::get('/purchase-orders/dashboard', [PurchaseOrderController::class, 'dashboard'])->name('purchase-orders.dashboard');
+        Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+        Route::get('/purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+        Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
+        Route::post('/purchase-orders/{purchaseOrder}/send', [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
+        Route::post('/purchase-orders/{purchaseOrder}/confirm', [PurchaseOrderController::class, 'confirm'])->name('purchase-orders.confirm');
+        Route::get('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'showReceiveForm'])->name('purchase-orders.receive-form');
+        Route::post('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+        Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+        Route::get('/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'generatePdf'])->name('purchase-orders.pdf');
+        Route::get('/api/vendors/{vendor}/products', [PurchaseOrderController::class, 'getVendorProducts'])->name('api.vendor-products');
     });
     
     // Reports

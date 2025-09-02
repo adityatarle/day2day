@@ -1,75 +1,146 @@
 @extends('layouts.app')
 
-@section('title', 'Inventory')
+@section('title', 'Inventory Management')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Inventory Management</h1>
-        <div class="space-x-3">
-            <a href="{{ route('inventory.addStockForm') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                Add Stock
-            </a>
-            <a href="{{ route('inventory.recordLossForm') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                Record Loss
-            </a>
+<div class="p-6">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Inventory Management</h1>
+                <p class="text-gray-600 mt-1">Monitor stock levels, track losses, and manage inventory across all branches.</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="{{ route('inventory.addStockForm') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Stock
+                </a>
+                <a href="{{ route('inventory.recordLossForm') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L5.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    Record Loss
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-100 text-sm font-medium">Total Inventory Value</p>
+                    <p class="text-2xl font-bold">₹{{ number_format($inventory_stats['total_value'] ?? 0, 2) }}</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-green-100 text-sm font-medium">In Stock Items</p>
+                    <p class="text-2xl font-bold">{{ $inventory_stats['in_stock'] ?? 0 }}</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-xl text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-yellow-100 text-sm font-medium">Low Stock Items</p>
+                    <p class="text-2xl font-bold">{{ $inventory_stats['low_stock'] ?? 0 }}</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L5.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-xl text-white shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-red-100 text-sm font-medium">Out of Stock</p>
+                    <p class="text-2xl font-bold">{{ $inventory_stats['out_of_stock'] ?? 0 }}</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <a href="{{ route('inventory.batches') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <a href="{{ route('inventory.batches') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all group">
             <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-blue-100 group-hover:bg-blue-200 p-3 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Batches</h3>
-                    <p class="text-sm text-gray-500">Manage inventory batches</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Batch Management</h3>
+                    <p class="text-sm text-gray-600">Track inventory batches</p>
                 </div>
             </div>
         </a>
 
-        <a href="{{ route('inventory.stockMovements') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <a href="{{ route('inventory.stockMovements') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all group">
             <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-green-100 group-hover:bg-green-200 p-3 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Stock Movements</h3>
-                    <p class="text-sm text-gray-500">Track stock changes</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Stock Movements</h3>
+                    <p class="text-sm text-gray-600">Track all stock changes</p>
                 </div>
             </div>
         </a>
 
-        <a href="{{ route('inventory.lowStockAlerts') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <a href="{{ route('inventory.lossTracking') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all group">
             <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <div class="bg-red-100 group-hover:bg-red-200 p-3 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L5.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Low Stock Alerts</h3>
-                    <p class="text-sm text-gray-500">Monitor stock levels</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Loss Tracking</h3>
+                    <p class="text-sm text-gray-600">Monitor wastage & losses</p>
                 </div>
             </div>
         </a>
 
-        <a href="{{ route('inventory.valuation') }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <a href="{{ route('inventory.valuation') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all group">
             <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="bg-purple-100 group-hover:bg-purple-200 p-3 rounded-lg transition-colors">
+                    <svg class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">Valuation</h3>
-                    <p class="text-sm text-gray-500">Inventory value report</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Inventory Valuation</h3>
+                    <p class="text-sm text-gray-600">Calculate total value</p>
                 </div>
             </div>
         </a>

@@ -131,21 +131,41 @@ class Product extends Model
     /**
      * Get current stock at a specific branch.
      */
-    public function getCurrentStock(Branch $branch): float
+    public function getCurrentStock($branchId): float
     {
+        if ($branchId instanceof Branch) {
+            $branchId = $branchId->id;
+        }
+        
         $productBranch = $this->branches()
-                              ->where('branch_id', $branch->id)
+                              ->where('branch_id', $branchId)
                               ->first();
         
         return $productBranch ? $productBranch->pivot->current_stock : 0;
     }
 
     /**
+     * Update stock at a specific branch.
+     */
+    public function updateBranchStock($branchId, $newStock): void
+    {
+        if ($branchId instanceof Branch) {
+            $branchId = $branchId->id;
+        }
+        
+        $this->branches()->updateExistingPivot($branchId, [
+            'current_stock' => $newStock,
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
      * Check if product is sold out at a specific branch.
      */
-    public function isSoldOut(Branch $branch): bool
+    public function isSoldOut($branch): bool
     {
-        $currentStock = $this->getCurrentStock($branch);
+        $branchId = $branch instanceof Branch ? $branch->id : $branch;
+        $currentStock = $this->getCurrentStock($branchId);
         return $currentStock <= $this->stock_threshold;
     }
 }

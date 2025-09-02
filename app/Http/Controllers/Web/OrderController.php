@@ -16,7 +16,7 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Order::with(['customer', 'products', 'branch']);
+        $query = Order::with(['customer', 'orderItems.product', 'branch']);
 
         // Filter by status
         if ($request->has('status')) {
@@ -63,7 +63,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $order->load(['customer', 'products', 'branch', 'orderItems']);
+        $order->load(['customer', 'orderItems.product', 'branch']);
         
         return view('orders.show', compact('order'));
     }
@@ -85,7 +85,7 @@ class OrderController extends Controller
      */
     public function invoice(Order $order)
     {
-        $order->load(['customer', 'products', 'branch', 'orderItems']);
+        $order->load(['customer', 'orderItems.product', 'branch']);
         
         return view('orders.invoice', compact('order'));
     }

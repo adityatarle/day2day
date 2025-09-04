@@ -11,6 +11,9 @@ use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\AdminController;
+use App\Http\Controllers\Web\OutletWebController;
+use App\Http\Controllers\Web\PosWebController;
+use App\Http\Controllers\Auth\OutletAuthController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -24,6 +27,10 @@ Route::get('/', function () {
 Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login']);
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
+
+// Outlet-specific authentication
+Route::get('/outlet/{outletCode}/login', [OutletAuthController::class, 'showOutletLogin'])->name('outlet.login');
+Route::post('/outlet/{outletCode}/login', [OutletAuthController::class, 'processOutletLogin'])->name('outlet.login.process');
 
 // Protected routes
 Route::middleware('auth')->group(function () {
@@ -138,6 +145,29 @@ Route::middleware('auth')->group(function () {
         
         // Role Management
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles');
+    });
+
+    // Outlet Management (Admin and Branch Manager)
+    Route::middleware('role:admin,branch_manager')->group(function () {
+        Route::get('/outlets', [OutletWebController::class, 'index'])->name('outlets.index');
+        Route::get('/outlets/create', [OutletWebController::class, 'create'])->name('outlets.create');
+        Route::post('/outlets', [OutletWebController::class, 'store'])->name('outlets.store');
+        Route::get('/outlets/{outlet}', [OutletWebController::class, 'show'])->name('outlets.show');
+        Route::get('/outlets/{outlet}/edit', [OutletWebController::class, 'edit'])->name('outlets.edit');
+        Route::put('/outlets/{outlet}', [OutletWebController::class, 'update'])->name('outlets.update');
+        Route::delete('/outlets/{outlet}', [OutletWebController::class, 'destroy'])->name('outlets.destroy');
+        Route::get('/outlets/{outlet}/staff', [OutletWebController::class, 'manageStaff'])->name('outlets.staff');
+    });
+
+    // POS System (Cashier, Branch Manager, Admin)
+    Route::middleware('role:admin,branch_manager,cashier')->group(function () {
+        Route::get('/pos', [PosWebController::class, 'index'])->name('pos.index');
+        Route::get('/pos/start-session', [PosWebController::class, 'startSession'])->name('pos.start-session');
+        Route::post('/pos/start-session', [PosWebController::class, 'processStartSession'])->name('pos.process-start-session');
+        Route::get('/pos/close-session', [PosWebController::class, 'closeSession'])->name('pos.close-session');
+        Route::post('/pos/close-session', [PosWebController::class, 'processCloseSession'])->name('pos.process-close-session');
+        Route::get('/pos/sales', [PosWebController::class, 'sales'])->name('pos.sales');
+        Route::get('/pos/history', [PosWebController::class, 'sessionHistory'])->name('pos.history');
     });
     
     // User profile and settings

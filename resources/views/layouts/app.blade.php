@@ -377,6 +377,24 @@
                 </div>
                 <span class="font-medium">Reports</span>
             </a>
+
+            @can('role', ['admin', 'branch_manager'])
+            <a href="{{ route('outlets.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('outlets.*') ? 'active text-white' : '' }}">
+                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-store"></i>
+                </div>
+                <span class="font-medium">Outlets</span>
+            </a>
+            @endcan
+
+            @can('role', ['admin', 'branch_manager', 'cashier'])
+            <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') ? 'active text-white' : '' }}">
+                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-cash-register"></i>
+                </div>
+                <span class="font-medium">POS System</span>
+            </a>
+            @endcan
             
             <a href="{{ route('billing.quickSale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('billing.*') ? 'active text-white' : '' }}">
                 <div class="nav-icon rounded-lg flex items-center justify-center mr-3">

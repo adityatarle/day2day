@@ -319,4 +319,248 @@ class ProductController extends Controller
             'data' => $products
         ]);
     }
+
+    /**
+     * Get product categories and subcategories.
+     */
+    public function getCategories()
+    {
+        $categories = Product::getCategories();
+        $categoriesWithSub = [];
+
+        foreach ($categories as $key => $name) {
+            $categoriesWithSub[] = [
+                'key' => $key,
+                'name' => $name,
+                'subcategories' => Product::getSubcategories($key),
+            ];
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $categoriesWithSub
+        ]);
+    }
+
+    /**
+     * Update branch-specific pricing.
+     */
+    public function updateBranchPricing(Request $request, Product $product)
+    {
+        $validator = Validator::make($request->all(), [
+            'branch_pricing' => 'required|array|min:1',
+            'branch_pricing.*.branch_id' => 'required|exists:branches,id',
+            'branch_pricing.*.selling_price' => 'required|numeric|min:0',
+            'branch_pricing.*.is_available_online' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($request->branch_pricing as $pricing) {
+                $product->branches()->updateExistingPivot($pricing['branch_id'], [
+                    'selling_price' => $pricing['selling_price'],
+                    'is_available_online' => $pricing['is_available_online'] ?? true,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Branch pricing updated successfully',
+                'data' => $product->load('branches')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update pricing: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update vendor pricing.
+     */
+    public function updateVendorPricing(Request $request, Product $product)
+    {
+        $validator = Validator::make($request->all(), [
+            'vendor_pricing' => 'required|array|min:1',
+            'vendor_pricing.*.vendor_id' => 'required|exists:vendors,id',
+            'vendor_pricing.*.vendor_price' => 'required|numeric|min:0',
+            'vendor_pricing.*.is_primary' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($request->vendor_pricing as $pricing) {
+                $product->vendors()->updateExistingPivot($pricing['vendor_id'], [
+                    'vendor_price' => $pricing['vendor_price'],
+                    'is_primary' => $pricing['is_primary'] ?? false,
+                    'updated_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Vendor pricing updated successfully',
+                'data' => $product->load('vendors')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update vendor pricing: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk update product categories.
+     */
+    public function bulkUpdateCategories(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'updates' => 'required|array|min:1',
+            'updates.*.product_id' => 'required|exists:products,id',
+            'updates.*.category' => 'required|string',
+            'updates.*.subcategory' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            foreach ($request->updates as $update) {
+                $product = Product::find($update['product_id']);
+                $product->update([
+                    'category' => $update['category'],
+                    'subcategory' => $update['subcategory'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product categories updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update categories: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get products by category with pricing analysis.
+     */
+    public function getByCategory(Request $request, string $category)
+    {
+        $query = Product::with(['branches', 'vendors', 'expenseAllocations'])
+                        ->where('category', $category);
+
+        if ($request->has('subcategory')) {
+            $query->where('subcategory', $request->subcategory);
+        }
+
+        if ($request->has('branch_id')) {
+            $query->whereHas('branches', function ($q) use ($request) {
+                $q->where('branches.id', $request->branch_id);
+            });
+        }
+
+        $products = $query->active()->get();
+
+        $categoryData = $products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'category' => $product->category,
+                'subcategory' => $product->subcategory,
+                'weight_unit' => $product->weight_unit,
+                'purchase_price' => $product->purchase_price,
+                'mrp' => $product->mrp,
+                'selling_price' => $product->selling_price,
+                'is_perishable' => $product->isPerishable(),
+                'storage_temperature' => $product->getStorageTemperature(),
+                'shelf_life_days' => $product->shelf_life_days,
+                'total_allocated_expenses' => $product->getTotalAllocatedExpenses(),
+                'cost_per_unit' => $product->getCostPerUnit(),
+                'profit_margin' => $product->getProfitMargin(),
+                'profit_percentage' => $product->getProfitPercentage(),
+                'branches' => $product->branches->map(function ($branch) use ($product) {
+                    return [
+                        'branch_id' => $branch->id,
+                        'branch_name' => $branch->name,
+                        'current_stock' => $branch->pivot->current_stock,
+                        'selling_price' => $branch->pivot->selling_price,
+                        'is_available_online' => $branch->pivot->is_available_online,
+                        'profit_margin' => $product->getProfitMargin($branch->id),
+                    ];
+                }),
+                'vendors' => $product->vendors->map(function ($vendor) {
+                    return [
+                        'vendor_id' => $vendor->id,
+                        'vendor_name' => $vendor->name,
+                        'vendor_price' => $vendor->pivot->vendor_price,
+                        'is_primary' => $vendor->pivot->is_primary,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'category' => $category,
+                'products' => $categoryData,
+                'summary' => [
+                    'total_products' => $products->count(),
+                    'average_profit_margin' => $products->avg(function ($product) {
+                        return $product->getProfitPercentage();
+                    }),
+                    'total_stock_value' => $products->sum(function ($product) {
+                        return $product->branches->sum(function ($branch) use ($product) {
+                            return $branch->pivot->current_stock * $branch->pivot->selling_price;
+                        });
+                    }),
+                ],
+            ]
+        ]);
+    }
 }

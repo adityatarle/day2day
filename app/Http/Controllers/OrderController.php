@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Branch;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -172,13 +173,17 @@ class OrderController extends Controller
 
                 $subtotal += $totalPrice;
 
-                // Update stock
-                $product->branches()->updateExistingPivot($branch->id, [
-                    'current_stock' => $currentStock - $item['quantity']
-                ]);
-
-                // Record stock movement
-                // Note: You'll need to create a StockMovement model and record this
+                // Auto-update stock using InventoryService
+                $inventoryService = new InventoryService();
+                $stockUpdated = $inventoryService->updateStockAfterSale($orderItem);
+                
+                if (!$stockUpdated) {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "Failed to update stock for {$product->name}"
+                    ], 500);
+                }
             }
 
             // Update order totals

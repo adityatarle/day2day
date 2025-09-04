@@ -19,12 +19,24 @@ class Delivery extends Model
         'delivered_at',
         'delivery_notes',
         'return_reason',
+        'current_latitude',
+        'current_longitude',
+        'last_location_update',
+        'pickup_time',
+        'delivery_time',
+        'customer_adjustments',
     ];
 
     protected $casts = [
         'assigned_at' => 'datetime',
         'picked_up_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'last_location_update' => 'datetime',
+        'pickup_time' => 'datetime',
+        'delivery_time' => 'datetime',
+        'customer_adjustments' => 'array',
+        'current_latitude' => 'decimal:8',
+        'current_longitude' => 'decimal:8',
     ];
 
     /**

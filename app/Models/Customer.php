@@ -16,10 +16,15 @@ class Customer extends Model
         'email',
         'address',
         'type',
+        'customer_type',
+        'credit_limit',
+        'credit_days',
         'is_active',
     ];
 
     protected $casts = [
+        'credit_limit' => 'decimal:2',
+        'credit_days' => 'integer',
         'is_active' => 'boolean',
     ];
 
@@ -91,5 +96,74 @@ class Customer extends Model
                     ->with(['orderItems.product', 'branch'])
                     ->orderBy('order_date', 'desc')
                     ->get();
+    }
+
+    /**
+     * Get wholesale pricing tiers for this customer.
+     */
+    public function wholesalePricing(): HasMany
+    {
+        return $this->hasMany(WholesalePricing::class);
+    }
+
+    /**
+     * Check if customer is wholesale customer.
+     */
+    public function isWholesaleCustomer(): bool
+    {
+        return in_array($this->customer_type, ['regular_wholesale', 'premium_wholesale', 'distributor', 'retailer']);
+    }
+
+    /**
+     * Check if customer has credit limit.
+     */
+    public function hasCreditLimit(): bool
+    {
+        return $this->credit_limit > 0;
+    }
+
+    /**
+     * Get remaining credit limit.
+     */
+    public function getRemainingCreditLimit(): float
+    {
+        if (!$this->hasCreditLimit()) {
+            return 0;
+        }
+
+        $pendingCreditAmount = $this->orders()
+                                   ->where('payment_status', 'pending')
+                                   ->sum('total_amount');
+
+        return $this->credit_limit - $pendingCreditAmount;
+    }
+
+    /**
+     * Check if customer can make credit purchase.
+     */
+    public function canMakeCreditPurchase(float $amount): bool
+    {
+        if (!$this->hasCreditLimit()) {
+            return false;
+        }
+
+        return $this->getRemainingCreditLimit() >= $amount;
+    }
+
+    /**
+     * Get customer type display name.
+     */
+    public function getCustomerTypeDisplayName(): string
+    {
+        $types = [
+            'walk_in' => 'Walk-in Customer',
+            'regular' => 'Regular Customer',
+            'regular_wholesale' => 'Regular Wholesale',
+            'premium_wholesale' => 'Premium Wholesale',
+            'distributor' => 'Distributor',
+            'retailer' => 'Retailer',
+        ];
+
+        return $types[$this->customer_type] ?? 'Unknown';
     }
 }

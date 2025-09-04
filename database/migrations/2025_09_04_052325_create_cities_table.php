@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('state')->nullable();
+            $table->string('postal_code')->nullable(); // Postal/ZIP code
             $table->string('country')->default('India');
             $table->string('code', 10)->unique(); // City code like 'DEL', 'MUM', 'BLR'
             $table->decimal('delivery_charge', 8, 2)->default(0);

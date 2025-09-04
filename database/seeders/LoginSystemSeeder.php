@@ -18,9 +18,9 @@ class LoginSystemSeeder extends Seeder
     {
         // Create cities first
         $cities = [
-            ['name' => 'Downtown', 'state' => 'State1', 'postal_code' => '12345'],
-            ['name' => 'Uptown', 'state' => 'State1', 'postal_code' => '12346'],
-            ['name' => 'Suburb', 'state' => 'State2', 'postal_code' => '54321'],
+            ['name' => 'Downtown', 'state' => 'State1', 'postal_code' => '12345', 'code' => 'DT'],
+            ['name' => 'Uptown', 'state' => 'State1', 'postal_code' => '12346', 'code' => 'UT'],
+            ['name' => 'Suburb', 'state' => 'State2', 'postal_code' => '54321', 'code' => 'SB'],
         ];
 
         foreach ($cities as $cityData) {

@@ -52,7 +52,7 @@ class RoleSeeder extends Seeder
             
             // Financial Management
             ['name' => 'finance.view', 'display_name' => 'View Finance', 'description' => 'Can view financial data', 'module' => 'finance'],
-            ['name' => 'finance.edit', 'description' => 'Can edit financial data', 'module' => 'finance'],
+            ['name' => 'finance.edit', 'display_name' => 'Edit Finance', 'description' => 'Can edit financial data', 'module' => 'finance'],
             ['name' => 'finance.reports', 'display_name' => 'Financial Reports', 'description' => 'Can view financial reports', 'module' => 'finance'],
             
             // Analytics & Reports
@@ -61,7 +61,10 @@ class RoleSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create($permission);
+            Permission::firstOrCreate(
+                ['name' => $permission['name']], 
+                $permission
+            );
         }
 
         // Create roles with their permissions
@@ -114,11 +117,14 @@ class RoleSeeder extends Seeder
             $permissions = $roleData['permissions'];
             unset($roleData['permissions']);
             
-            $role = Role::create($roleData);
+            $role = Role::firstOrCreate(
+                ['name' => $roleData['name']], 
+                $roleData
+            );
             
-            // Attach permissions to role
+            // Sync permissions to role (this will replace existing permissions)
             $permissionModels = Permission::whereIn('name', $permissions)->get();
-            $role->permissions()->attach($permissionModels);
+            $role->permissions()->sync($permissionModels);
         }
     }
 }

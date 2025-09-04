@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Expense extends Model
 {
@@ -21,6 +22,8 @@ class Expense extends Model
         'payment_method',
         'reference_number',
         'status',
+        'expense_type',
+        'allocation_method',
         'notes',
     ];
 
@@ -139,5 +142,61 @@ class Expense extends Model
     public function markAsPaid(): void
     {
         $this->update(['status' => 'paid']);
+    }
+
+    /**
+     * Get the expense allocations.
+     */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(ExpenseAllocation::class);
+    }
+
+    /**
+     * Scope to get expenses by type.
+     */
+    public function scopeByType($query, $type)
+    {
+        return $query->where('expense_type', $type);
+    }
+
+    /**
+     * Check if expense is transport related.
+     */
+    public function isTransportExpense(): bool
+    {
+        return $this->expense_type === 'transport';
+    }
+
+    /**
+     * Check if expense is labour related.
+     */
+    public function isLabourExpense(): bool
+    {
+        return $this->expense_type === 'labour';
+    }
+
+    /**
+     * Check if expense is operational.
+     */
+    public function isOperationalExpense(): bool
+    {
+        return $this->expense_type === 'operational';
+    }
+
+    /**
+     * Get total allocated amount.
+     */
+    public function getTotalAllocatedAmount(): float
+    {
+        return $this->allocations->sum('allocated_amount');
+    }
+
+    /**
+     * Get unallocated amount.
+     */
+    public function getUnallocatedAmount(): float
+    {
+        return $this->amount - $this->getTotalAllocatedAmount();
     }
 }

@@ -17,11 +17,15 @@ class Product extends Model
         'code',
         'description',
         'category',
+        'subcategory',
         'weight_unit',
         'purchase_price',
         'mrp',
         'selling_price',
         'stock_threshold',
+        'shelf_life_days',
+        'storage_temperature',
+        'is_perishable',
         'is_active',
     ];
 
@@ -30,6 +34,8 @@ class Product extends Model
         'mrp' => 'decimal:2',
         'selling_price' => 'decimal:2',
         'stock_threshold' => 'integer',
+        'shelf_life_days' => 'integer',
+        'is_perishable' => 'boolean',
         'is_active' => 'boolean',
     ];
 
@@ -167,5 +173,189 @@ class Product extends Model
         $branchId = $branch instanceof Branch ? $branch->id : $branch;
         $currentStock = $this->getCurrentStock($branchId);
         return $currentStock <= $this->stock_threshold;
+    }
+
+    /**
+     * Get the expense allocations for this product.
+     */
+    public function expenseAllocations(): HasMany
+    {
+        return $this->hasMany(ExpenseAllocation::class);
+    }
+
+    /**
+     * Get total allocated expenses for this product.
+     */
+    public function getTotalAllocatedExpenses(): float
+    {
+        return $this->expenseAllocations()->sum('allocated_amount');
+    }
+
+    /**
+     * Get cost per unit including allocated expenses.
+     */
+    public function getCostPerUnit($branchId = null): float
+    {
+        $allocatedExpenses = $this->getTotalAllocatedExpenses();
+        $currentStock = $branchId ? $this->getCurrentStock($branchId) : $this->getTotalCurrentStock();
+        
+        if ($currentStock <= 0) {
+            return $this->purchase_price;
+        }
+
+        return $this->purchase_price + ($allocatedExpenses / $currentStock);
+    }
+
+    /**
+     * Get profit margin including allocated expenses.
+     */
+    public function getProfitMargin($branchId = null): float
+    {
+        $costPerUnit = $this->getCostPerUnit($branchId);
+        $sellingPrice = $branchId ? 
+            $this->branches()->where('branches.id', $branchId)->first()?->pivot?->selling_price ?? $this->selling_price :
+            $this->selling_price;
+            
+        return $sellingPrice - $costPerUnit;
+    }
+
+    /**
+     * Get profit percentage including allocated expenses.
+     */
+    public function getProfitPercentage($branchId = null): float
+    {
+        $costPerUnit = $this->getCostPerUnit($branchId);
+        
+        if ($costPerUnit <= 0) {
+            return 0;
+        }
+
+        $profitMargin = $this->getProfitMargin($branchId);
+        return ($profitMargin / $costPerUnit) * 100;
+    }
+
+    /**
+     * Get available categories.
+     */
+    public static function getCategories(): array
+    {
+        return [
+            'fruit' => 'Fruits',
+            'vegetable' => 'Vegetables', 
+            'leafy' => 'Leafy Vegetables',
+            'exotic' => 'Exotic Items',
+            'herbs' => 'Herbs & Spices',
+            'dry_fruits' => 'Dry Fruits',
+            'organic' => 'Organic Products',
+        ];
+    }
+
+    /**
+     * Get available subcategories for a category.
+     */
+    public static function getSubcategories($category): array
+    {
+        $subcategories = [
+            'fruit' => ['citrus', 'tropical', 'seasonal', 'berries', 'stone_fruits'],
+            'vegetable' => ['root', 'gourd', 'pod', 'bulb', 'stem'],
+            'leafy' => ['greens', 'herbs', 'salads'],
+            'exotic' => ['imported', 'specialty', 'rare'],
+            'herbs' => ['fresh', 'dried', 'medicinal'],
+            'dry_fruits' => ['nuts', 'dried_fruits', 'seeds'],
+            'organic' => ['certified', 'natural', 'pesticide_free'],
+        ];
+
+        return $subcategories[$category] ?? [];
+    }
+
+    /**
+     * Check if product is perishable.
+     */
+    public function isPerishable(): bool
+    {
+        return $this->is_perishable;
+    }
+
+    /**
+     * Check if product is fruit.
+     */
+    public function isFruit(): bool
+    {
+        return $this->category === 'fruit';
+    }
+
+    /**
+     * Check if product is vegetable.
+     */
+    public function isVegetable(): bool
+    {
+        return in_array($this->category, ['vegetable', 'leafy']);
+    }
+
+    /**
+     * Check if product is exotic.
+     */
+    public function isExotic(): bool
+    {
+        return $this->category === 'exotic';
+    }
+
+    /**
+     * Get recommended storage temperature.
+     */
+    public function getStorageTemperature(): string
+    {
+        return $this->storage_temperature ?? $this->getDefaultStorageTemperature();
+    }
+
+    /**
+     * Get default storage temperature based on category.
+     */
+    private function getDefaultStorageTemperature(): string
+    {
+        $defaults = [
+            'fruit' => '2-8°C',
+            'vegetable' => '0-4°C',
+            'leafy' => '0-2°C',
+            'exotic' => '8-12°C',
+            'herbs' => '0-2°C',
+            'dry_fruits' => 'Room Temperature',
+            'organic' => '0-4°C',
+        ];
+
+        return $defaults[$this->category] ?? 'Room Temperature';
+    }
+
+    /**
+     * Calculate expected expiry date for new batch.
+     */
+    public function calculateExpiryDate(\DateTime $purchaseDate = null): ?\DateTime
+    {
+        if (!$this->shelf_life_days) {
+            return null;
+        }
+
+        $startDate = $purchaseDate ?? new \DateTime();
+        return $startDate->modify("+{$this->shelf_life_days} days");
+    }
+
+    /**
+     * Get vendor-specific pricing.
+     */
+    public function getVendorPrice(int $vendorId): ?float
+    {
+        $vendor = $this->vendors()->where('vendors.id', $vendorId)->first();
+        return $vendor ? $vendor->pivot->vendor_price : null;
+    }
+
+    /**
+     * Update vendor pricing.
+     */
+    public function updateVendorPrice(int $vendorId, float $price): void
+    {
+        $this->vendors()->updateExistingPivot($vendorId, [
+            'vendor_price' => $price,
+            'updated_at' => now(),
+        ]);
     }
 }

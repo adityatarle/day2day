@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\Batch;
 use App\Models\StockMovement;
 use App\Models\LossTracking;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -447,6 +448,245 @@ class InventoryController extends Controller
                 'valuation' => $valuation,
                 'summary' => $totalValuation
             ]
+        ]);
+    }
+
+    /**
+     * Get stock alerts.
+     */
+    public function getStockAlerts(Request $request)
+    {
+        $inventoryService = new InventoryService();
+        $branchId = $request->branch_id;
+
+        $alerts = $inventoryService->getStockAlerts($branchId);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $alerts
+        ]);
+    }
+
+    /**
+     * Record weight loss.
+     */
+    public function recordWeightLoss(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:products,id',
+            'branch_id' => 'required|exists:branches,id',
+            'initial_weight' => 'required|numeric|min:0.01',
+            'current_weight' => 'required|numeric|min:0|lt:initial_weight',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $inventoryService = new InventoryService();
+        $product = Product::find($request->product_id);
+        $branch = Branch::find($request->branch_id);
+
+        $inventoryService->recordWeightLoss(
+            $product,
+            $branch,
+            $request->initial_weight,
+            $request->current_weight,
+            $request->reason ?? 'Storage weight loss'
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Weight loss recorded successfully'
+        ]);
+    }
+
+    /**
+     * Record water loss.
+     */
+    public function recordWaterLoss(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:products,id',
+            'branch_id' => 'required|exists:branches,id',
+            'quantity' => 'required|numeric|min:0.01',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $inventoryService = new InventoryService();
+        $product = Product::find($request->product_id);
+        $branch = Branch::find($request->branch_id);
+
+        $inventoryService->recordWaterLoss(
+            $product,
+            $branch,
+            $request->quantity,
+            $request->reason ?? 'Moisture loss'
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Water loss recorded successfully'
+        ]);
+    }
+
+    /**
+     * Record wastage loss.
+     */
+    public function recordWastageLoss(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:products,id',
+            'branch_id' => 'required|exists:branches,id',
+            'quantity' => 'required|numeric|min:0.01',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $inventoryService = new InventoryService();
+        $product = Product::find($request->product_id);
+        $branch = Branch::find($request->branch_id);
+
+        $inventoryService->recordWastageLoss(
+            $product,
+            $branch,
+            $request->quantity,
+            $request->reason ?? 'Damaged/spoiled items'
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Wastage loss recorded successfully'
+        ]);
+    }
+
+    /**
+     * Transfer stock between branches.
+     */
+    public function transferStock(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|exists:products,id',
+            'from_branch_id' => 'required|exists:branches,id',
+            'to_branch_id' => 'required|exists:branches,id|different:from_branch_id',
+            'quantity' => 'required|numeric|min:0.01',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $inventoryService = new InventoryService();
+        
+        $transferred = $inventoryService->transferStock(
+            $request->product_id,
+            $request->from_branch_id,
+            $request->to_branch_id,
+            $request->quantity,
+            $request->reason ?? 'Branch transfer'
+        );
+
+        if ($transferred) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Stock transferred successfully'
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to transfer stock'
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk update stock thresholds.
+     */
+    public function bulkUpdateThresholds(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'updates' => 'required|array|min:1',
+            'updates.*.product_id' => 'required|exists:products,id',
+            'updates.*.threshold' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $inventoryService = new InventoryService();
+        $updated = $inventoryService->bulkUpdateThresholds($request->updates);
+
+        if ($updated) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Thresholds updated successfully'
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update thresholds'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get inventory valuation with cost allocation.
+     */
+    public function getValuationWithCosts(Request $request)
+    {
+        $inventoryService = new InventoryService();
+        $branchId = $request->branch_id;
+
+        $valuation = $inventoryService->getInventoryValuation($branchId);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $valuation
+        ]);
+    }
+
+    /**
+     * Process expired batches.
+     */
+    public function processExpiredBatches()
+    {
+        $inventoryService = new InventoryService();
+        $processedCount = $inventoryService->processExpiredBatches();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Processed {$processedCount} expired batches",
+            'data' => ['processed_count' => $processedCount]
         ]);
     }
 }

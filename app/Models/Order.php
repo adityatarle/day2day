@@ -24,6 +24,9 @@ class Order extends Model
         'tax_amount',
         'discount_amount',
         'total_amount',
+        'adjustment_amount',
+        'adjusted_invoice_number',
+        'adjustment_date',
         'notes',
         'order_date',
         'delivery_date',
@@ -34,6 +37,8 @@ class Order extends Model
         'tax_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'adjustment_amount' => 'decimal:2',
+        'adjustment_date' => 'datetime',
         'order_date' => 'datetime',
         'delivery_date' => 'datetime',
     ];

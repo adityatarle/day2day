@@ -19,11 +19,17 @@ class LossTracking extends Model
         'financial_loss',
         'reason',
         'user_id',
+        'reference_type',
+        'reference_id',
+        'initial_quantity',
+        'final_quantity',
     ];
 
     protected $casts = [
         'quantity_lost' => 'decimal:2',
         'financial_loss' => 'decimal:2',
+        'initial_quantity' => 'decimal:2',
+        'final_quantity' => 'decimal:2',
     ];
 
     /**
@@ -131,7 +137,7 @@ class LossTracking extends Model
         return $this->financial_loss > 1000; // Define your threshold
     }
 
-    /**
+        /**
      * Get the average loss per unit.
      */
     public function getAverageLossPerUnit(): float
@@ -139,7 +145,52 @@ class LossTracking extends Model
         if ($this->quantity_lost <= 0) {
             return 0;
         }
-
+        
         return $this->financial_loss / $this->quantity_lost;
+    }
+
+    /**
+     * Check if this is a complimentary loss.
+     */
+    public function isComplimentaryLoss(): bool
+    {
+        return $this->loss_type === 'complimentary';
+    }
+
+    /**
+     * Check if this is a weight loss.
+     */
+    public function isWeightLoss(): bool
+    {
+        return $this->loss_type === 'weight_loss';
+    }
+
+    /**
+     * Check if this is a water loss.
+     */
+    public function isWaterLoss(): bool
+    {
+        return $this->loss_type === 'water_loss';
+    }
+
+    /**
+     * Scope to get losses by reference.
+     */
+    public function scopeByReference($query, $referenceType, $referenceId)
+    {
+        return $query->where('reference_type', $referenceType)
+                    ->where('reference_id', $referenceId);
+    }
+
+    /**
+     * Get loss percentage (if initial and final quantities are available).
+     */
+    public function getLossPercentage(): float
+    {
+        if (!$this->initial_quantity || $this->initial_quantity <= 0) {
+            return 0;
+        }
+
+        return ($this->quantity_lost / $this->initial_quantity) * 100;
     }
 }

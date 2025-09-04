@@ -146,6 +146,68 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/expenses/{expense}/approve', [ExpenseController::class, 'approve']);
         Route::put('/expenses/{expense}/reject', [ExpenseController::class, 'reject']);
         Route::put('/expenses/{expense}/mark-paid', [ExpenseController::class, 'markAsPaid']);
+        Route::get('/expenses/allocation/report', [ExpenseController::class, 'getAllocationReport']);
+        Route::get('/expenses/cost/analysis', [ExpenseController::class, 'getCostAnalysis']);
+        Route::get('/expenses/summary', [ExpenseController::class, 'getExpenseSummary']);
+    });
+
+    // Enhanced Inventory Management
+    Route::get('/inventory/alerts', [InventoryController::class, 'getStockAlerts']);
+    Route::post('/inventory/weight-loss', [InventoryController::class, 'recordWeightLoss']);
+    Route::post('/inventory/water-loss', [InventoryController::class, 'recordWaterLoss']);
+    Route::post('/inventory/wastage-loss', [InventoryController::class, 'recordWastageLoss']);
+    Route::post('/inventory/transfer', [InventoryController::class, 'transferStock']);
+    Route::put('/inventory/thresholds/bulk', [InventoryController::class, 'bulkUpdateThresholds']);
+    Route::get('/inventory/valuation-with-costs', [InventoryController::class, 'getValuationWithCosts']);
+    Route::post('/inventory/process-expired-batches', [InventoryController::class, 'processExpiredBatches']);
+
+    // Loss Tracking Management
+    Route::apiResource('loss-tracking', LossTrackingController::class);
+    Route::get('/loss-tracking/analytics', [LossTrackingController::class, 'getLossAnalytics']);
+    Route::get('/loss-tracking/trends', [LossTrackingController::class, 'getLossTrends']);
+    Route::get('/loss-tracking/critical-alerts', [LossTrackingController::class, 'getCriticalLossAlerts']);
+    Route::post('/loss-tracking/bulk', [LossTrackingController::class, 'bulkRecordLosses']);
+    Route::get('/loss-tracking/prevention-recommendations', [LossTrackingController::class, 'getLossPreventionRecommendations']);
+    Route::get('/loss-tracking/export', [LossTrackingController::class, 'exportLossData']);
+
+    // Enhanced Product Management
+    Route::get('/products/categories', [ProductController::class, 'getCategories']);
+    Route::put('/products/{product}/branch-pricing', [ProductController::class, 'updateBranchPricing']);
+    Route::put('/products/{product}/vendor-pricing', [ProductController::class, 'updateVendorPricing']);
+    Route::put('/products/categories/bulk', [ProductController::class, 'bulkUpdateCategories']);
+    Route::get('/products/category/{category}', [ProductController::class, 'getByCategory']);
+
+    // Wholesale Management
+    Route::get('/wholesale/pricing-tiers', [WholesaleController::class, 'getPricingTiers']);
+    Route::post('/wholesale/pricing-tiers', [WholesaleController::class, 'createPricingTier']);
+    Route::put('/wholesale/pricing-tiers/{pricingTier}', [WholesaleController::class, 'updatePricingTier']);
+    Route::delete('/wholesale/pricing-tiers/{pricingTier}', [WholesaleController::class, 'deletePricingTier']);
+    Route::post('/wholesale/calculate-pricing', [WholesaleController::class, 'calculateWholesalePricing']);
+    Route::post('/wholesale/orders', [WholesaleController::class, 'createWholesaleOrder']);
+    Route::get('/wholesale/orders', [WholesaleController::class, 'getWholesaleOrders']);
+    Route::get('/wholesale/orders/{order}/invoice', [WholesaleController::class, 'generateInvoice']);
+    Route::get('/wholesale/customer-analysis', [WholesaleController::class, 'getCustomerAnalysis']);
+    Route::get('/wholesale/performance-metrics', [WholesaleController::class, 'getPerformanceMetrics']);
+
+    // Billing Management
+    Route::get('/billing/invoice/{order}', [BillingController::class, 'generateInvoice']);
+    Route::post('/billing/quick-billing', [BillingController::class, 'quickBilling']);
+    Route::post('/billing/online-payment/{order}', [BillingController::class, 'processOnlinePayment']);
+    Route::post('/billing/bulk-invoice', [BillingController::class, 'generateBulkInvoice']);
+    Route::post('/billing/partial-payment/{order}', [BillingController::class, 'processPartialPayment']);
+    Route::get('/billing/summary', [BillingController::class, 'getBillingSummary']);
+    Route::get('/billing/pending-payments', [BillingController::class, 'getPendingPayments']);
+
+    // Delivery Boy Adjustment (for delivery boys)
+    Route::middleware('role:delivery_boy')->group(function () {
+        Route::get('/delivery/orders', [DeliveryAdjustmentController::class, 'getDeliveryOrders']);
+        Route::put('/delivery/orders/{order}/start', [DeliveryAdjustmentController::class, 'startDelivery']);
+        Route::put('/delivery/orders/{order}/process', [DeliveryAdjustmentController::class, 'processDelivery']);
+        Route::put('/delivery/orders/{order}/location', [DeliveryAdjustmentController::class, 'updateLocation']);
+        Route::post('/delivery/orders/{order}/quick-return', [DeliveryAdjustmentController::class, 'quickReturn']);
+        Route::get('/delivery/history', [DeliveryAdjustmentController::class, 'getDeliveryHistory']);
+        Route::get('/delivery/stats', [DeliveryAdjustmentController::class, 'getDeliveryStats']);
+        Route::get('/delivery/optimized-route', [DeliveryAdjustmentController::class, 'getOptimizedRoute']);
     });
     
     // Payment management

@@ -70,10 +70,25 @@ class RoleSeeder extends Seeder
         // Create roles with their permissions
         $roles = [
             [
+                'name' => 'super_admin',
+                'display_name' => 'Super Admin',
+                'description' => 'Ultimate system access with complete control over all operations, users, and system settings',
+                'permissions' => Permission::all()->pluck('name')->toArray()
+            ],
+            [
                 'name' => 'admin',
                 'display_name' => 'Admin (Owner/Manager)',
-                'description' => 'Full access to all system features',
-                'permissions' => Permission::all()->pluck('name')->toArray()
+                'description' => 'Full access to business operations but limited system administration',
+                'permissions' => [
+                    'user.create', 'user.edit', 'user.view',
+                    'branch.create', 'branch.edit', 'branch.view',
+                    'inventory.view', 'inventory.edit', 'inventory.adjust', 'inventory.reports',
+                    'sales.create', 'sales.edit', 'sales.view', 'sales.reports',
+                    'purchase.create', 'purchase.edit', 'purchase.view', 'purchase.approve',
+                    'customer.create', 'customer.edit', 'customer.view',
+                    'finance.view', 'finance.edit', 'finance.reports',
+                    'analytics.view', 'reports.view'
+                ]
             ],
             [
                 'name' => 'branch_manager',

@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\SuperAdminDashboardController;
+use App\Http\Controllers\Web\AdminDashboardController;
+use App\Http\Controllers\Web\BranchManagerDashboardController;
+use App\Http\Controllers\Web\CashierDashboardController;
 use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\OrderController;
 use App\Http\Controllers\Web\InventoryController;
@@ -35,11 +39,33 @@ Route::post('/outlet/{outletCode}/login', [OutletAuthController::class, 'process
 // Protected routes
 Route::middleware('auth')->group(function () {
     
-    // Dashboard
+    // Dashboard - Main redirect
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
+    // Role-specific dashboards
+    Route::get('/dashboard/super-admin', [SuperAdminDashboardController::class, 'index'])
+        ->name('dashboard.super_admin')
+        ->middleware('role:super_admin');
+    
+    Route::get('/dashboard/admin', [AdminDashboardController::class, 'index'])
+        ->name('dashboard.admin')
+        ->middleware('role:admin');
+    
+    Route::get('/dashboard/branch-manager', [BranchManagerDashboardController::class, 'index'])
+        ->name('dashboard.branch_manager')
+        ->middleware('role:branch_manager');
+    
+    Route::get('/dashboard/cashier', [CashierDashboardController::class, 'index'])
+        ->name('dashboard.cashier')
+        ->middleware('role:cashier');
+    
+    // Cashier POS data endpoint
+    Route::get('/api/cashier/pos-data', [CashierDashboardController::class, 'getPosData'])
+        ->name('api.cashier.pos_data')
+        ->middleware('role:cashier');
+    
     // Product management
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
@@ -48,7 +74,7 @@ Route::middleware('auth')->group(function () {
     });
     
     // Inventory management
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('/inventory/add-stock', [InventoryController::class, 'addStockForm'])->name('inventory.addStockForm');
         Route::get('/inventory/record-loss', [InventoryController::class, 'recordLossForm'])->name('inventory.recordLossForm');
@@ -60,7 +86,7 @@ Route::middleware('auth')->group(function () {
     });
     
     // Order management
-    Route::middleware('role:admin,branch_manager,cashier')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager,cashier')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -71,7 +97,7 @@ Route::middleware('auth')->group(function () {
     });
     
     // Customer management
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
         Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
@@ -80,7 +106,7 @@ Route::middleware('auth')->group(function () {
     });
     
     // Vendor management
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
         Route::get('/vendors/create', [VendorController::class, 'create'])->name('vendors.create');
         Route::post('/vendors', [VendorController::class, 'store'])->name('vendors.store');
@@ -94,7 +120,7 @@ Route::middleware('auth')->group(function () {
     });
     
     // Purchase Order management
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
         Route::get('/purchase-orders/dashboard', [PurchaseOrderController::class, 'dashboard'])->name('purchase-orders.dashboard');
         Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
@@ -112,7 +138,7 @@ Route::middleware('auth')->group(function () {
     });
     
     // Reports
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
         Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
@@ -124,8 +150,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/analytics', [ReportController::class, 'analytics'])->name('reports.analytics');
     });
     
-    // Admin-only routes
-    Route::middleware('role:admin')->group(function () {
+    // Super Admin and Admin routes
+    Route::middleware('role:super_admin,admin')->group(function () {
         // Admin Dashboard
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         
@@ -154,8 +180,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');
     });
 
-    // Outlet Management (Admin and Branch Manager)
-    Route::middleware('role:admin,branch_manager')->group(function () {
+    // Outlet Management (Super Admin, Admin and Branch Manager)
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/outlets', [OutletWebController::class, 'index'])->name('outlets.index');
         Route::get('/outlets/create', [OutletWebController::class, 'create'])->name('outlets.create');
         Route::post('/outlets', [OutletWebController::class, 'store'])->name('outlets.store');
@@ -166,8 +192,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/outlets/{outlet}/staff', [OutletWebController::class, 'manageStaff'])->name('outlets.staff');
     });
 
-    // POS System (Cashier, Branch Manager, Admin)
-    Route::middleware('role:admin,branch_manager,cashier')->group(function () {
+    // POS System (Cashier, Branch Manager, Admin, Super Admin)
+    Route::middleware('role:super_admin,admin,branch_manager,cashier')->group(function () {
         Route::get('/pos', [PosWebController::class, 'index'])->name('pos.index');
         Route::get('/pos/start-session', [PosWebController::class, 'startSession'])->name('pos.start-session');
         Route::post('/pos/start-session', [PosWebController::class, 'processStartSession'])->name('pos.process-start-session');

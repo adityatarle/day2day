@@ -126,6 +126,9 @@ Route::middleware('auth')->group(function () {
     
     // Admin-only routes
     Route::middleware('role:admin')->group(function () {
+        // Admin Dashboard
+        Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        
         // User Management
         Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
         Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
@@ -145,6 +148,10 @@ Route::middleware('auth')->group(function () {
         
         // Role Management
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles');
+        
+        // System Settings
+        Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+        Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');
     });
 
     // Outlet Management (Admin and Branch Manager)

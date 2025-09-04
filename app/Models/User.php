@@ -128,6 +128,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the POS sessions for this user.
+     */
+    public function posSessions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\PosSession::class);
+    }
+
+    /**
+     * Get the current active POS session for this user.
+     */
+    public function currentPosSession()
+    {
+        return $this->posSessions()->where('status', 'active')->first();
+    }
+
+    /**
      * Scope to get only active users.
      */
     public function scopeActive($query)

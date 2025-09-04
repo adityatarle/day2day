@@ -100,6 +100,14 @@ class Product extends Model
     }
 
     /**
+     * Get the city-based pricing for this product.
+     */
+    public function cityPricing(): HasMany
+    {
+        return $this->hasMany(CityProductPricing::class);
+    }
+
+    /**
      * Get the GST rates applicable to this product.
      */
     public function gstRates(): BelongsToMany
@@ -357,5 +365,34 @@ class Product extends Model
             'vendor_price' => $price,
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * Get city-specific pricing for this product.
+     */
+    public function getCityPrice($cityId)
+    {
+        $pricing = $this->cityPricing()
+            ->where('city_id', $cityId)
+            ->available()
+            ->effectiveOn()
+            ->orderBy('effective_from', 'desc')
+            ->first();
+
+        return $pricing ? $pricing->getFinalPrice() : $this->selling_price;
+    }
+
+    /**
+     * Check if product is available in a specific city.
+     */
+    public function isAvailableInCity($cityId): bool
+    {
+        $pricing = $this->cityPricing()
+            ->where('city_id', $cityId)
+            ->available()
+            ->effectiveOn()
+            ->exists();
+
+        return $pricing;
     }
 }

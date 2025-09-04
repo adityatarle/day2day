@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Branch extends Model
 {
@@ -18,10 +19,21 @@ class Branch extends Model
         'phone',
         'email',
         'is_active',
+        'city_id',
+        'latitude',
+        'longitude',
+        'outlet_type',
+        'operating_hours',
+        'pos_enabled',
+        'pos_terminal_id',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
+        'operating_hours' => 'array',
+        'pos_enabled' => 'boolean',
     ];
 
     /**
@@ -51,10 +63,71 @@ class Branch extends Model
     }
 
     /**
+     * Get the city where this branch is located.
+     */
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    /**
+     * Get the POS sessions for this branch.
+     */
+    public function posSessions(): HasMany
+    {
+        return $this->hasMany(PosSession::class);
+    }
+
+    /**
+     * Get the current active POS session for this branch.
+     */
+    public function currentPosSession()
+    {
+        return $this->posSessions()->where('status', 'active')->first();
+    }
+
+    /**
      * Scope to get only active branches.
      */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope to get branches by outlet type.
+     */
+    public function scopeByOutletType($query, $type)
+    {
+        return $query->where('outlet_type', $type);
+    }
+
+    /**
+     * Scope to get POS enabled branches.
+     */
+    public function scopePosEnabled($query)
+    {
+        return $query->where('pos_enabled', true);
+    }
+
+    /**
+     * Check if the branch is currently open based on operating hours.
+     */
+    public function isOpen()
+    {
+        if (!$this->operating_hours) {
+            return true; // If no operating hours set, assume always open
+        }
+
+        $currentTime = now()->format('H:i');
+        $currentDay = strtolower(now()->format('l'));
+
+        $todayHours = $this->operating_hours[$currentDay] ?? null;
+        
+        if (!$todayHours || !isset($todayHours['open'], $todayHours['close'])) {
+            return false; // Closed if no hours defined for today
+        }
+
+        return $currentTime >= $todayHours['open'] && $currentTime <= $todayHours['close'];
     }
 }

@@ -16,6 +16,7 @@ class Order extends Model
         'customer_id',
         'branch_id',
         'user_id',
+        'pos_session_id',
         'order_type',
         'status',
         'payment_method',
@@ -30,6 +31,7 @@ class Order extends Model
         'notes',
         'order_date',
         'delivery_date',
+        'created_by',
     ];
 
     protected $casts = [
@@ -89,6 +91,14 @@ class Order extends Model
     public function returns(): HasMany
     {
         return $this->hasMany(OrderReturn::class);
+    }
+
+    /**
+     * Get the POS session for this order.
+     */
+    public function posSession(): BelongsTo
+    {
+        return $this->belongsTo(PosSession::class);
     }
 
     /**

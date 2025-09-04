@@ -12,6 +12,10 @@ use App\Http\Controllers\VendorController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\OutletController;
+use App\Http\Controllers\PosController;
+use App\Http\Controllers\CityController;
+use App\Http\Controllers\Auth\OutletAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +31,10 @@ use App\Http\Controllers\ReportController;
 // Public routes (no authentication required)
 Route::post('/login', [AuthController::class, 'login']);
 
+// Outlet-specific authentication
+Route::post('/outlet/login', [OutletAuthController::class, 'outletLogin']);
+Route::get('/outlet/{outletCode}/info', [OutletAuthController::class, 'getOutletInfo']);
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -34,6 +42,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    
+    // Outlet authentication routes
+    Route::post('/outlet/logout', [OutletAuthController::class, 'outletLogout']);
+    Route::post('/outlet/change-password', [OutletAuthController::class, 'changePassword']);
     
     // User management routes (Admin only)
     Route::middleware('role:admin')->group(function () {
@@ -219,6 +231,32 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/credit-transactions', [CreditTransactionController::class, 'index']);
     Route::post('/credit-transactions', [CreditTransactionController::class, 'store']);
     Route::get('/credit-transactions/{transaction}', [CreditTransactionController::class, 'show']);
+
+    // City Management (Admin only)
+    Route::middleware('role:admin')->group(function () {
+        Route::apiResource('cities', CityController::class);
+        Route::post('/cities/{city}/product-pricing', [CityController::class, 'setProductPricing']);
+        Route::get('/cities/{city}/product-pricing', [CityController::class, 'getProductPricing']);
+    });
+
+    // Outlet Management
+    Route::middleware('role:admin,branch_manager')->group(function () {
+        Route::apiResource('outlets', OutletController::class);
+        Route::get('/cities/{city}/outlets', [OutletController::class, 'getByCity']);
+        Route::post('/outlets/{outlet}/staff', [OutletController::class, 'createStaff']);
+        Route::get('/outlets/{outlet}/performance', [OutletController::class, 'getPerformanceMetrics']);
+    });
+
+    // POS System
+    Route::middleware('role:admin,branch_manager,cashier')->group(function () {
+        Route::post('/pos/start-session', [PosController::class, 'startSession']);
+        Route::get('/pos/current-session', [PosController::class, 'getCurrentSession']);
+        Route::post('/pos/process-sale', [PosController::class, 'processSale']);
+        Route::post('/pos/close-session', [PosController::class, 'closeSession']);
+        Route::get('/pos/products', [PosController::class, 'getProducts']);
+        Route::get('/pos/session-history', [PosController::class, 'getSessionHistory']);
+        Route::get('/pos/session-summary', [PosController::class, 'getSessionSummary']);
+    });
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

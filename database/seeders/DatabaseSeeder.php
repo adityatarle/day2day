@@ -15,30 +15,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Call existing seeders in order
+        // Use the comprehensive LoginSystemSeeder
         $this->call([
-            RoleSeeder::class,
-            BranchSeeder::class,
-            AdminUserSeeder::class,
+            LoginSystemSeeder::class,
         ]);
 
-        // Add a simple test user for easy login testing
-        $adminRole = Role::where('name', 'admin')->first();
-        $mainBranch = Branch::first();
-
-        if ($adminRole && $mainBranch) {
-            // Check if test user already exists
-            if (!User::where('email', 'test@foodcompany.com')->exists()) {
-                User::create([
-                    'name' => 'Test User',
-                    'email' => 'test@foodcompany.com',
-                    'phone' => '+1234567899',
-                    'password' => Hash::make('password123'),
-                    'role_id' => $adminRole->id,
-                    'branch_id' => $mainBranch->id,
-                    'is_active' => true,
-                ]);
-            }
-        }
+        // Optionally call other data seeders if needed
+        // $this->call([
+        //     BasicDataSeeder::class,
+        //     CitySeeder::class,
+        //     CityProductPricingSeeder::class,
+        //     EnhancedSystemSeeder::class,
+        // ]);
     }
 }

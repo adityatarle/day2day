@@ -53,6 +53,24 @@ class ExpenseController extends Controller
     }
 
     /**
+     * Display expenses for the authenticated manager's branch (web view placeholder).
+     */
+    public function branchIndex(Request $request)
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No branch assigned to your account.');
+        }
+
+        // In the current UI, we will reuse the reports expenses page as a placeholder
+        // until a dedicated branch expenses view is implemented.
+        return view('reports.expenses');
+    }
+
+    /**
      * Store a newly created expense.
      */
     public function store(Request $request)

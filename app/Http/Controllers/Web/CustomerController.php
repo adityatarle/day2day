@@ -32,6 +32,41 @@ class CustomerController extends Controller
     }
 
     /**
+     * Display customers for the authenticated manager's branch.
+     */
+    public function branchIndex(Request $request)
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No branch assigned to your account.');
+        }
+
+        $query = Customer::query()
+            ->whereHas('orders', function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            })
+            ->withCount(['orders' => function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            }]);
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->latest()->paginate(20);
+
+        return view('customers.index', compact('customers'));
+    }
+
+    /**
      * Show the form for creating a new customer.
      */
     public function create()

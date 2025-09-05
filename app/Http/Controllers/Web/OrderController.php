@@ -111,4 +111,45 @@ class OrderController extends Controller
 
         return view('billing.wholesale', compact('products', 'branches'));
     }
+
+    /**
+     * Display orders for the authenticated manager's branch.
+     */
+    public function branchIndex(Request $request)
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No branch assigned to your account.');
+        }
+
+        $query = Order::with(['customer', 'orderItems.product', 'branch'])
+            ->where('branch_id', $branch->id);
+
+        // Filter by status
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        // Search by order number or customer name
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                      $customerQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $orders = $query->latest()->paginate(20);
+
+        // Limit branches dropdown to current branch for branch manager
+        $branches = collect([$branch]);
+        $statuses = ['pending', 'processing', 'completed', 'cancelled'];
+
+        return view('orders.index', compact('orders', 'branches', 'statuses'));
+    }
 }

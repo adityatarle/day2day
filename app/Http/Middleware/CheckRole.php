@@ -14,10 +14,13 @@ class CheckRole
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (!$request->user()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthenticated'
-            ], 401);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+            return redirect()->route('login');
         }
 
         $user = $request->user();
@@ -29,9 +32,16 @@ class CheckRole
             }
         }
 
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Access denied. Insufficient permissions.'
-        ], 403);
+        // Check if this is an API request
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Access denied. Insufficient permissions.'
+            ], 403);
+        }
+
+        // For web requests, redirect to dashboard with error message
+        return redirect()->route('dashboard')
+            ->with('error', 'Access denied. You do not have permission to access this page.');
     }
 }

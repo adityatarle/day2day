@@ -15,6 +15,10 @@ use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\AdminController;
+use App\Http\Controllers\Web\AdminUserManagementController;
+use App\Http\Controllers\Web\AdminBranchManagementController;
+use App\Http\Controllers\Web\BranchStaffController;
+use App\Http\Controllers\Web\CashierOrdersController;
 use App\Http\Controllers\Web\OutletWebController;
 use App\Http\Controllers\Web\PosWebController;
 use App\Http\Controllers\Web\UserManagementController;
@@ -159,21 +163,32 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         
         // User Management
-        Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
-        Route::get('/admin/users/create', [AdminController::class, 'createUser'])->name('admin.users.create');
-        Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
-        Route::get('/admin/users/{user}/edit', [AdminController::class, 'editUser'])->name('admin.users.edit');
-        Route::put('/admin/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
-        Route::delete('/admin/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+        Route::resource('admin/users', AdminUserManagementController::class)->names([
+            'index' => 'admin.users.index',
+            'create' => 'admin.users.create',
+            'store' => 'admin.users.store',
+            'show' => 'admin.users.show',
+            'edit' => 'admin.users.edit',
+            'update' => 'admin.users.update',
+            'destroy' => 'admin.users.destroy',
+        ]);
+        Route::patch('/admin/users/{user}/toggle-status', [AdminUserManagementController::class, 'toggleStatus'])
+            ->name('admin.users.toggle-status');
         
         // Branch Management
-        Route::get('/admin/branches', [AdminController::class, 'branches'])->name('admin.branches');
-        Route::get('/admin/branches/create', [AdminController::class, 'createBranch'])->name('admin.branches.create');
-        Route::post('/admin/branches', [AdminController::class, 'storeBranch'])->name('admin.branches.store');
-        Route::get('/admin/branches/{branch}/edit', [AdminController::class, 'editBranch'])->name('admin.branches.edit');
-        Route::put('/admin/branches/{branch}', [AdminController::class, 'updateBranch'])->name('admin.branches.update');
-        Route::delete('/admin/branches/{branch}', [AdminController::class, 'deleteBranch'])->name('admin.branches.delete');
-        Route::get('/admin/branches/performance', [AdminController::class, 'branchPerformance'])->name('admin.branches.performance');
+        Route::resource('admin/branches', AdminBranchManagementController::class)->names([
+            'index' => 'admin.branches.index',
+            'create' => 'admin.branches.create',
+            'store' => 'admin.branches.store',
+            'show' => 'admin.branches.show',
+            'edit' => 'admin.branches.edit',
+            'update' => 'admin.branches.update',
+            'destroy' => 'admin.branches.destroy',
+        ]);
+        Route::patch('/admin/branches/{branch}/toggle-status', [AdminBranchManagementController::class, 'toggleStatus'])
+            ->name('admin.branches.toggle-status');
+        Route::patch('/admin/branches/{branch}/assign-manager', [AdminBranchManagementController::class, 'assignManager'])
+            ->name('admin.branches.assign-manager');
         
         // Role Management
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles');
@@ -181,6 +196,56 @@ Route::middleware('auth')->group(function () {
         // System Settings
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
         Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');
+        Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
+        Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles.index');
+    });
+
+    // Branch Manager specific routes
+    Route::middleware('role:branch_manager')->group(function () {
+        // Branch Staff Management
+        Route::resource('branch/staff', BranchStaffController::class)->names([
+            'index' => 'branch.staff.index',
+            'create' => 'branch.staff.create',
+            'store' => 'branch.staff.store',
+            'show' => 'branch.staff.show',
+            'edit' => 'branch.staff.edit',
+            'update' => 'branch.staff.update',
+            'destroy' => 'branch.staff.destroy',
+        ]);
+        Route::patch('/branch/staff/{staff}/toggle-status', [BranchStaffController::class, 'toggleStatus'])
+            ->name('branch.staff.toggle-status');
+
+        // Branch-specific routes
+        Route::get('/branch/inventory', [InventoryController::class, 'branchIndex'])->name('branch.inventory.index');
+        Route::get('/branch/orders', [OrderController::class, 'branchIndex'])->name('branch.orders.index');
+        Route::get('/branch/customers', [CustomerController::class, 'branchIndex'])->name('branch.customers.index');
+        Route::get('/branch/expenses', [ExpenseController::class, 'branchIndex'])->name('branch.expenses.index');
+        Route::get('/branch/reports', [ReportController::class, 'branchIndex'])->name('branch.reports.index');
+    });
+
+    // Cashier specific routes
+    Route::middleware('role:cashier')->group(function () {
+        // Cashier Orders and Sales
+        Route::get('/cashier/orders', [CashierOrdersController::class, 'index'])->name('cashier.orders.index');
+        Route::get('/cashier/orders/{order}', [CashierOrdersController::class, 'show'])->name('cashier.orders.show');
+        
+        // Returns and Refunds
+        Route::get('/cashier/returns', [CashierOrdersController::class, 'returns'])->name('cashier.returns.index');
+        Route::get('/cashier/orders/{order}/return', [CashierOrdersController::class, 'createReturn'])->name('cashier.returns.create');
+        Route::post('/cashier/orders/{order}/return', [CashierOrdersController::class, 'storeReturn'])->name('cashier.returns.store');
+        
+        // Cashier specific views
+        Route::get('/cashier/inventory/view', [InventoryController::class, 'cashierView'])->name('cashier.inventory.view');
+        Route::get('/cashier/customers/search', [CustomerController::class, 'cashierSearch'])->name('cashier.customers.search');
+        Route::get('/cashier/help', function() { 
+            return view('cashier.help'); 
+        })->name('cashier.help');
+        
+        // POS specific routes
+        Route::get('/pos/sale', [PosController::class, 'newSale'])->name('pos.sale');
+        Route::get('/pos/session/current', [PosSessionController::class, 'current'])->name('pos.session.current');
+        Route::get('/pos/session/history', [PosSessionController::class, 'history'])->name('pos.session.history');
+        Route::post('/api/pos/session/start', [PosSessionController::class, 'start'])->name('api.pos.session.start');
     });
 
     // Outlet Management (Super Admin, Admin and Branch Manager)

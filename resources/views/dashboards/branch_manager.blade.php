@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.branch-manager')
 
 @section('title', 'Branch Manager Dashboard')
 

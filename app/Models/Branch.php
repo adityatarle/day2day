@@ -130,4 +130,61 @@ class Branch extends Model
 
         return $currentTime >= $todayHours['open'] && $currentTime <= $todayHours['close'];
     }
+
+    /**
+     * Get the branch manager for this branch.
+     */
+    public function manager()
+    {
+        return $this->users()->whereHas('role', function($q) {
+            $q->where('name', 'branch_manager');
+        })->first();
+    }
+
+    /**
+     * Get all cashiers for this branch.
+     */
+    public function cashiers()
+    {
+        return $this->users()->whereHas('role', function($q) {
+            $q->where('name', 'cashier');
+        });
+    }
+
+    /**
+     * Get all delivery staff for this branch.
+     */
+    public function deliveryStaff()
+    {
+        return $this->users()->whereHas('role', function($q) {
+            $q->where('name', 'delivery_boy');
+        });
+    }
+
+    /**
+     * Get branch-specific inventory.
+     */
+    public function inventory()
+    {
+        return $this->products()->withPivot(['current_stock', 'selling_price', 'is_available_online']);
+    }
+
+    /**
+     * Get today's sales for this branch.
+     */
+    public function todaySales()
+    {
+        return $this->orders()
+            ->whereDate('created_at', today())
+            ->where('status', 'completed')
+            ->sum('total_amount');
+    }
+
+    /**
+     * Get active POS sessions count.
+     */
+    public function activePosSessionsCount()
+    {
+        return $this->posSessions()->where('status', 'active')->count();
+    }
 }

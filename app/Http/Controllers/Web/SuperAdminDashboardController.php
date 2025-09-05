@@ -56,20 +56,26 @@ class SuperAdminDashboardController extends Controller
         // Branch performance overview
         $branch_performance = Branch::withCount(['orders', 'users'])
             ->withSum('orders', 'total_amount')
-            ->with(['manager' => function($query) {
-                $query->select('id', 'name', 'branch_id');
-            }])
             ->get()
             ->map(function($branch) {
+                $manager = $branch->manager();
                 return [
                     'id' => $branch->id,
                     'name' => $branch->name,
+                    'code' => $branch->code,
                     'location' => $branch->address,
-                    'manager' => $branch->manager->name ?? 'No Manager',
+                    'manager' => $manager ? $manager->name : 'No Manager',
+                    'manager_id' => $manager ? $manager->id : null,
                     'total_orders' => $branch->orders_count,
                     'total_revenue' => $branch->orders_sum_total_amount ?? 0,
                     'total_staff' => $branch->users_count,
+                    'cashiers_count' => $branch->cashiers()->count(),
+                    'delivery_count' => $branch->deliveryStaff()->count(),
+                    'today_sales' => $branch->todaySales(),
+                    'active_pos_sessions' => $branch->activePosSessionsCount(),
                     'status' => $branch->is_active ? 'Active' : 'Inactive',
+                    'outlet_type' => $branch->outlet_type,
+                    'pos_enabled' => $branch->pos_enabled,
                 ];
             });
 
@@ -129,13 +135,50 @@ class SuperAdminDashboardController extends Controller
                 ];
             });
 
+        // Pending management tasks
+        $pending_tasks = [
+            'branches_without_manager' => Branch::active()->whereDoesntHave('users', function($q) {
+                $q->whereHas('role', function($r) {
+                    $r->where('name', 'branch_manager');
+                });
+            })->count(),
+            'inactive_users' => User::where('is_active', false)->count(),
+            'low_stock_branches' => Branch::whereHas('products', function($q) {
+                $q->wherePivot('current_stock', '<', 10);
+            })->count(),
+            'pending_purchase_orders' => PurchaseOrder::where('status', 'pending')->count(),
+        ];
+
+        // System alerts
+        $system_alerts = [];
+        
+        if ($pending_tasks['branches_without_manager'] > 0) {
+            $system_alerts[] = [
+                'type' => 'warning',
+                'message' => "{$pending_tasks['branches_without_manager']} branch(es) without assigned manager",
+                'action' => 'Assign managers',
+                'url' => route('branches.index')
+            ];
+        }
+        
+        if ($pending_tasks['inactive_users'] > 0) {
+            $system_alerts[] = [
+                'type' => 'info',
+                'message' => "{$pending_tasks['inactive_users']} inactive user(s) in system",
+                'action' => 'Review users',
+                'url' => route('users.index')
+            ];
+        }
+
         return view('dashboards.super_admin', compact(
             'stats',
             'system_health',
             'branch_performance',
             'recent_activities',
             'role_distribution',
-            'revenue_by_branch'
+            'revenue_by_branch',
+            'pending_tasks',
+            'system_alerts'
         ));
     }
 }

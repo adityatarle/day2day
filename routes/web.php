@@ -17,6 +17,9 @@ use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\AdminController;
 use App\Http\Controllers\Web\OutletWebController;
 use App\Http\Controllers\Web\PosWebController;
+use App\Http\Controllers\Web\UserManagementController;
+use App\Http\Controllers\Web\BranchManagementController;
+use App\Http\Controllers\Web\PosSessionController;
 use App\Http\Controllers\Auth\OutletAuthController;
 
 // Home page - redirects to login if not authenticated
@@ -203,6 +206,49 @@ Route::middleware('auth')->group(function () {
         Route::get('/pos/history', [PosWebController::class, 'sessionHistory'])->name('pos.history');
     });
     
+    // User Management (Super Admin and Branch Manager)
+    Route::middleware('role:super_admin,branch_manager')->group(function () {
+        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+        Route::get('/api/users/stats', [UserManagementController::class, 'getUserStats'])->name('api.users.stats');
+    });
+
+    // Branch Management (Super Admin only)
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/branches', [BranchManagementController::class, 'index'])->name('branches.index');
+        Route::get('/branches/create', [BranchManagementController::class, 'create'])->name('branches.create');
+        Route::post('/branches', [BranchManagementController::class, 'store'])->name('branches.store');
+        Route::get('/branches/{branch}', [BranchManagementController::class, 'show'])->name('branches.show');
+        Route::get('/branches/{branch}/edit', [BranchManagementController::class, 'edit'])->name('branches.edit');
+        Route::put('/branches/{branch}', [BranchManagementController::class, 'update'])->name('branches.update');
+        Route::post('/branches/{branch}/toggle-status', [BranchManagementController::class, 'toggleStatus'])->name('branches.toggle-status');
+        Route::post('/branches/{branch}/assign-manager', [BranchManagementController::class, 'assignManager'])->name('branches.assign-manager');
+        Route::get('/api/branches/{branch}/performance', [BranchManagementController::class, 'getPerformanceData'])->name('api.branches.performance');
+    });
+
+    // Branch Inventory Management (Super Admin and Branch Manager)
+    Route::middleware('role:super_admin,branch_manager')->group(function () {
+        Route::get('/branches/{branch}/inventory', [BranchManagementController::class, 'inventory'])->name('branches.inventory');
+        Route::post('/branches/{branch}/inventory/{product}', [BranchManagementController::class, 'updateInventoryItem'])->name('branches.inventory.update');
+    });
+
+    // Enhanced POS Session Management
+    Route::middleware('role:super_admin,branch_manager,cashier')->group(function () {
+        Route::get('/pos/sessions', [PosSessionController::class, 'index'])->name('pos.sessions.index');
+        Route::get('/pos/sessions/create', [PosSessionController::class, 'create'])->name('pos.sessions.create');
+        Route::post('/pos/sessions', [PosSessionController::class, 'store'])->name('pos.sessions.store');
+        Route::get('/pos/sessions/{posSession}', [PosSessionController::class, 'show'])->name('pos.sessions.show');
+        Route::post('/pos/sessions/{posSession}/close', [PosSessionController::class, 'close'])->name('pos.sessions.close');
+        Route::get('/api/pos/sessions/{posSession}/performance', [PosSessionController::class, 'getPerformanceData'])->name('api.pos.sessions.performance');
+        Route::get('/api/pos/active-sessions', [PosSessionController::class, 'getActiveSessions'])->name('api.pos.active-sessions');
+    });
+
     // User profile and settings
     Route::get('/profile', function () {
         return view('profile');

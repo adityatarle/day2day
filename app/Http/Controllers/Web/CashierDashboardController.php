@@ -48,11 +48,17 @@ class CashierDashboardController extends Controller
         ];
 
         // Branch overview (limited info for cashier)
+        $branch_manager = $branch->manager();
         $branch_info = [
             'name' => $branch->name,
+            'code' => $branch->code,
             'address' => $branch->address,
-            'manager' => $branch->manager->name ?? 'No Manager Assigned',
+            'phone' => $branch->phone,
+            'manager' => $branch_manager ? $branch_manager->name : 'No Manager Assigned',
+            'manager_phone' => $branch_manager ? $branch_manager->phone : null,
             'total_products' => $branch->products()->where('is_active', true)->count(),
+            'outlet_type' => $branch->outlet_type,
+            'is_open' => $branch->isOpen(),
         ];
 
         // Recent orders by this cashier
@@ -148,6 +154,43 @@ class CashierDashboardController extends Controller
             ->take(10)
             ->get();
 
+        // POS alerts and notifications
+        $pos_alerts = [];
+        
+        if (!$current_session) {
+            $pos_alerts[] = [
+                'type' => 'warning',
+                'message' => 'No active POS session. Start a session to begin sales.',
+                'action' => 'Start Session',
+                'url' => route('pos.sessions.create')
+            ];
+        }
+        
+        if ($quick_stats['out_of_stock_items'] > 0) {
+            $pos_alerts[] = [
+                'type' => 'info',
+                'message' => "{$quick_stats['out_of_stock_items']} item(s) are out of stock",
+                'action' => 'View Inventory',
+                'url' => route('inventory.index')
+            ];
+        }
+
+        // Session performance metrics
+        $session_metrics = [];
+        if ($current_session) {
+            $session_duration = now()->diffInMinutes($current_session->started_at);
+            $avg_order_value = $today_stats['session_orders'] > 0 ? 
+                $today_stats['session_sales'] / $today_stats['session_orders'] : 0;
+            
+            $session_metrics = [
+                'duration_minutes' => $session_duration,
+                'duration_formatted' => $current_session->started_at->diffForHumans(),
+                'avg_order_value' => $avg_order_value,
+                'orders_per_hour' => $session_duration > 0 ? 
+                    round(($today_stats['session_orders'] / $session_duration) * 60, 1) : 0,
+            ];
+        }
+
         return view('dashboards.cashier', compact(
             'today_stats',
             'branch_info',
@@ -157,7 +200,9 @@ class CashierDashboardController extends Controller
             'quick_stats',
             'session_history',
             'hourly_sales',
-            'recent_customers'
+            'recent_customers',
+            'pos_alerts',
+            'session_metrics'
         ));
     }
 

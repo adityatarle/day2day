@@ -15,15 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Use the comprehensive LoginSystemSeeder
+        // Use the comprehensive Multi-Role System Seeder
         $this->call([
-            LoginSystemSeeder::class,
+            MultiRoleSystemSeeder::class,
         ]);
 
-        // Optionally call other data seeders if needed
+        // Optionally call other data seeders for products and demo data
         // $this->call([
         //     BasicDataSeeder::class,
-        //     CitySeeder::class,
         //     CityProductPricingSeeder::class,
         //     EnhancedSystemSeeder::class,
         // ]);

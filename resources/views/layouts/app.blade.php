@@ -304,6 +304,20 @@
             }
         }
     </style>
+    @if(auth()->check() && auth()->user()->isBranchManager())
+    <style>
+        /* Branch Manager Theme Overrides */
+        .sidebar {
+            background: linear-gradient(180deg, #065f46 0%, #047857 50%, #059669 100%);
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+        }
+        .main-content { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); }
+        .top-nav { border-bottom: 2px solid rgba(16, 185, 129, 0.2); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+        .logo-icon { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+        .nav-link:hover { background: rgba(16, 185, 129, 0.15); }
+        .nav-link.active { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+    </style>
+    @endif
 </head>
 <body class="bg-gray-50">
     <!-- Mobile Overlay -->
@@ -321,6 +335,14 @@
         </div>
         
         <!-- Navigation -->
+        @php $user = auth()->user(); @endphp
+        @if($user && $user->isBranchManager())
+            @include('partials.navigation.branch-manager')
+        @elseif($user && $user->isCashier())
+            @include('partials.navigation.cashier')
+        @elseif($user && $user->isSuperAdmin())
+            @include('partials.navigation.super-admin')
+        @else
         <nav class="p-6 space-y-2">
             <a href="{{ route('dashboard') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('dashboard') ? 'active text-white' : '' }}">
                 <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -378,23 +400,23 @@
                 <span class="font-medium">Reports</span>
             </a>
 
-            @can('role', ['admin', 'branch_manager'])
+            @if($user && ($user->isAdmin() || $user->isBranchManager()))
             <a href="{{ route('outlets.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('outlets.*') ? 'active text-white' : '' }}">
                 <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
                     <i class="fas fa-store"></i>
                 </div>
                 <span class="font-medium">Outlets</span>
             </a>
-            @endcan
+            @endif
 
-            @can('role', ['admin', 'branch_manager', 'cashier'])
+            @if($user && ($user->isAdmin() || $user->isBranchManager() || $user->isCashier()))
             <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') ? 'active text-white' : '' }}">
                 <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
                     <i class="fas fa-cash-register"></i>
                 </div>
                 <span class="font-medium">POS System</span>
             </a>
-            @endcan
+            @endif
             
             <a href="{{ route('billing.quickSale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('billing.*') ? 'active text-white' : '' }}">
                 <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -403,6 +425,7 @@
                 <span class="font-medium">Quick Sale</span>
             </a>
         </nav>
+        @endif
         
         <!-- User Profile -->
         <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/10 bg-black/20">
@@ -412,7 +435,18 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                    <p class="text-xs text-gray-300">Administrator</p>
+                    @php
+                        $roleLabel = 'User';
+                        if (auth()->check()) {
+                            $u = auth()->user();
+                            if ($u->isSuperAdmin()) { $roleLabel = 'Super Admin'; }
+                            elseif ($u->isAdmin()) { $roleLabel = 'Admin'; }
+                            elseif ($u->isBranchManager()) { $roleLabel = 'Branch Manager'; }
+                            elseif ($u->isCashier()) { $roleLabel = 'Cashier'; }
+                            elseif ($u->isDeliveryBoy()) { $roleLabel = 'Delivery Boy'; }
+                        }
+                    @endphp
+                    <p class="text-xs text-gray-300">{{ $roleLabel }}</p>
                 </div>
             </div>
         </div>

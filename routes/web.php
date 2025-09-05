@@ -14,6 +14,7 @@ use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\VendorController;
 use App\Http\Controllers\Web\PurchaseOrderController;
 use App\Http\Controllers\Web\ReportController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\Web\AdminController;
 use App\Http\Controllers\Web\AdminUserManagementController;
 use App\Http\Controllers\Web\AdminBranchManagementController;

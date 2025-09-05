@@ -38,6 +38,39 @@ class ReportController extends Controller
     }
 
     /**
+     * Display reports for the authenticated manager's branch.
+     */
+    public function branchIndex()
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return redirect()->route('dashboard')
+                ->with('error', 'No branch assigned to your account.');
+        }
+
+        $stats = [
+            'total_sales' => Order::where('status', 'completed')->where('branch_id', $branch->id)->sum('total_amount'),
+            'total_orders' => Order::where('branch_id', $branch->id)->count(),
+            'total_customers' => Customer::whereHas('orders', function ($q) use ($branch) {
+                $q->where('branch_id', $branch->id);
+            })->count(),
+            'total_products' => Product::count(),
+        ];
+
+        $monthlySales = Order::where('status', 'completed')
+            ->where('branch_id', $branch->id)
+            ->selectRaw('MONTH(created_at) as month, SUM(total_amount) as total')
+            ->whereYear('created_at', date('Y'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        return view('reports.index', compact('stats', 'monthlySales'));
+    }
+
+    /**
      * Display sales reports.
      */
     public function sales(Request $request)

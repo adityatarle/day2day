@@ -89,22 +89,48 @@ class BranchManagerDashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        // Branch staff performance
+        // Branch staff performance and management
         $staff_performance = User::where('branch_id', $branch->id)
-            ->with('role')
+            ->with(['role', 'posSessions' => function($query) {
+                $query->whereDate('created_at', today());
+            }])
             ->withCount(['orders' => function($query) {
                 $query->whereMonth('created_at', Carbon::now()->month);
             }])
             ->get()
             ->map(function($staff) {
+                $currentPosSession = $staff->currentPosSession();
                 return [
+                    'id' => $staff->id,
                     'name' => $staff->name,
+                    'email' => $staff->email,
+                    'phone' => $staff->phone,
                     'role' => $staff->role->display_name,
+                    'role_name' => $staff->role->name,
                     'monthly_orders' => $staff->orders_count,
                     'last_login' => $staff->last_login_at ? $staff->last_login_at->diffForHumans() : 'Never',
-                    'status' => $staff->is_active ? 'Active' : 'Inactive'
+                    'status' => $staff->is_active ? 'Active' : 'Inactive',
+                    'current_pos_session' => $currentPosSession ? [
+                        'id' => $currentPosSession->id,
+                        'started_at' => $currentPosSession->started_at,
+                        'opening_balance' => $currentPosSession->opening_balance,
+                    ] : null,
+                    'today_pos_sessions' => $staff->posSessions->count(),
                 ];
             });
+
+        // Staff management statistics
+        $staff_stats = [
+            'total_staff' => $branch->users()->count(),
+            'active_staff' => $branch->users()->active()->count(),
+            'cashiers' => $branch->cashiers()->count(),
+            'delivery_staff' => $branch->deliveryStaff()->count(),
+            'active_pos_sessions' => $branch->activePosSessionsCount(),
+            'staff_on_duty' => User::where('branch_id', $branch->id)
+                ->whereHas('posSessions', function($q) {
+                    $q->where('status', 'active');
+                })->count(),
+        ];
 
         // Recent branch activities
         $recent_activities = collect()
@@ -159,6 +185,27 @@ class BranchManagerDashboardController extends Controller
                 ->whereMonth('created_at', Carbon::now()->month)->sum('amount'),
         ];
 
+        // Management alerts for branch manager
+        $management_alerts = [];
+        
+        if ($staff_stats['active_pos_sessions'] === 0 && $branch->pos_enabled) {
+            $management_alerts[] = [
+                'type' => 'warning',
+                'message' => 'No active POS sessions. Sales operations may be affected.',
+                'action' => 'Start POS Session',
+                'url' => route('pos.sessions.create')
+            ];
+        }
+        
+        if ($inventory_alerts['low_stock'] > 0) {
+            $management_alerts[] = [
+                'type' => 'danger',
+                'message' => "{$inventory_alerts['low_stock']} product(s) are low in stock",
+                'action' => 'Restock Items',
+                'url' => route('inventory.index')
+            ];
+        }
+
         return view('dashboards.branch_manager', compact(
             'stats',
             'branch',
@@ -167,9 +214,11 @@ class BranchManagerDashboardController extends Controller
             'top_products',
             'sales_analytics',
             'staff_performance',
+            'staff_stats',
             'recent_activities',
             'inventory_alerts',
-            'financial_summary'
+            'financial_summary',
+            'management_alerts'
         ));
     }
 }

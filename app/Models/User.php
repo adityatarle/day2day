@@ -159,4 +159,98 @@ class User extends Authenticatable
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Scope to get users by role.
+     */
+    public function scopeByRole($query, string $roleName)
+    {
+        return $query->whereHas('role', function($q) use ($roleName) {
+            $q->where('name', $roleName);
+        });
+    }
+
+    /**
+     * Scope to get users by branch.
+     */
+    public function scopeByBranch($query, int $branchId)
+    {
+        return $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * Check if user can manage another user based on hierarchy.
+     */
+    public function canManageUser(User $targetUser): bool
+    {
+        // Super admin can manage everyone
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Branch manager can manage users in their branch (except super admin and other branch managers)
+        if ($this->isBranchManager()) {
+            return $this->branch_id === $targetUser->branch_id && 
+                   !$targetUser->isSuperAdmin() && 
+                   !$targetUser->isBranchManager();
+        }
+
+        // Others cannot manage users
+        return false;
+    }
+
+    /**
+     * Check if user can manage a specific branch.
+     */
+    public function canManageBranch(Branch $branch): bool
+    {
+        // Super admin can manage all branches
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Branch manager can only manage their own branch
+        if ($this->isBranchManager()) {
+            return $this->branch_id === $branch->id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Get manageable users for current user.
+     */
+    public function getManageableUsers()
+    {
+        if ($this->isSuperAdmin()) {
+            return User::with(['role', 'branch'])->get();
+        }
+
+        if ($this->isBranchManager()) {
+            return User::with(['role', 'branch'])
+                ->where('branch_id', $this->branch_id)
+                ->whereHas('role', function($q) {
+                    $q->whereIn('name', ['cashier', 'delivery_boy']);
+                })
+                ->get();
+        }
+
+        return collect();
+    }
+
+    /**
+     * Get manageable branches for current user.
+     */
+    public function getManageableBranches()
+    {
+        if ($this->isSuperAdmin()) {
+            return Branch::with(['users', 'city'])->get();
+        }
+
+        if ($this->isBranchManager()) {
+            return Branch::with(['users', 'city'])->where('id', $this->branch_id)->get();
+        }
+
+        return collect();
+    }
 }

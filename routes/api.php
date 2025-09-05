@@ -16,6 +16,7 @@ use App\Http\Controllers\OutletController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\Auth\OutletAuthController;
+use App\Http\Controllers\Api\SystemMonitoringController;
 
 /*
 |--------------------------------------------------------------------------
@@ -256,6 +257,29 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pos/products', [PosController::class, 'getProducts']);
         Route::get('/pos/session-history', [PosController::class, 'getSessionHistory']);
         Route::get('/pos/session-summary', [PosController::class, 'getSessionSummary']);
+    });
+
+    // System Monitoring and Real-time Data
+    Route::prefix('monitoring')->group(function () {
+        
+        // Super Admin monitoring
+        Route::middleware('role:super_admin')->group(function () {
+            Route::get('/system-status', [SystemMonitoringController::class, 'getSystemStatus']);
+            Route::get('/branch-performance', [SystemMonitoringController::class, 'getBranchPerformance']);
+        });
+        
+        // Branch Manager monitoring
+        Route::middleware('role:super_admin,branch_manager')->group(function () {
+            Route::get('/branch-status', [SystemMonitoringController::class, 'getBranchStatus']);
+            Route::get('/user-activity', [SystemMonitoringController::class, 'getUserActivity']);
+        });
+        
+        // General monitoring (all authenticated users)
+        Route::middleware('role:super_admin,branch_manager,cashier')->group(function () {
+            Route::get('/pos-status', [SystemMonitoringController::class, 'getPosStatus']);
+            Route::get('/sales-data', [SystemMonitoringController::class, 'getSalesData']);
+            Route::get('/inventory-alerts', [SystemMonitoringController::class, 'getInventoryAlerts']);
+        });
     });
 });
 

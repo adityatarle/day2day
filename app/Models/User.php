@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
-
 
 class User extends Authenticatable
 {
@@ -52,9 +50,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
-            'last_login_at' => 'datetime',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
+            'last_login_at'     => 'datetime',
         ];
     }
 
@@ -79,7 +77,10 @@ class User extends Authenticatable
      */
     public function permissions(): BelongsToMany
     {
-        return $this->role->permissions();
+        // assuming Role model has belongsToMany(Permission::class)
+        return $this->role
+            ? $this->role->permissions()
+            : $this->belongsToMany(Permission::class, 'permission_role', 'role_id', 'permission_id');
     }
 
     /**
@@ -87,7 +88,9 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permissionName): bool
     {
-        return $this->role && $this->role->hasPermission($permissionName);
+        return $this->role
+            ? $this->role->permissions()->where('name', $permissionName)->exists()
+            : false;
     }
 
     /**
@@ -99,49 +102,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if the user is a super admin.
+     * Role helpers
      */
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('super_admin');
-    }
-
-    /**
-     * Check if the user is an admin.
-     */
-    public function isAdmin(): bool
-    {
-        return $this->hasRole('admin');
-    }
-
-    /**
-     * Check if the user is a branch manager.
-     */
-    public function isBranchManager(): bool
-    {
-        return $this->hasRole('branch_manager');
-    }
-
-    /**
-     * Check if the user is a cashier.
-     */
-    public function isCashier(): bool
-    {
-        return $this->hasRole('cashier');
-    }
-
-    /**
-     * Check if the user is a delivery boy.
-     */
-    public function isDeliveryBoy(): bool
-    {
-        return $this->hasRole('delivery_boy');
-    }
+    public function isSuperAdmin(): bool { return $this->hasRole('super_admin'); }
+    public function isAdmin(): bool { return $this->hasRole('admin'); }
+    public function isBranchManager(): bool { return $this->hasRole('branch_manager'); }
+    public function isCashier(): bool { return $this->hasRole('cashier'); }
+    public function isDeliveryBoy(): bool { return $this->hasRole('delivery_boy'); }
 
     /**
      * Get the POS sessions for this user.
      */
-    public function posSessions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function posSessions(): HasMany
     {
         return $this->hasMany(\App\Models\PosSession::class);
     }

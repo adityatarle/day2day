@@ -353,7 +353,7 @@ class Product extends Model
     public function getVendorPrice(int $vendorId): ?float
     {
         $vendor = $this->vendors()->where('vendors.id', $vendorId)->first();
-        return $vendor ? $vendor->pivot->vendor_price : null;
+        return $vendor ? $vendor->pivot->supply_price : null;
     }
 
     /**
@@ -362,7 +362,7 @@ class Product extends Model
     public function updateVendorPrice(int $vendorId, float $price): void
     {
         $this->vendors()->updateExistingPivot($vendorId, [
-            'vendor_price' => $price,
+            'supply_price' => $price,
             'updated_at' => now(),
         ]);
     }

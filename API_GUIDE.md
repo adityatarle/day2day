@@ -17,8 +17,8 @@ POST /api/login
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "secret"
+  "email": "admin@foodcompany.com",
+  "password": "admin123"
 }
 ```
 
@@ -28,7 +28,7 @@ Successful response:
   "status": "success",
   "message": "Login successful",
   "data": {
-    "user": { "id": 1, "name": "Admin", "email": "admin@example.com", "role": "Admin", "role_name": "admin" },
+    "user": { "id": 1, "name": "System Administrator", "email": "admin@foodcompany.com", "role": "Administrator", "role_name": "admin" },
     "token": "<bearer_token_here>",
     "permissions": ["..."]
   }
@@ -278,7 +278,7 @@ Content-Type: application/json
 - Method: POST
 - URL: `{{baseUrl}}/api/login`
 - Headers: `Accept: application/json`, `Content-Type: application/json`
-- Body (raw JSON): `{ "email": "admin@example.com", "password": "secret" }`
+- Body (raw JSON): `{ "email": "admin@foodcompany.com", "password": "admin123" }`
 - Tests (save token automatically):
 ```javascript
 const json = pm.response.json();
@@ -300,7 +300,7 @@ if (json && json.data && json.data.token) {
 6.5) Outlet login request
 - Method: POST
 - URL: `{{baseUrl}}/api/outlet/login`
-- Body: `{ "email": "cashier@example.com", "password": "secret", "outlet_code": "BR-001" }`
+- Body: `{ "email": "cashier@foodcompany.com", "password": "cashier123", "outlet_code": "FDC001" }`
 
 ### 7) cURL Quickstart
 
@@ -309,7 +309,7 @@ if (json && json.data && json.data.token) {
 TOKEN=$(curl -s -X POST "http://localhost:8000/api/login" \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@example.com","password":"secret"}' | jq -r '.data.token')
+  -d '{"email":"admin@foodcompany.com","password":"admin123"}' | jq -r '.data.token')
 ```
 
 7.2) Call a protected endpoint
@@ -324,7 +324,7 @@ curl -i "http://localhost:8000/api/profile" \
 curl -i -X POST "http://localhost:8000/api/outlet/login" \
   -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
-  -d '{"email":"cashier@example.com","password":"secret","outlet_code":"BR-001"}'
+  -d '{"email":"cashier@foodcompany.com","password":"cashier123","outlet_code":"FDC001"}'
 ```
 
 ### 8) Routing Notes and Known Caveats
@@ -356,6 +356,31 @@ php artisan key:generate
 php artisan migrate --seed
 php artisan serve --host 0.0.0.0 --port 8000
 ```
+
+### 13) Seeder Credentials (for quick testing)
+
+The following users and branches are created by `database/seeders/LoginSystemSeeder.php` during `php artisan migrate --seed`:
+
+- Admin: `admin@foodcompany.com` / `admin123`
+- Super Admin: `superadmin@foodcompany.com` / `super123`
+- Branch Managers:
+  - `manager@foodcompany.com` / `manager123` (branch: FDC001)
+  - `manager2@foodcompany.com` / `manager123` (branch: FDC002)
+  - `manager3@foodcompany.com` / `manager123` (branch: FDC003)
+- Cashiers:
+  - `cashier@foodcompany.com` / `cashier123` (branch: FDC001)
+  - `cashier2@foodcompany.com` / `cashier123` (branch: FDC002)
+  - `cashier3@foodcompany.com` / `cashier123` (branch: FDC003)
+  - `cashier4@foodcompany.com` / `cashier123` (branch: FDC001)
+- Delivery Staff:
+  - `delivery@foodcompany.com` / `delivery123` (branch: FDC001)
+  - `delivery2@foodcompany.com` / `delivery123` (branch: FDC002)
+- Test user: `test@foodcompany.com` / `password123`
+
+Outlet codes (branches):
+- `FDC001` (Main Branch; POS terminal: POS001)
+- `FDC002` (Downtown Branch; POS terminal: POS002)
+- `FDC003` (Uptown Express; POS terminal: POS003)
 
 ### 12) Security Notes
 - Treat bearer tokens like passwords; store them securely.

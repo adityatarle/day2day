@@ -12,7 +12,7 @@
                 <p class="text-gray-600 mt-1">Update branch information and settings.</p>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('admin.branches') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <a href="{{ route('admin.branches.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -162,7 +162,7 @@
 
                 <!-- Form Actions -->
                 <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                    <a href="{{ route('admin.branches') }}" class="btn-secondary">Cancel</a>
+                    <a href="{{ route('admin.branches.index') }}" class="btn-secondary">Cancel</a>
                     <button type="submit" class="btn-primary">
                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>

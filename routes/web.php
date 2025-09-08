@@ -190,6 +190,10 @@ Route::middleware('auth')->group(function () {
             ->name('admin.branches.toggle-status');
         Route::patch('/admin/branches/{branch}/assign-manager', [AdminBranchManagementController::class, 'assignManager'])
             ->name('admin.branches.assign-manager');
+
+        // Branch performance analytics
+        Route::get('/admin/branches/performance', [AdminController::class, 'branchPerformance'])
+            ->name('admin.branches.performance');
         
         // Role Management
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles');

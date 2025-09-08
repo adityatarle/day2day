@@ -260,7 +260,7 @@
             </div>
         </a>
 
-        <a href="{{ route('admin.branches') }}" class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <a href="{{ route('admin.branches.index') }}" class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl">
             <div class="flex items-center space-x-4">
                 <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                     <i class="fas fa-building text-xl"></i>

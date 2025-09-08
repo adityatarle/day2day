@@ -30,7 +30,7 @@ use App\Http\Controllers\DeliveryAdjustmentController;
 */
 
 // Public routes (no authentication required)
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/v1/login', [AuthController::class, 'login']);
 
 // Outlet-specific authentication
 Route::post('/outlet/login', [OutletAuthController::class, 'outletLogin']);

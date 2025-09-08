@@ -75,6 +75,33 @@ class CustomerController extends Controller
     }
 
     /**
+     * Store a newly created customer in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20|unique:customers,phone',
+            'email' => 'nullable|email|max:255|unique:customers,email',
+            'address' => 'nullable|string|max:1000',
+            'customer_type' => 'required|in:walk_in,regular,regular_wholesale,premium_wholesale,distributor,retailer',
+            'credit_limit' => 'nullable|numeric|min:0',
+            'credit_days' => 'nullable|integer|min:0',
+            'is_active' => 'boolean',
+        ]);
+
+        // Set defaults
+        $validated['credit_limit'] = $validated['credit_limit'] ?? 0;
+        $validated['credit_days'] = $validated['credit_days'] ?? 0;
+        $validated['is_active'] = $request->has('is_active') ? true : false;
+
+        $customer = Customer::create($validated);
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Customer created successfully!');
+    }
+
+    /**
      * Display the specified customer.
      */
     public function show(Customer $customer)
@@ -95,6 +122,50 @@ class CustomerController extends Controller
     public function edit(Customer $customer)
     {
         return view('customers.edit', compact('customer'));
+    }
+
+    /**
+     * Update the specified customer in storage.
+     */
+    public function update(Request $request, Customer $customer)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20|unique:customers,phone,' . $customer->id,
+            'email' => 'nullable|email|max:255|unique:customers,email,' . $customer->id,
+            'address' => 'nullable|string|max:1000',
+            'customer_type' => 'required|in:walk_in,regular,regular_wholesale,premium_wholesale,distributor,retailer',
+            'credit_limit' => 'nullable|numeric|min:0',
+            'credit_days' => 'nullable|integer|min:0',
+            'is_active' => 'boolean',
+        ]);
+
+        // Set defaults
+        $validated['credit_limit'] = $validated['credit_limit'] ?? 0;
+        $validated['credit_days'] = $validated['credit_days'] ?? 0;
+        $validated['is_active'] = $request->has('is_active') ? true : false;
+
+        $customer->update($validated);
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Customer updated successfully!');
+    }
+
+    /**
+     * Remove the specified customer from storage.
+     */
+    public function destroy(Customer $customer)
+    {
+        // Check if customer has any orders
+        if ($customer->orders()->count() > 0) {
+            return redirect()->route('customers.index')
+                ->with('error', 'Cannot delete customer with existing orders.');
+        }
+
+        $customer->delete();
+
+        return redirect()->route('customers.index')
+            ->with('success', 'Customer deleted successfully!');
     }
 
     /**

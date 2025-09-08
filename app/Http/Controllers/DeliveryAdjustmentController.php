@@ -212,7 +212,7 @@ class DeliveryAdjustmentController extends Controller
         switch ($adjustment['action']) {
             case 'return':
                 // Create return record
-                $return = Return::create([
+                $return = \App\Models\Return::create([
                     'order_id' => $orderItem->order_id,
                     'customer_id' => $orderItem->order->customer_id,
                     'branch_id' => $branch->id,
@@ -223,7 +223,7 @@ class DeliveryAdjustmentController extends Controller
                     'total_amount' => $orderItem->total_price,
                 ]);
 
-                ReturnItem::create([
+                \App\Models\ReturnItem::create([
                     'return_id' => $return->id,
                     'order_item_id' => $orderItem->id,
                     'product_id' => $orderItem->product_id,
@@ -467,7 +467,7 @@ class DeliveryAdjustmentController extends Controller
             $totalRefundAmount = 0;
 
             // Create return record
-            $return = Return::create([
+            $return = \App\Models\Return::create([
                 'order_id' => $order->id,
                 'customer_id' => $order->customer_id,
                 'branch_id' => $order->branch_id,
@@ -487,7 +487,7 @@ class DeliveryAdjustmentController extends Controller
                 }
 
                 // Create return item
-                $returnItem = ReturnItem::create([
+                $returnItem = \App\Models\ReturnItem::create([
                     'return_id' => $return->id,
                     'order_item_id' => $orderItem->id,
                     'product_id' => $orderItem->product_id,

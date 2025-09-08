@@ -204,8 +204,8 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadProducts() {
     try {
         const response = await fetch('/api/pos/products', {
+            credentials: 'same-origin',
             headers: {
-                'Authorization': 'Bearer ' + '{{ auth()->user()->createToken("pos")->plainTextToken }}',
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             }
@@ -429,9 +429,9 @@ async function processSale() {
     try {
         const response = await fetch('/api/pos/process-sale', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + '{{ auth()->user()->createToken("pos")->plainTextToken }}',
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },

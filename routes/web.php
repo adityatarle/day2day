@@ -267,8 +267,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/pos/start-session', [PosWebController::class, 'processStartSession'])->name('pos.process-start-session');
         Route::get('/pos/close-session', [PosWebController::class, 'closeSession'])->name('pos.close-session');
         Route::post('/pos/close-session', [PosWebController::class, 'processCloseSession'])->name('pos.process-close-session');
+        Route::get('/pos/sale', [PosWebController::class, 'sale'])->name('pos.sale');
         Route::get('/pos/sales', [PosWebController::class, 'sales'])->name('pos.sales');
         Route::get('/pos/history', [PosWebController::class, 'sessionHistory'])->name('pos.history');
+        
+        // POS API routes
+        Route::get('/api/pos/products', [PosWebController::class, 'getProducts'])->name('api.pos.products');
+        Route::post('/api/pos/process-sale', [PosWebController::class, 'processSale'])->name('api.pos.process-sale');
     });
     
     // User Management (Super Admin and Branch Manager)

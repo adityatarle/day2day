@@ -88,6 +88,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::get('/inventory/add-stock', [InventoryController::class, 'addStockForm'])->name('inventory.addStockForm');
+        Route::post('/inventory/add-stock', [InventoryController::class, 'addStock'])->name('inventory.addStock');
         Route::get('/inventory/record-loss', [InventoryController::class, 'recordLossForm'])->name('inventory.recordLossForm');
         Route::get('/inventory/batches', [InventoryController::class, 'batches'])->name('inventory.batches');
         Route::get('/inventory/stock-movements', [InventoryController::class, 'stockMovements'])->name('inventory.stockMovements');

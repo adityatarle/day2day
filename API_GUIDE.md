@@ -1,43 +1,114 @@
-## API User Guide
+## API User Guide (Detailed)
 
-This document describes the REST API for this Laravel application. Authentication uses Laravel Sanctum bearer tokens. Role-based middleware controls access to most endpoints.
+This guide explains how to call every API endpoint in this Laravel application, how authentication works (Laravel Sanctum bearer tokens), how to configure Postman, and how to troubleshoot common issues like HTTP 405 Method Not Allowed.
 
-### Base URL
-- For local dev: `http://localhost:8000`
-- API prefix: `/api`
+### 1) Base URL and Headers
+- For local development: `http://localhost:8000`
+- All API routes are prefixed with `/api` (for example, `POST /api/login`).
+- Always send these headers for JSON APIs:
+  - `Accept: application/json`
+  - `Content-Type: application/json`
 
-### Authentication
-- Issue token: `POST /api/login`
-  - Body: `{ "email": "user@example.com", "password": "secret" }`
-  - Success: `{ status, message, data: { user, token, permissions } }`
-- Auth header for subsequent requests: `Authorization: Bearer <token>`
-- Logout: `POST /api/logout` (auth required)
-- Me: `GET /api/profile` (auth required)
-- Change password: `POST /api/change-password` with `{ current_password, new_password, new_password_confirmation }`
+### 2) Authentication Flow (Sanctum)
 
-#### Outlet authentication
-- `POST /api/outlet/login` with `{ email, password, outlet_code }`
-- `GET /api/outlet/{outletCode}/info`
-- `POST /api/outlet/logout`
-- `POST /api/outlet/change-password`
+2.1) Login (issue bearer token)
+```http
+POST /api/login
+Content-Type: application/json
 
-### Roles
-Roles are enforced via `role:` middleware on routes. Common roles:
-- `super_admin`
-- `admin`
-- `branch_manager`
-- `cashier`
-- `delivery_boy`
+{
+  "email": "user@example.com",
+  "password": "secret"
+}
+```
 
-When this guide states an endpoint is available to roles `[A,B]`, it means the route group is protected by `middleware('role:A,B')` in addition to `auth:sanctum`.
+Successful response:
+```json
+{
+  "status": "success",
+  "message": "Login successful",
+  "data": {
+    "user": { "id": 1, "name": "Admin", "email": "admin@example.com", "role": "Admin", "role_name": "admin" },
+    "token": "<bearer_token_here>",
+    "permissions": ["..."]
+  }
+}
+```
 
-### Common endpoints (all authenticated users)
-- `GET /api/dashboard/stats`
-- `GET /api/dashboard/recent-orders`
-- `GET /api/dashboard/low-stock`
-- `GET /api/dashboard/today-sales`
+2.2) Use the token
+- Send `Authorization: Bearer <token>` on every protected request.
 
-### Admin only
+2.3) Logout
+```http
+POST /api/logout
+Authorization: Bearer <token>
+```
+
+2.4) Profile (current user)
+```http
+GET /api/profile
+Authorization: Bearer <token>
+```
+
+2.5) Change password
+```http
+POST /api/change-password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "current_password": "old",
+  "new_password": "new_password_here",
+  "new_password_confirmation": "new_password_here"
+}
+```
+
+### 3) Outlet Authentication (Outlet-specific login)
+
+3.1) Login to an outlet
+```http
+POST /api/outlet/login
+Content-Type: application/json
+
+{
+  "email": "staff@outlet.com",
+  "password": "password",
+  "outlet_code": "BR-001"
+}
+```
+
+3.2) Get outlet info (public)
+```http
+GET /api/outlet/{outletCode}/info
+```
+
+3.3) Outlet logout
+```http
+POST /api/outlet/logout
+Authorization: Bearer <token>
+```
+
+3.4) Outlet change password
+```http
+POST /api/outlet/change-password
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "current_password": "old",
+  "new_password": "new_password_here",
+  "new_password_confirmation": "new_password_here"
+}
+```
+
+### 4) Role Model and Access Control
+- Roles are enforced with `role:` middleware alongside `auth:sanctum`.
+- Available roles: `super_admin`, `admin`, `branch_manager`, `cashier`, `delivery_boy`.
+- Endpoints below are annotated by role grouping (as implemented in `routes/api.php`).
+
+### 5) Endpoint Catalog (as implemented)
+
+5.1) Admin only
 - Users
   - `GET /api/users`
   - `POST /api/users`
@@ -46,39 +117,28 @@ When this guide states an endpoint is available to roles `[A,B]`, it means the r
   - `DELETE /api/users/{user}`
   - `GET /api/roles`
   - `GET /api/branches`
-- Branches (resource)
-  - `GET /api/branches`
-  - `POST /api/branches`
-  - `GET /api/branches/{branch}`
-  - `PUT /api/branches/{branch}`
-  - `DELETE /api/branches/{branch}`
-- Vendors (resource)
-  - `GET /api/vendors` ... CRUD
-- Expense categories
+- Expense Categories
   - `GET /api/expense-categories`
   - `POST /api/expense-categories`
   - `PUT /api/expense-categories/{category}`
   - `DELETE /api/expense-categories/{category}`
-- GST rates
-  - `GET /api/gst-rates`
-  - `POST /api/gst-rates`
-  - `PUT /api/gst-rates/{gstRate}`
-  - `DELETE /api/gst-rates/{gstRate}`
 
-### Admin + Branch Manager
+5.2) Admin + Branch Manager
 - Products (resource)
   - `GET /api/products`
   - `POST /api/products`
   - `GET /api/products/{product}`
   - `PUT /api/products/{product}`
   - `DELETE /api/products/{product}`
-  - `POST /api/products/{product}/branch-pricing`
-  - `PUT /api/products/{product}/vendor-pricing`
-  - `GET /api/products/{product}/stock-info`
+- Products (additional)
   - `GET /api/products/categories`
   - `PUT /api/products/categories/bulk`
   - `GET /api/products/category/{category}`
-  - `GET /api/products/search`
+  - `GET /api/products/{product}/stock-info`
+  - `POST /api/products/{product}/branch-pricing`
+  - `PUT /api/products/{product}/branch-pricing`
+  - `PUT /api/products/{product}/vendor-pricing`
+  - `GET /api/products/search`  ← See routing note in section 8
 - Inventory
   - `GET /api/inventory`
   - `POST /api/inventory/add-stock`
@@ -97,39 +157,26 @@ When this guide states an endpoint is available to roles `[A,B]`, it means the r
   - `PUT /api/inventory/thresholds/bulk`
   - `GET /api/inventory/valuation-with-costs`
   - `POST /api/inventory/process-expired-batches`
-- Customers (resource)
-  - `GET /api/customers` ... CRUD
-  - `GET /api/customers/{customer}/purchase-history`
-  - `GET /api/customers/{customer}/credit-balance`
-- Purchase Orders (resource)
-  - `GET /api/purchase-orders` ... CRUD
-  - `POST /api/purchase-orders/{purchaseOrder}/receive`
-- Reports
-  - `GET /api/reports/sales`
-  - `GET /api/reports/inventory`
-  - `GET /api/reports/customers`
-  - `GET /api/reports/vendors`
-  - `GET /api/reports/expenses`
-  - `GET /api/reports/profit-loss`
 - Outlet Management
-  - `GET /api/outlets` ... CRUD (Admin, Branch Manager)
+  - `GET /api/outlets`
+  - `POST /api/outlets`
+  - `GET /api/outlets/{outlet}`
+  - `PUT /api/outlets/{outlet}`
+  - `DELETE /api/outlets/{outlet}`
   - `GET /api/cities/{city}/outlets`
   - `POST /api/outlets/{outlet}/staff`
   - `GET /api/outlets/{outlet}/performance`
-- City Management (Admin only)
-  - `GET /api/cities` ... CRUD
-  - `POST /api/cities/{city}/product-pricing`
-  - `GET /api/cities/{city}/product-pricing`
 
-### Admin + Branch Manager + Cashier
+5.3) Admin + Branch Manager + Cashier
 - Orders (resource)
-  - `GET /api/orders` ... CRUD
+  - `GET /api/orders`
+  - `POST /api/orders`
+  - `GET /api/orders/{order}`
+  - `PUT /api/orders/{order}`
+  - `DELETE /api/orders/{order}`
   - `POST /api/orders/{order}/cancel`
   - `GET /api/orders/{order}/invoice`
   - `GET /api/orders/statistics`
-- Billing
-  - `POST /api/billing/quick-sale`
-  - `POST /api/billing/wholesale`
 - POS
   - `POST /api/pos/start-session`
   - `GET /api/pos/current-session`
@@ -139,23 +186,12 @@ When this guide states an endpoint is available to roles `[A,B]`, it means the r
   - `GET /api/pos/session-history`
   - `GET /api/pos/session-summary`
 
-### Delivery Boy (+ Admin, Branch Manager)
-- Deliveries
-  - `GET /api/deliveries/assigned`
-  - `PUT /api/deliveries/{delivery}/pickup`
-  - `PUT /api/deliveries/{delivery}/in-transit`
-  - `PUT /api/deliveries/{delivery}/delivered`
-  - `PUT /api/deliveries/{delivery}/returned`
-- Returns
-  - `POST /api/returns`
-  - `PUT /api/returns/{return}/approve`
-  - `PUT /api/returns/{return}/reject`
-  - `PUT /api/returns/{return}/process`
-- Adjustments
-  - `POST /api/adjustments`
-
-### Expenses (Admin + Branch Manager)
-- `GET /api/expenses` ... CRUD
+5.4) Expenses (Admin + Branch Manager)
+- `GET /api/expenses`
+- `POST /api/expenses`
+- `GET /api/expenses/{expense}`
+- `PUT /api/expenses/{expense}`
+- `DELETE /api/expenses/{expense}`
 - `PUT /api/expenses/{expense}/approve`
 - `PUT /api/expenses/{expense}/reject`
 - `PUT /api/expenses/{expense}/mark-paid`
@@ -163,20 +199,37 @@ When this guide states an endpoint is available to roles `[A,B]`, it means the r
 - `GET /api/expenses/cost/analysis`
 - `GET /api/expenses/summary`
 
-### Loss Tracking
+5.5) Loss Tracking
 - Resource: `loss-tracking` (CRUD)
-- Analytics: `/api/loss-tracking/analytics`, `/api/loss-tracking/trends`, `/api/loss-tracking/critical-alerts`
-- Bulk: `POST /api/loss-tracking/bulk`
-- Recommendations: `GET /api/loss-tracking/prevention-recommendations`
-- Export: `GET /api/loss-tracking/export`
+  - `GET /api/loss-tracking`
+  - `POST /api/loss-tracking`
+  - `GET /api/loss-tracking/{loss}`
+  - `PUT /api/loss-tracking/{loss}`
+  - `DELETE /api/loss-tracking/{loss}`
+- Analytics and utilities
+  - `GET /api/loss-tracking/analytics`
+  - `GET /api/loss-tracking/trends`
+  - `GET /api/loss-tracking/critical-alerts`
+  - `POST /api/loss-tracking/bulk`
+  - `GET /api/loss-tracking/prevention-recommendations`
+  - `GET /api/loss-tracking/export`
 
-### Wholesale
-- Pricing tiers: `GET|POST|PUT|DELETE /api/wholesale/pricing-tiers[/{pricingTier}]`
-- Pricing calc: `POST /api/wholesale/calculate-pricing`
-- Orders: `POST /api/wholesale/orders`, `GET /api/wholesale/orders`, `GET /api/wholesale/orders/{order}/invoice`
-- Analytics: `GET /api/wholesale/customer-analysis`, `GET /api/wholesale/performance-metrics`
+5.6) Wholesale
+- Pricing tiers
+  - `GET /api/wholesale/pricing-tiers`
+  - `POST /api/wholesale/pricing-tiers`
+  - `PUT /api/wholesale/pricing-tiers/{pricingTier}`
+  - `DELETE /api/wholesale/pricing-tiers/{pricingTier}`
+- Orders and pricing
+  - `POST /api/wholesale/calculate-pricing`
+  - `POST /api/wholesale/orders`
+  - `GET /api/wholesale/orders`
+  - `GET /api/wholesale/orders/{order}/invoice`
+- Analytics
+  - `GET /api/wholesale/customer-analysis`
+  - `GET /api/wholesale/performance-metrics`
 
-### Billing
+5.7) Billing
 - `GET /api/billing/invoice/{order}`
 - `POST /api/billing/quick-billing`
 - `POST /api/billing/online-payment/{order}`
@@ -185,7 +238,7 @@ When this guide states an endpoint is available to roles `[A,B]`, it means the r
 - `GET /api/billing/summary`
 - `GET /api/billing/pending-payments`
 
-### Delivery Boy Adjustment (role: delivery_boy)
+5.8) Delivery (delivery_boy)
 - `GET /api/delivery/orders`
 - `PUT /api/delivery/orders/{order}/start`
 - `PUT /api/delivery/orders/{order}/process`
@@ -195,46 +248,118 @@ When this guide states an endpoint is available to roles `[A,B]`, it means the r
 - `GET /api/delivery/stats`
 - `GET /api/delivery/optimized-route`
 
-### Payments and Credit Transactions
-- Payments: `GET /api/payments`, `POST /api/payments`, `GET /api/payments/{payment}`
-- Credit: `GET /api/credit-transactions`, `POST /api/credit-transactions`, `GET /api/credit-transactions/{transaction}`
+5.9) City Management (Admin)
+- `GET /api/cities`
+- `POST /api/cities`
+- `GET /api/cities/{city}`
+- `PUT /api/cities/{city}`
+- `DELETE /api/cities/{city}`
+- `POST /api/cities/{city}/product-pricing`
+- `GET /api/cities/{city}/product-pricing`
 
-### Monitoring (prefixed `/api/monitoring`)
-- Super Admin: `GET /api/monitoring/system-status`, `GET /api/monitoring/branch-performance`
-- Super Admin + Branch Manager: `GET /api/monitoring/branch-status`, `GET /api/monitoring/user-activity`
-- Super Admin + Branch Manager + Cashier: `GET /api/monitoring/pos-status`, `GET /api/monitoring/sales-data`, `GET /api/monitoring/inventory-alerts`
+5.10) System Monitoring (prefixed `/api/monitoring`)
+- Super Admin
+  - `GET /api/monitoring/system-status`
+  - `GET /api/monitoring/branch-performance`
+- Super Admin + Branch Manager
+  - `GET /api/monitoring/branch-status`
+  - `GET /api/monitoring/user-activity`
+- Super Admin + Branch Manager + Cashier
+  - `GET /api/monitoring/pos-status`
+  - `GET /api/monitoring/sales-data`
+  - `GET /api/monitoring/inventory-alerts`
 
-### Example Usage
+### 6) Postman Setup (Step-by-step)
 
-Authenticate and list products (Branch Manager/Admin):
+6.1) Create an environment
+- Variables: `baseUrl = http://localhost:8000`, `token = <empty>`
 
-```bash
-curl -sX POST http://localhost:8000/api/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@example.com","password":"secret"}' | jq -r '.data.token'
-
-TOKEN=... # paste token
-curl -s http://localhost:8000/api/products \
-  -H "Authorization: Bearer $TOKEN"
+6.2) Create a Login request
+- Method: POST
+- URL: `{{baseUrl}}/api/login`
+- Headers: `Accept: application/json`, `Content-Type: application/json`
+- Body (raw JSON): `{ "email": "admin@example.com", "password": "secret" }`
+- Tests (save token automatically):
+```javascript
+const json = pm.response.json();
+if (json && json.data && json.data.token) {
+  pm.environment.set('token', json.data.token);
+}
 ```
 
-Outlet login and fetch outlet info:
+6.3) Authorize subsequent requests
+- Add header to a Postman Collection (or per-request):
+  - `Authorization: Bearer {{token}}`
+  - `Accept: application/json`
 
+6.4) Example protected request
+- Method: GET
+- URL: `{{baseUrl}}/api/profile`
+- Headers: `Authorization: Bearer {{token}}`, `Accept: application/json`
+
+6.5) Outlet login request
+- Method: POST
+- URL: `{{baseUrl}}/api/outlet/login`
+- Body: `{ "email": "cashier@example.com", "password": "secret", "outlet_code": "BR-001" }`
+
+### 7) cURL Quickstart
+
+7.1) Login and capture token
 ```bash
-curl -sX POST http://localhost:8000/api/outlet/login \
+TOKEN=$(curl -s -X POST "http://localhost:8000/api/login" \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"secret"}' | jq -r '.data.token')
+```
+
+7.2) Call a protected endpoint
+```bash
+curl -i "http://localhost:8000/api/profile" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Accept: application/json'
+```
+
+7.3) Outlet login
+```bash
+curl -i -X POST "http://localhost:8000/api/outlet/login" \
+  -H 'Accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{"email":"cashier@example.com","password":"secret","outlet_code":"BR-001"}'
-
-curl -s http://localhost:8000/api/outlet/BR-001/info
 ```
 
-### Error format
-- Validation error: HTTP 422 with `{ status|success, message, errors }`
-- Auth error: HTTP 401 with `{ status|success, message }`
-- Not found: HTTP 404 with `{ success:false, message }`
+### 8) Routing Notes and Known Caveats
+- `GET /api/products/search` is defined alongside `Route::apiResource('products', ...)`. In Laravel, if `products/search` appears after the resource registration, it can be shadowed by `GET /api/products/{product}` (treating `search` as a product ID). If you get a 404 or unexpected response from `/api/products/search`, use a query on the index instead (e.g., `GET /api/products?search=...`) or move the `products/search` route above the resource in code.
+- There are both `POST` and `PUT` variants for `/api/products/{product}/branch-pricing`. Follow controller docs for which one your workflow uses.
 
-### Notes
-- All endpoints listed under protected groups require `Authorization: Bearer <token>`.
-- Certain endpoints are available only to specified roles as noted above.
-- Request/response shapes for resources follow typical Laravel conventions; see controllers for exact payloads.
+### 9) Error Responses (Standardized)
+- Validation: HTTP 422
+  - Shape: `{ status|success, message, errors }`
+- Unauthorized: HTTP 401
+- Forbidden: HTTP 403
+- Not found: HTTP 404
+- Server error: HTTP 500
 
+### 10) Troubleshooting HTTP 405 Method Not Allowed
+If you see 405 in Postman, check these first:
+1. Verify HTTP method matches the route (e.g., `POST /api/login`, not GET).
+2. Ensure you are calling the `/api/...` path (not the web routes like `/login`).
+3. Add headers: `Accept: application/json` and for body requests `Content-Type: application/json`.
+4. Watch for redirects (301/302). If your server redirects `http`→`https`, call the final `https://...` URL directly. Redirects can turn POST into GET and cause 405.
+5. Reverse proxies/firewalls may block `PUT`, `PATCH`, or `DELETE`. Allow these methods on `/api/*`.
+6. In browser apps, CORS preflight (`OPTIONS`) might be rejected. Configure CORS for your API. Postman is not subject to CORS, so a 405 there is almost always a method/URL mismatch or redirect.
+7. Confirm the route is registered: run `php artisan route:list` and verify method/path/middleware.
+
+### 11) Running the API locally
+```bash
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve --host 0.0.0.0 --port 8000
+```
+
+### 12) Security Notes
+- Treat bearer tokens like passwords; store them securely.
+- Revoke tokens on logout. Tokens are per-device/session.
+- Role checks (e.g., `role:admin`) restrict access beyond authentication.
+
+This guide reflects the actual routes in `routes/api.php` and provides practical steps to authenticate and call each group of endpoints reliably.

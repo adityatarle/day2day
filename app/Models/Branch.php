@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Branch extends Model
 {
@@ -134,11 +135,12 @@ class Branch extends Model
     /**
      * Get the branch manager for this branch.
      */
-    public function manager()
+    public function manager(): HasOne
     {
-        return $this->users()->whereHas('role', function($q) {
-            $q->where('name', 'branch_manager');
-        })->first();
+        return $this->hasOne(User::class)
+            ->whereHas('role', function($q) {
+                $q->where('name', 'branch_manager');
+            });
     }
 
     /**

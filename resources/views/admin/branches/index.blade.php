@@ -182,7 +182,7 @@
                         Edit Branch
                     </a>
                     @if($branch->users_count == 0 && $branch->orders_count == 0)
-                    <form method="POST" action="{{ route('admin.branches.delete', $branch) }}" class="inline">
+                    <form method="POST" action="{{ route('admin.branches.destroy', $branch) }}" class="inline">
                         @csrf
                         @method('DELETE')
                         <button type="submit" 

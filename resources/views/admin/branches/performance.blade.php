@@ -12,7 +12,7 @@
                 <p class="text-gray-600 mt-1">Comprehensive analytics and performance metrics for all branches.</p>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('admin.branches') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <a href="{{ route('admin.branches.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>

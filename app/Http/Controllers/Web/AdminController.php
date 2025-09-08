@@ -68,7 +68,7 @@ class AdminController extends Controller
             'address' => $request->address,
         ]);
 
-        return redirect()->route('admin.users')->with('success', 'User created successfully!');
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully!');
     }
 
     /**
@@ -112,7 +112,7 @@ class AdminController extends Controller
 
         $user->update($updateData);
 
-        return redirect()->route('admin.users')->with('success', 'User updated successfully!');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully!');
     }
 
     /**
@@ -122,12 +122,12 @@ class AdminController extends Controller
     {
         // Prevent deleting the current user
         if ($user->id === auth()->id()) {
-            return redirect()->route('admin.users')->with('error', 'You cannot delete your own account!');
+            return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account!');
         }
 
         $user->delete();
 
-        return redirect()->route('admin.users')->with('success', 'User deleted successfully!');
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully!');
     }
 
     /**
@@ -166,7 +166,7 @@ class AdminController extends Controller
 
         Branch::create($request->all());
 
-        return redirect()->route('admin.branches')->with('success', 'Branch created successfully!');
+        return redirect()->route('admin.branches.index')->with('success', 'Branch created successfully!');
     }
 
     /**
@@ -193,7 +193,7 @@ class AdminController extends Controller
 
         $branch->update($request->all());
 
-        return redirect()->route('admin.branches')->with('success', 'Branch updated successfully!');
+        return redirect()->route('admin.branches.index')->with('success', 'Branch updated successfully!');
     }
 
     /**
@@ -203,12 +203,12 @@ class AdminController extends Controller
     {
         // Check if branch has users or orders
         if ($branch->users()->count() > 0 || $branch->orders()->count() > 0) {
-            return redirect()->route('admin.branches')->with('error', 'Cannot delete branch with existing users or orders!');
+            return redirect()->route('admin.branches.index')->with('error', 'Cannot delete branch with existing users or orders!');
         }
 
         $branch->delete();
 
-        return redirect()->route('admin.branches')->with('success', 'Branch deleted successfully!');
+        return redirect()->route('admin.branches.index')->with('success', 'Branch deleted successfully!');
     }
 
     /**

@@ -243,7 +243,6 @@ Route::middleware('auth')->group(function () {
         })->name('cashier.help');
         
         // POS specific routes
-        Route::get('/pos/sale', [PosController::class, 'newSale'])->name('pos.sale');
         Route::get('/pos/session/current', [PosSessionController::class, 'current'])->name('pos.session.current');
         Route::get('/pos/session/history', [PosSessionController::class, 'history'])->name('pos.session.history');
         Route::post('/api/pos/session/start', [PosSessionController::class, 'start'])->name('api.pos.session.start');

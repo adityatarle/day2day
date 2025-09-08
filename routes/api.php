@@ -7,16 +7,16 @@ use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\VendorController;
-use App\Http\Controllers\BranchController;
 use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\OutletController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\Auth\OutletAuthController;
 use App\Http\Controllers\Api\SystemMonitoringController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\WholesaleController;
+use App\Http\Controllers\LossTrackingController;
+use App\Http\Controllers\DeliveryAdjustmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,23 +58,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/roles', [UserController::class, 'getRoles']);
         Route::get('/branches', [UserController::class, 'getBranches']);
         
-        // Branch management
-        Route::apiResource('branches', BranchController::class);
-        
-        // Vendor management
-        Route::apiResource('vendors', VendorController::class);
-        
         // Expense categories
         Route::get('/expense-categories', [ExpenseController::class, 'getCategories']);
         Route::post('/expense-categories', [ExpenseController::class, 'storeCategory']);
         Route::put('/expense-categories/{category}', [ExpenseController::class, 'updateCategory']);
         Route::delete('/expense-categories/{category}', [ExpenseController::class, 'destroyCategory']);
-        
-        // GST rates
-        Route::get('/gst-rates', [ProductController::class, 'getGstRates']);
-        Route::post('/gst-rates', [ProductController::class, 'storeGstRate']);
-        Route::put('/gst-rates/{gstRate}', [ProductController::class, 'updateGstRate']);
-        Route::delete('/gst-rates/{gstRate}', [ProductController::class, 'destroyGstRate']);
     });
     
     // Branch Manager routes
@@ -98,21 +86,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/inventory/valuation', [InventoryController::class, 'getInventoryValuation']);
         
         // Customer management
-        Route::apiResource('customers', CustomerController::class);
-        Route::get('/customers/{customer}/purchase-history', [CustomerController::class, 'getPurchaseHistory']);
-        Route::get('/customers/{customer}/credit-balance', [CustomerController::class, 'getCreditBalance']);
-        
-        // Purchase orders
-        Route::apiResource('purchase-orders', PurchaseOrderController::class);
-        Route::post('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive']);
-        
-        // Reports
-        Route::get('/reports/sales', [ReportController::class, 'getSalesReport']);
-        Route::get('/reports/inventory', [ReportController::class, 'getInventoryReport']);
-        Route::get('/reports/customers', [ReportController::class, 'getCustomerReport']);
-        Route::get('/reports/vendors', [ReportController::class, 'getVendorReport']);
-        Route::get('/reports/expenses', [ReportController::class, 'getExpenseReport']);
-        Route::get('/reports/profit-loss', [ReportController::class, 'getProfitLossReport']);
     });
     
     // Cashier routes
@@ -123,35 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{order}/invoice', [OrderController::class, 'generateInvoice']);
         Route::get('/orders/statistics', [OrderController::class, 'getStatistics']);
         
-        // Quick billing
-        Route::post('/billing/quick-sale', [OrderController::class, 'quickSale']);
-        Route::post('/billing/wholesale', [OrderController::class, 'wholesaleSale']);
-    });
-    
-    // Delivery Boy routes
-    Route::middleware('role:admin,branch_manager,delivery_boy')->group(function () {
-        // Delivery management
-        Route::get('/deliveries/assigned', [DeliveryController::class, 'getAssignedDeliveries']);
-        Route::put('/deliveries/{delivery}/pickup', [DeliveryController::class, 'markAsPickedUp']);
-        Route::put('/deliveries/{delivery}/in-transit', [DeliveryController::class, 'markAsInTransit']);
-        Route::put('/deliveries/{delivery}/delivered', [DeliveryController::class, 'markAsDelivered']);
-        Route::put('/deliveries/{delivery}/returned', [DeliveryController::class, 'markAsReturned']);
-        
-        // Returns management
-        Route::post('/returns', [ReturnController::class, 'store']);
-        Route::put('/returns/{return}/approve', [ReturnController::class, 'approve']);
-        Route::put('/returns/{return}/reject', [ReturnController::class, 'reject']);
-        Route::put('/returns/{return}/process', [ReturnController::class, 'process']);
-        
-        // Customer adjustments
-        Route::post('/adjustments', [OrderController::class, 'createAdjustment']);
     });
     
     // Common routes for all authenticated users
-    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
-    Route::get('/dashboard/recent-orders', [DashboardController::class, 'getRecentOrders']);
-    Route::get('/dashboard/low-stock', [DashboardController::class, 'getLowStock']);
-    Route::get('/dashboard/today-sales', [DashboardController::class, 'getTodaySales']);
+    // (Dashboard endpoints removed; use monitoring endpoints instead)
     
     // Expense management (for branch managers and admins)
     Route::middleware('role:admin,branch_manager')->group(function () {
@@ -222,16 +170,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/delivery/stats', [DeliveryAdjustmentController::class, 'getDeliveryStats']);
         Route::get('/delivery/optimized-route', [DeliveryAdjustmentController::class, 'getOptimizedRoute']);
     });
-    
-    // Payment management
-    Route::get('/payments', [PaymentController::class, 'index']);
-    Route::post('/payments', [PaymentController::class, 'store']);
-    Route::get('/payments/{payment}', [PaymentController::class, 'show']);
-    
-    // Credit transactions
-    Route::get('/credit-transactions', [CreditTransactionController::class, 'index']);
-    Route::post('/credit-transactions', [CreditTransactionController::class, 'store']);
-    Route::get('/credit-transactions/{transaction}', [CreditTransactionController::class, 'show']);
 
     // City Management (Admin only)
     Route::middleware('role:admin')->group(function () {

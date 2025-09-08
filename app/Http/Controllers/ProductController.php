@@ -196,34 +196,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Update branch-specific pricing and availability.
-     */
-    public function updateBranchPricing(Request $request, Product $product, Branch $branch)
-    {
-        $validator = Validator::make($request->all(), [
-            'selling_price' => 'required|numeric|min:0',
-            'is_available_online' => 'boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $product->branches()->updateExistingPivot($branch->id, [
-            'selling_price' => $request->selling_price,
-            'is_available_online' => $request->is_available_online ?? true
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Branch pricing updated successfully'
-        ]);
-    }
 
     /**
      * Get product stock information across branches.
@@ -260,21 +232,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Get products by category.
-     */
-    public function getByCategory($category)
-    {
-        $products = Product::byCategory($category)
-                          ->active()
-                          ->with(['branches'])
-                          ->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $products
-        ]);
-    }
 
     /**
      * Search products.

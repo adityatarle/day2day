@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Branch;
-use App\Models\InventoryBatch;
+use App\Models\Batch;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class InventoryController extends Controller
 {
@@ -55,6 +57,91 @@ class InventoryController extends Controller
         $vendors = \App\Models\Vendor::all();
 
         return view('inventory.add-stock', compact('products', 'branches', 'vendors'));
+    }
+
+    /**
+     * Process the add stock form submission.
+     */
+    public function addStock(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'branch_id' => 'required|exists:branches,id',
+            'vendor_id' => 'nullable|exists:vendors,id',
+            'quantity' => 'required|numeric|min:0.01',
+            'cost_price' => 'nullable|numeric|min:0',
+            'selling_price' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $product = Product::find($request->product_id);
+            $branch = Branch::find($request->branch_id);
+            $user = auth()->user();
+
+            // Generate batch number
+            $batchNumber = 'BATCH-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+
+            // Create batch
+            $batch = Batch::create([
+                'product_id' => $request->product_id,
+                'branch_id' => $request->branch_id,
+                'batch_number' => $batchNumber,
+                'initial_quantity' => $request->quantity,
+                'current_quantity' => $request->quantity,
+                'purchase_date' => now(),
+                'purchase_price' => $request->cost_price ?? 0,
+                'status' => 'active',
+            ]);
+
+            // Update branch stock - ensure the relationship exists
+            $currentStock = $product->getCurrentStock($branch);
+            
+            // Check if the product-branch relationship exists
+            $existingPivot = $product->branches()->where('branch_id', $branch->id)->first();
+            
+            if ($existingPivot) {
+                // Update existing pivot record
+                $updateData = ['current_stock' => $currentStock + $request->quantity];
+                if ($request->selling_price) {
+                    $updateData['selling_price'] = $request->selling_price;
+                }
+                $product->branches()->updateExistingPivot($branch->id, $updateData);
+            } else {
+                // Create new pivot record
+                $product->branches()->attach($branch->id, [
+                    'current_stock' => $request->quantity,
+                    'selling_price' => $request->selling_price ?? $product->selling_price,
+                    'is_available_online' => true,
+                    'stock_threshold' => $product->stock_threshold ?? 10,
+                ]);
+            }
+
+            // Record stock movement
+            StockMovement::create([
+                'product_id' => $request->product_id,
+                'branch_id' => $request->branch_id,
+                'batch_id' => $batch->id,
+                'type' => 'purchase',
+                'quantity' => $request->quantity,
+                'unit_price' => $request->cost_price ?? 0,
+                'notes' => $request->notes,
+                'user_id' => $user->id,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('inventory.addStockForm')
+                ->with('success', 'Stock added successfully! New stock quantity: ' . ($currentStock + $request->quantity));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to add stock: ' . $e->getMessage());
+        }
     }
 
     /**

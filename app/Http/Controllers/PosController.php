@@ -7,10 +7,12 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PosController extends Controller
 {
@@ -104,6 +106,8 @@ class PosController extends Controller
             'tax_amount' => 'nullable|numeric|min:0',
             'customer_name' => 'nullable|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
+            'amount_received' => 'nullable|numeric|min:0',
+            'reference_number' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -149,6 +153,19 @@ class PosController extends Controller
             $taxAmount = $request->tax_amount ?? ($subtotal * 0.18); // Default 18% GST
             $totalAmount = $subtotal - $discountAmount + $taxAmount;
 
+            $amountReceived = $request->amount_received ?? $totalAmount;
+            // Determine payment status
+            if ($request->payment_method === 'credit') {
+                $paymentStatus = 'pending';
+                $amountReceived = 0; // No immediate cash/card/upi received for credit
+            } elseif ($amountReceived >= $totalAmount) {
+                $paymentStatus = 'paid';
+            } elseif ($amountReceived > 0) {
+                $paymentStatus = 'partial';
+            } else {
+                $paymentStatus = 'pending';
+            }
+
             // Create order
             $order = Order::create([
                 'customer_id' => $customer?->id,
@@ -160,9 +177,12 @@ class PosController extends Controller
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
                 'payment_method' => $request->payment_method,
+                'payment_status' => $paymentStatus,
                 'status' => 'completed',
                 'order_type' => 'pos',
                 'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
+                'order_date' => now(),
             ]);
 
             // Create order items
@@ -171,8 +191,8 @@ class PosController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                    'total' => $item['quantity'] * $item['price'],
+                    'unit_price' => $item['price'],
+                    'total_price' => $item['quantity'] * $item['price'],
                 ]);
 
                 // Update stock
@@ -185,19 +205,35 @@ class PosController extends Controller
                 }
             }
 
+            // Create payment record if amount was received
+            if ($amountReceived > 0) {
+                Payment::create([
+                    'type' => 'customer_payment',
+                    'payable_id' => $order->id,
+                    'payable_type' => Order::class,
+                    'amount' => min($amountReceived, $totalAmount),
+                    'payment_method' => $request->payment_method,
+                    'reference_number' => $request->reference_number ?? ('POS-' . Str::upper(Str::random(8))),
+                    'notes' => 'POS sale payment',
+                    'user_id' => auth()->id(),
+                    'payment_date' => now(),
+                ]);
+            }
+
             // Update session statistics
             $session->increment('total_transactions');
             $session->increment('total_sales', $totalAmount);
 
             DB::commit();
 
-            $order->load(['customer', 'items.product']);
+            $order->load(['customer', 'orderItems.product', 'payments']);
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'order' => $order,
-                    'session' => $session->fresh()
+                    'session' => $session->fresh(),
+                    'invoice_url' => route('orders.invoice', $order),
                 ],
                 'message' => 'Sale processed successfully'
             ], 201);

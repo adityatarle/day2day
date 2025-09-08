@@ -112,6 +112,21 @@
                             </select>
                         </div>
 
+                        <!-- Payment Details -->
+                        <div id="payment-details" class="mb-4 space-y-3">
+                            <div id="amount-received-wrapper">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Amount Received</label>
+                                <input type="number" id="amount-received" value="0" min="0" step="0.01"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <div class="mt-1 text-sm text-gray-600">Change to return: <span id="change-amount">₹0.00</span></div>
+                            </div>
+                            <div id="reference-number-wrapper" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Reference Number (Txn ID / Last 4)</label>
+                                <input type="text" id="reference-number" placeholder="e.g. UPI txn id or card ref"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
                         <!-- Action Buttons -->
                         <div class="space-y-2">
                             <button id="process-sale" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg disabled:opacity-50" disabled>
@@ -181,6 +196,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('discount-amount').addEventListener('input', updateTotals);
     document.getElementById('process-sale').addEventListener('click', processSale);
     document.getElementById('clear-cart').addEventListener('click', clearCart);
+    document.getElementById('payment-method').addEventListener('change', onPaymentMethodChange);
+    document.getElementById('amount-received').addEventListener('input', updateChangeToReturn);
 });
 
 // Load products from API
@@ -318,6 +335,7 @@ function updateTotals() {
     document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
     document.getElementById('tax-amount').textContent = `₹${taxAmount.toFixed(2)}`;
     document.getElementById('total-amount').textContent = `₹${total.toFixed(2)}`;
+    updateChangeToReturn();
 }
 
 // Clear cart
@@ -326,6 +344,8 @@ function clearCart() {
     updateCartDisplay();
     updateTotals();
     document.getElementById('discount-amount').value = 0;
+    document.getElementById('amount-received').value = 0;
+    document.getElementById('reference-number').value = '';
 }
 
 // Filter products
@@ -356,6 +376,36 @@ function populateCategories() {
     });
 }
 
+// Payment method change handler
+function onPaymentMethodChange() {
+    const method = document.getElementById('payment-method').value;
+    const amountWrapper = document.getElementById('amount-received-wrapper');
+    const referenceWrapper = document.getElementById('reference-number-wrapper');
+
+    if (method === 'cash') {
+        amountWrapper.classList.remove('hidden');
+        referenceWrapper.classList.add('hidden');
+    } else if (method === 'card' || method === 'upi') {
+        amountWrapper.classList.remove('hidden');
+        referenceWrapper.classList.remove('hidden');
+    } else if (method === 'credit') {
+        amountWrapper.classList.add('hidden');
+        referenceWrapper.classList.add('hidden');
+        document.getElementById('amount-received').value = 0;
+        document.getElementById('reference-number').value = '';
+    }
+    updateChangeToReturn();
+}
+
+// Update change to return for cash/card
+function updateChangeToReturn() {
+    const totalText = document.getElementById('total-amount').textContent.replace('₹', '').trim();
+    const total = parseFloat(totalText) || 0;
+    const amountReceived = parseFloat(document.getElementById('amount-received').value) || 0;
+    const change = Math.max(amountReceived - total, 0);
+    document.getElementById('change-amount').textContent = `₹${change.toFixed(2)}`;
+}
+
 // Process sale
 async function processSale() {
     if (cart.length === 0) return;
@@ -363,13 +413,17 @@ async function processSale() {
     const customerId = document.getElementById('customer-select').value || null;
     const paymentMethod = document.getElementById('payment-method').value;
     const discountAmount = parseFloat(document.getElementById('discount-amount').value) || 0;
+    const amountReceived = paymentMethod === 'credit' ? 0 : (parseFloat(document.getElementById('amount-received').value) || 0);
+    const referenceNumber = document.getElementById('reference-number').value || null;
     
     const saleData = {
         customer_id: customerId,
         items: cart,
         payment_method: paymentMethod,
         discount_amount: discountAmount,
-        tax_amount: parseFloat(document.getElementById('tax-amount').textContent.replace('₹', ''))
+        tax_amount: parseFloat(document.getElementById('tax-amount').textContent.replace('₹', '')),
+        amount_received: amountReceived,
+        reference_number: referenceNumber
     };
     
     try {
@@ -391,6 +445,9 @@ async function processSale() {
             clearCart();
             // Update session stats
             updateSessionStats(data.data.session);
+            if (data.data.invoice_url) {
+                window.open(data.data.invoice_url, '_blank');
+            }
         } else {
             alert('Error: ' + data.message);
         }

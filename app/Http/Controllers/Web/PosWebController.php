@@ -7,7 +7,10 @@ use App\Models\PosSession;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Branch;
+use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PosWebController extends Controller
 {
@@ -176,5 +179,197 @@ class PosWebController extends Controller
             ->paginate(15);
 
         return view('pos.history', compact('sessions'));
+    }
+
+    /**
+     * Show new sale interface.
+     */
+    public function sale()
+    {
+        $session = PosSession::where('user_id', auth()->id())->active()->first();
+        
+        if (!$session) {
+            return redirect()->route('pos.start-session')
+                ->with('error', 'Please start a POS session first');
+        }
+
+        $user = auth()->user();
+        $branch = $user->branch;
+        $customers = Customer::active()->get();
+        
+        // Get available products for this branch
+        $products = Product::whereHas('branches', function($query) use ($branch) {
+            $query->where('branch_id', $branch->id)
+                  ->where('current_stock', '>', 0);
+        })
+        ->where('is_active', true)
+        ->with(['branches' => function($query) use ($branch) {
+            $query->where('branch_id', $branch->id);
+        }, 'category'])
+        ->get()
+        ->map(function($product) use ($branch) {
+            $branchProduct = $product->branches->first();
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->sku,
+                'category' => $product->category->name ?? 'Uncategorized',
+                'selling_price' => $branchProduct->selling_price ?? $product->selling_price,
+                'current_stock' => $branchProduct->current_stock ?? 0,
+                'city_price' => $branchProduct->selling_price ?? $product->selling_price,
+                'is_available_in_city' => true,
+            ];
+        });
+
+        return view('pos.sale', compact('session', 'products', 'customers', 'branch'));
+    }
+
+    /**
+     * Get products for POS (API endpoint).
+     */
+    public function getProducts()
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+        
+        if (!$branch) {
+            return response()->json(['success' => false, 'message' => 'No branch assigned']);
+        }
+
+        $products = Product::whereHas('branches', function($query) use ($branch) {
+            $query->where('branch_id', $branch->id)
+                  ->where('current_stock', '>', 0);
+        })
+        ->where('is_active', true)
+        ->with(['branches' => function($query) use ($branch) {
+            $query->where('branch_id', $branch->id);
+        }, 'category'])
+        ->get()
+        ->map(function($product) use ($branch) {
+            $branchProduct = $product->branches->first();
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->sku,
+                'category' => $product->category->name ?? 'Uncategorized',
+                'selling_price' => $branchProduct->selling_price ?? $product->selling_price,
+                'current_stock' => $branchProduct->current_stock ?? 0,
+                'city_price' => $branchProduct->selling_price ?? $product->selling_price,
+                'is_available_in_city' => true,
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $products]);
+    }
+
+    /**
+     * Process a sale (API endpoint).
+     */
+    public function processSale(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.price' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,card,upi,credit',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'tax_amount' => 'nullable|numeric|min:0',
+            'amount_received' => 'nullable|numeric|min:0',
+            'customer_id' => 'nullable|exists:customers,id',
+            'reference_number' => 'nullable|string|max:100',
+        ]);
+
+        $user = auth()->user();
+        $session = PosSession::where('user_id', $user->id)->active()->first();
+        
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'No active POS session']);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Calculate totals
+            $subtotal = collect($request->items)->sum(function($item) {
+                return $item['quantity'] * $item['price'];
+            });
+            
+            $discountAmount = $request->discount_amount ?? 0;
+            $taxAmount = $request->tax_amount ?? (($subtotal - $discountAmount) * 0.18);
+            $totalAmount = $subtotal - $discountAmount + $taxAmount;
+
+            // Create order
+            $order = Order::create([
+                'order_number' => 'POS-' . time() . '-' . rand(1000, 9999),
+                'customer_id' => $request->customer_id,
+                'branch_id' => $user->branch_id,
+                'pos_session_id' => $session->id,
+                'created_by' => $user->id,
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'payment_method' => $request->payment_method,
+                'payment_status' => $request->payment_method === 'credit' ? 'pending' : 'paid',
+                'amount_received' => $request->amount_received ?? $totalAmount,
+                'change_amount' => max(($request->amount_received ?? $totalAmount) - $totalAmount, 0),
+                'reference_number' => $request->reference_number,
+                'status' => 'completed',
+                'order_date' => now(),
+            ]);
+
+            // Create order items and update stock
+            foreach ($request->items as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['price'],
+                    'total_price' => $item['quantity'] * $item['price'],
+                ]);
+
+                // Update product stock
+                $productBranch = DB::table('product_branches')
+                    ->where('product_id', $item['product_id'])
+                    ->where('branch_id', $user->branch_id)
+                    ->first();
+
+                if ($productBranch) {
+                    DB::table('product_branches')
+                        ->where('product_id', $item['product_id'])
+                        ->where('branch_id', $user->branch_id)
+                        ->decrement('current_stock', $item['quantity']);
+                }
+            }
+
+            // Update session stats
+            $session->increment('total_transactions');
+            $session->increment('total_sales', $totalAmount);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Sale processed successfully',
+                'data' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'total_amount' => $totalAmount,
+                    'session' => [
+                        'total_sales' => $session->fresh()->total_sales,
+                        'total_transactions' => $session->fresh()->total_transactions,
+                    ],
+                    'invoice_url' => route('orders.invoice', $order->id)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error processing sale: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

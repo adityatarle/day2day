@@ -56,7 +56,7 @@ class AdminDashboardController extends Controller
         // Top selling products
         $top_products = Product::withCount(['orderItems as total_sold'])
             ->with(['orderItems' => function($query) {
-                $query->selectRaw('product_id, SUM(quantity) as total_quantity, SUM(subtotal) as total_revenue');
+                $query->selectRaw('product_id, SUM(quantity) as total_quantity, SUM(total_price) as total_revenue');
                 $query->groupBy('product_id');
             }])
             ->orderBy('total_sold', 'desc')

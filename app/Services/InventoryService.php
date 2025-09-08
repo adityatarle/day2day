@@ -31,7 +31,7 @@ class InventoryService
             $newStock = $currentStock - $orderItem->quantity;
             
             // Update stock in product_branches pivot table
-            $product->updateStock($branch->id, $newStock);
+            $product->updateBranchStock($branch->id, $newStock);
             
             // Create stock movement record
             StockMovement::create([
@@ -136,7 +136,7 @@ class InventoryService
 
         // Update stock accordingly
         $currentStock = $product->getCurrentStock($branch->id);
-        $product->updateStock($branch->id, $currentStock - $quantity);
+        $product->updateBranchStock($branch->id, $currentStock - $quantity);
     }
 
     /**
@@ -162,7 +162,7 @@ class InventoryService
 
             // Update stock
             $currentStock = $product->getCurrentStock($branch->id);
-            $product->updateStock($branch->id, $currentStock - $lostWeight);
+            $product->updateBranchStock($branch->id, $currentStock - $lostWeight);
         }
     }
 
@@ -184,7 +184,7 @@ class InventoryService
 
         // Update stock
         $currentStock = $product->getCurrentStock($branch->id);
-        $product->updateStock($branch->id, $currentStock - $quantity);
+        $product->updateBranchStock($branch->id, $currentStock - $quantity);
     }
 
     /**
@@ -205,7 +205,7 @@ class InventoryService
 
         // Update stock
         $currentStock = $product->getCurrentStock($branch->id);
-        $product->updateStock($branch->id, $currentStock - $quantity);
+        $product->updateBranchStock($branch->id, $currentStock - $quantity);
     }
 
     /**
@@ -378,7 +378,7 @@ class InventoryService
                 // Update product stock
                 $product = $batch->product;
                 $currentStock = $product->getCurrentStock($batch->branch_id);
-                $product->updateStock($batch->branch_id, $currentStock - $batch->current_quantity);
+                $product->updateBranchStock($batch->branch_id, $currentStock - $batch->current_quantity);
 
                 // Mark batch as expired
                 $batch->update([
@@ -505,11 +505,11 @@ class InventoryService
             }
 
             // Reduce stock from source branch
-            $product->updateStock($fromBranchId, $currentStock - $quantity);
+            $product->updateBranchStock($fromBranchId, $currentStock - $quantity);
 
             // Add stock to destination branch
             $destinationStock = $product->getCurrentStock($toBranchId);
-            $product->updateStock($toBranchId, $destinationStock + $quantity);
+            $product->updateBranchStock($toBranchId, $destinationStock + $quantity);
 
             // Create stock movements
             StockMovement::create([

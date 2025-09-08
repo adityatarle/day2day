@@ -462,6 +462,24 @@ function updateSessionStats(session) {
     document.getElementById('session-sales').textContent = `₹${parseFloat(session.total_sales).toFixed(2)}`;
     document.getElementById('session-transactions').textContent = session.total_transactions;
 }
+
+// Subscribe to branch private channel for real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    const branchId = {{ (int) $branch->id }};
+    if (window.Echo) {
+        window.Echo.private(`branch.${branchId}`)
+            .listen('.sale.processed', (e) => {
+                if (e.session) {
+                    updateSessionStats(e.session);
+                }
+            })
+            .listen('.stock.updated', (e) => {
+                // Optionally refresh product list or decrement stock badges
+                // For now, just log
+                console.log('Stock updated', e);
+            });
+    }
+});
 </script>
 @endif
 @endsection

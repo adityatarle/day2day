@@ -13,6 +13,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Events\BranchSaleProcessed;
+use App\Events\BranchStockUpdated;
 
 class PosController extends Controller
 {
@@ -224,9 +226,29 @@ class PosController extends Controller
             $session->increment('total_transactions');
             $session->increment('total_sales', $totalAmount);
 
+            // Prepare stock change payload
+            $stockChanges = [
+                'type' => 'decrement',
+                'items' => array_map(function ($i) use ($session) {
+                    return [
+                        'product_id' => $i['product_id'],
+                        'quantity' => $i['quantity'],
+                        'branch_id' => $session->branch_id,
+                    ];
+                }, $request->items),
+            ];
+
             DB::commit();
 
             $order->load(['customer', 'orderItems.product', 'payments']);
+
+            // Broadcast events
+            $freshSession = $session->fresh();
+            event(new BranchSaleProcessed($order, $freshSession->branch_id, [
+                'total_sales' => $freshSession->total_sales,
+                'total_transactions' => $freshSession->total_transactions,
+            ]));
+            event(new BranchStockUpdated($freshSession->branch_id, $stockChanges));
 
             return response()->json([
                 'success' => true,

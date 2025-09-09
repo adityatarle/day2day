@@ -100,11 +100,89 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Manager Name</label>
-                            <input type="text" name="manager_name" value="{{ old('manager_name') }}" 
-                                   class="form-input @error('manager_name') border-red-500 @enderror" 
-                                   placeholder="Enter branch manager name">
-                            @error('manager_name')
+                            <label class="form-label">City *</label>
+                            <select name="city_id" class="form-input @error('city_id') border-red-500 @enderror" required>
+                                <option value="">Select City</option>
+                                @foreach($cities as $city)
+                                <option value="{{ $city->id }}" {{ old('city_id') == $city->id ? 'selected' : '' }}>
+                                    {{ $city->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @error('city_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Branch Code *</label>
+                            <input type="text" name="code" value="{{ old('code') }}" 
+                                   class="form-input @error('code') border-red-500 @enderror" 
+                                   placeholder="Enter unique branch code" required>
+                            @error('code')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Outlet Type *</label>
+                            <select name="outlet_type" class="form-input @error('outlet_type') border-red-500 @enderror" required>
+                                <option value="">Select Outlet Type</option>
+                                <option value="retail" {{ old('outlet_type') == 'retail' ? 'selected' : '' }}>Retail</option>
+                                <option value="wholesale" {{ old('outlet_type') == 'wholesale' ? 'selected' : '' }}>Wholesale</option>
+                                <option value="hybrid" {{ old('outlet_type') == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                            </select>
+                            @error('outlet_type')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- POS Configuration -->
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-6">
+                        <h4 class="text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">POS Configuration</h4>
+                        
+                        <div class="form-group">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="pos_enabled" value="1" 
+                                       {{ old('pos_enabled') ? 'checked' : '' }}
+                                       class="form-checkbox text-blue-600">
+                                <span class="ml-2 text-sm text-gray-700">Enable POS System</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">POS Terminal ID</label>
+                            <input type="text" name="pos_terminal_id" value="{{ old('pos_terminal_id') }}" 
+                                   class="form-input @error('pos_terminal_id') border-red-500 @enderror" 
+                                   placeholder="Enter POS terminal ID">
+                            @error('pos_terminal_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <h4 class="text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">Location (Optional)</h4>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Latitude</label>
+                            <input type="number" step="any" name="latitude" value="{{ old('latitude') }}" 
+                                   class="form-input @error('latitude') border-red-500 @enderror" 
+                                   placeholder="Enter latitude">
+                            @error('latitude')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Longitude</label>
+                            <input type="number" step="any" name="longitude" value="{{ old('longitude') }}" 
+                                   class="form-input @error('longitude') border-red-500 @enderror" 
+                                   placeholder="Enter longitude">
+                            @error('longitude')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>

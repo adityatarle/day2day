@@ -118,7 +118,9 @@
                 @foreach($branch_performance as $branch)
                 <div class="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                     <div>
-                        <h4 class="font-semibold text-gray-900">{{ $branch['name'] }}</h4>
+                        <a href="{{ route('admin.branches.show', $branch['id']) }}" class="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                            {{ $branch['name'] }}
+                        </a>
                         <p class="text-sm text-gray-600">Manager: {{ $branch['manager'] }}</p>
                     </div>
                     <div class="text-right">

@@ -162,6 +162,19 @@
             box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
         }
         
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
         /* Form Styles */
         .form-input {
             width: 100%;
@@ -327,9 +340,9 @@
     <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-72 text-white">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-72 text-white flex flex-col">
         <!-- Logo Section -->
-        <div class="p-6 text-center border-b border-white/10">
+        <div class="p-6 text-center border-b border-white/10 flex-shrink-0">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
                 <i class="fas fa-leaf text-2xl text-white"></i>
             </div>
@@ -339,7 +352,7 @@
         
         <!-- Navigation -->
         @php $user = auth()->user(); @endphp
-        <div class="flex-1 overflow-y-auto pb-24">
+        <div class="flex-1 overflow-y-auto">
         @if($user && $user->isBranchManager())
             @include('partials.navigation.branch-manager')
         @elseif($user && $user->isCashier())
@@ -433,7 +446,7 @@
         </div>
         
         <!-- User Profile -->
-        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/10 bg-black/20">
+        <div class="flex-shrink-0 p-6 border-t border-white/10 bg-black/20">
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                     <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>

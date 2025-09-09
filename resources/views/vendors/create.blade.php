@@ -48,8 +48,27 @@
         </div>
     @endif
 
+    <!-- Debug Panel (only in development) -->
+    @if(config('app.debug'))
+    <div id="debug-panel" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 hidden">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800">Debug Information</h3>
+                <div id="debug-content" class="mt-2 text-sm text-yellow-700">
+                    <p>Form ready for debugging...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Form -->
-    <form method="POST" action="{{ route('vendors.store') }}" class="space-y-8" id="vendor-form">
+    <form method="POST" action="{{ route('vendors.store') }}" class="space-y-8" id="vendor-form" novalidate>
         @csrf
 
         <!-- Basic Information -->
@@ -176,30 +195,69 @@
             <a href="{{ route('vendors.index') }}" class="btn-secondary">
                 Cancel
             </a>
-            <button type="submit" class="btn-primary" id="submit-btn">
+        <button type="submit" class="btn-primary" id="submit-btn">
+            <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span class="btn-text">Create Vendor</span>
+            <span class="spinner hidden">
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </span>
+        </button>
+        
+        <!-- Fallback submit button for JavaScript issues -->
+        <noscript>
+            <button type="submit" class="btn-primary">
                 <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                <span class="btn-text">Create Vendor</span>
-                <span class="spinner hidden">
-                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </span>
+                Create Vendor (No JS)
             </button>
+        </noscript>
         </div>
     </form>
 </div>
 
+<noscript>
+    <style>
+        #vendor-form {
+            display: block !important;
+        }
+        .js-only {
+            display: none !important;
+        }
+    </style>
+</noscript>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Vendor form JavaScript loaded');
     let productIndex = 0;
     const addProductBtn = document.getElementById('add-product');
     const productsContainer = document.getElementById('products-container');
     const productTemplate = document.getElementById('product-template');
     const form = document.getElementById('vendor-form');
     const submitBtn = document.getElementById('submit-btn');
+    const debugPanel = document.getElementById('debug-panel');
+    const debugContent = document.getElementById('debug-content');
+    
+    // Debug function
+    function debug(message) {
+        console.log('[VENDOR FORM DEBUG]', message);
+        if (debugContent) {
+            const p = document.createElement('p');
+            p.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            debugContent.appendChild(p);
+            if (debugPanel) {
+                debugPanel.classList.remove('hidden');
+            }
+        }
+    }
+    
+    debug('Form initialized successfully');
 
     // Add product functionality
     addProductBtn.addEventListener('click', function() {
@@ -230,11 +288,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form validation and submission
-    form.addEventListener('submit', function(e) {
+    let formSubmitting = false;
+    
+    function handleFormSubmit(e) {
+        console.log('Form submission started');
+        debug('Form submission handler called');
+        
+        // Prevent double submission
+        if (formSubmitting) {
+            e.preventDefault();
+            debug('Prevented double submission');
+            return;
+        }
+        
         e.preventDefault();
+        debug('Default form submission prevented');
         
         // Clear previous errors
         clearErrors();
+        debug('Previous errors cleared');
         
         // Validate required fields
         const requiredFields = [
@@ -262,67 +334,69 @@ document.addEventListener('DOMContentLoaded', function() {
             hasErrors = true;
         }
 
-        // Validate products if any are added
+        // Validate products if any are added (only if there are product rows)
         const productRows = productsContainer.querySelectorAll('.product-row');
         productRows.forEach((row, index) => {
             const productSelect = row.querySelector('select[name*="product_id"]');
             const priceInput = row.querySelector('input[name*="supply_price"]');
             
-            if (!productSelect.value) {
+            if (productSelect && !productSelect.value) {
                 showFieldError(productSelect, 'Please select a product');
                 hasErrors = true;
             }
             
-            if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+            if (priceInput && (!priceInput.value || parseFloat(priceInput.value) <= 0)) {
                 showFieldError(priceInput, 'Please enter a valid supply price');
                 hasErrors = true;
             }
         });
 
         if (hasErrors) {
+            console.log('Form has validation errors');
+            debug('Form validation failed with ' + hasErrors + ' errors');
             // Scroll to first error
             const firstError = document.querySelector('.border-red-500');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                debug('Scrolled to first error field');
             }
             return;
         }
 
+        console.log('Form validation passed, submitting...');
+        debug('Form validation passed, proceeding with submission');
+        
+        // Mark as submitting
+        formSubmitting = true;
+        
         // Show loading state
         showLoadingState();
+        debug('Loading state activated');
 
-        // Submit the form
-        const formData = new FormData(form);
-        
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        // Use setTimeout to ensure the loading state is shown
+        setTimeout(function() {
+            try {
+                console.log('Attempting form submission...');
+                debug('Removing event listener and submitting form');
+                // Remove event listener and submit normally
+                form.removeEventListener('submit', handleFormSubmit);
+                form.submit();
+                console.log('Form submitted successfully');
+                debug('Form.submit() called successfully');
+            } catch (error) {
+                console.error('Form submission error:', error);
+                debug('Form submission error: ' + error.message);
+                formSubmitting = false;
+                hideLoadingState();
+                showAlert('An error occurred during form submission. Please try again.', 'error');
+                // Re-add event listener
+                form.addEventListener('submit', handleFormSubmit);
+                debug('Event listener re-added after error');
             }
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.text();
-            }
-            throw new Error('Network response was not ok');
-        })
-        .then(html => {
-            // Check if response contains errors
-            if (html.includes('alert-error') || html.includes('border-red-500')) {
-                // Replace current page content with response (which includes errors)
-                document.body.innerHTML = html;
-            } else {
-                // Success - redirect to vendors index
-                window.location.href = '{{ route("vendors.index") }}';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            hideLoadingState();
-            showAlert('An error occurred while creating the vendor. Please try again.', 'error');
-        });
-    });
+        }, 100);
+    }
+    
+    form.addEventListener('submit', handleFormSubmit);
 
     function clearErrors() {
         const errorFields = document.querySelectorAll('.border-red-500');

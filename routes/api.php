@@ -18,6 +18,9 @@ use App\Http\Controllers\WholesaleController;
 use App\Http\Controllers\LossTrackingController;
 use App\Http\Controllers\DeliveryAdjustmentController;
 use App\Http\Controllers\InventoryDashboardController;
+use App\Http\Controllers\TransferController;
+use App\Http\Controllers\DiscrepancyController;
+use App\Http\Controllers\AttachmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -86,6 +89,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/inventory/low-stock-alerts', [InventoryController::class, 'getLowStockAlerts']);
         Route::get('/inventory/valuation', [InventoryController::class, 'getInventoryValuation']);
         
+        // Transfers staged flow
+        Route::post('/transfers', [TransferController::class, 'store']);
+        Route::post('/transfers/{transfer}/approve', [TransferController::class, 'approve']);
+        Route::post('/transfers/{transfer}/dispatch', [TransferController::class, 'dispatch']);
+        Route::post('/transfers/{transfer}/mark-delivered', [TransferController::class, 'markDelivered']);
+        Route::post('/transfers/{transfer}/receive', [TransferController::class, 'receive']);
+
+        // Discrepancies
+        Route::post('/discrepancies', [DiscrepancyController::class, 'store']);
+        Route::post('/discrepancies/{discrepancy}/resolve', [DiscrepancyController::class, 'resolve']);
+
+        // Attachments
+        Route::post('/attachments', [AttachmentController::class, 'store']);
+
         // Customer management
     });
     

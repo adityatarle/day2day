@@ -182,15 +182,4 @@ class LossTracking extends Model
                     ->where('reference_id', $referenceId);
     }
 
-    /**
-     * Get loss percentage (if initial and final quantities are available).
-     */
-    public function getLossPercentage(): float
-    {
-        if (!$this->initial_quantity || $this->initial_quantity <= 0) {
-            return 0;
-        }
-
-        return ($this->quantity_lost / $this->initial_quantity) * 100;
-    }
 }

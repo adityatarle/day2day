@@ -68,6 +68,13 @@
         <span class="font-medium">Customers</span>
     </a>
     
+    <a href="{{ route('vendors.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('vendors.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-handshake"></i>
+        </div>
+        <span class="font-medium">Vendors</span>
+    </a>
+    
     <a href="{{ route('purchase-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('purchase-orders.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-file-invoice"></i>

@@ -116,7 +116,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                             <div>
                                 <label class="form-label">Product</label>
-                                <select name="products[{{ $index }}][product_id]" class="form-input" required>
+                                <select name="products[{{ $index }}][product_id]" class="form-input">
                                     <option value="">Select Product</option>
                                     @foreach($allProducts as $prod)
                                         <option value="{{ $prod->id }}" {{ $prod->id == $product->id ? 'selected' : '' }}>
@@ -129,7 +129,7 @@
                                 <label class="form-label">Supply Price (₹)</label>
                                 <input type="number" name="products[{{ $index }}][supply_price]" 
                                        value="{{ $product->pivot->supply_price }}" 
-                                       step="0.01" min="0" class="form-input" required>
+                                       step="0.01" min="0" class="form-input">
                             </div>
                             <div>
                                 <label class="form-label">Primary Supplier</label>
@@ -159,7 +159,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div>
                             <label class="form-label">Product</label>
-                            <select name="products[INDEX][product_id]" class="form-input" required>
+                            <select name="products[INDEX][product_id]" class="form-input">
                                 <option value="">Select Product</option>
                                 @foreach($allProducts as $product)
                                     <option value="{{ $product->id }}">{{ $product->name }} ({{ ucfirst($product->category) }})</option>
@@ -168,7 +168,7 @@
                         </div>
                         <div>
                             <label class="form-label">Supply Price (₹)</label>
-                            <input type="number" name="products[INDEX][supply_price]" step="0.01" min="0" class="form-input" required>
+                            <input type="number" name="products[INDEX][supply_price]" step="0.01" min="0" class="form-input">
                         </div>
                         <div>
                             <label class="form-label">Primary Supplier</label>
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     addProductBtn.addEventListener('click', function() {
-        const template = productTemplate.innerHTML;
+        const template = productTemplate.innerHTML.replace(/disabled/g, '');
         const newProduct = template.replace(/INDEX/g, productIndex);
         
         const div = document.createElement('div');

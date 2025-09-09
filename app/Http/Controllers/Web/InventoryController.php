@@ -222,7 +222,7 @@ class InventoryController extends Controller
      */
     public function batches()
     {
-        $batches = InventoryBatch::with(['product', 'branch', 'vendor'])
+        $batches = Batch::with(['product', 'branch'])
             ->latest()
             ->paginate(20);
 

@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             $table->foreignId('pos_session_id')->nullable()->constrained('pos_sessions')->onDelete('set null');
-            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->index(['pos_session_id', 'created_at']);
         });
     }
@@ -25,8 +24,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             $table->dropForeign(['pos_session_id']);
-            $table->dropForeign(['created_by']);
-            $table->dropColumn(['pos_session_id', 'created_by']);
+            $table->dropColumn(['pos_session_id']);
         });
     }
 };

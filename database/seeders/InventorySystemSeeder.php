@@ -32,11 +32,11 @@ class InventorySystemSeeder extends Seeder
 
         // Create Cities
         $cities = [
-            ['name' => 'Mumbai', 'state' => 'Maharashtra'],
-            ['name' => 'Delhi', 'state' => 'Delhi'],
-            ['name' => 'Bangalore', 'state' => 'Karnataka'],
-            ['name' => 'Chennai', 'state' => 'Tamil Nadu'],
-            ['name' => 'Pune', 'state' => 'Maharashtra'],
+            ['name' => 'Mumbai', 'state' => 'Maharashtra', 'code' => 'MUM'],
+            ['name' => 'Delhi', 'state' => 'Delhi', 'code' => 'DEL'],
+            ['name' => 'Bangalore', 'state' => 'Karnataka', 'code' => 'BLR'],
+            ['name' => 'Chennai', 'state' => 'Tamil Nadu', 'code' => 'CHN'],
+            ['name' => 'Pune', 'state' => 'Maharashtra', 'code' => 'PUN'],
         ];
 
         foreach ($cities as $cityData) {

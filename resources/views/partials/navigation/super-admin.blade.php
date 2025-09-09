@@ -58,6 +58,13 @@
         </div>
         <span class="font-medium">Vendor Management</span>
     </a>
+    
+    <a href="{{ route('purchase-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('purchase-orders.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <span class="font-medium">Purchase Orders</span>
+    </a>
 
     <!-- Analytics & Reports -->
     <div class="pt-4 pb-2">

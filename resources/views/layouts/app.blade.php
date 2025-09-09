@@ -339,6 +339,7 @@
         
         <!-- Navigation -->
         @php $user = auth()->user(); @endphp
+        <div class="flex-1 overflow-y-auto pb-24">
         @if($user && $user->isBranchManager())
             @include('partials.navigation.branch-manager')
         @elseif($user && $user->isCashier())
@@ -429,6 +430,7 @@
             </a>
         </nav>
         @endif
+        </div>
         
         <!-- User Profile -->
         <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/10 bg-black/20">

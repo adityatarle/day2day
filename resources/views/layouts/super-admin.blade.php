@@ -128,7 +128,9 @@
         </div>
         
         <!-- Navigation -->
-        @include('partials.navigation.super-admin')
+        <div class="flex-1 overflow-y-auto pb-24">
+            @include('partials.navigation.super-admin')
+        </div>
         
         <!-- User Profile -->
         <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/20 bg-black/30">

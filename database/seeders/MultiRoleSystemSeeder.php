@@ -176,11 +176,11 @@ class MultiRoleSystemSeeder extends Seeder
         $this->command->info('Setting up cities...');
 
         $cities = [
-            ['name' => 'Mumbai', 'state' => 'Maharashtra', 'is_active' => true],
-            ['name' => 'Delhi', 'state' => 'Delhi', 'is_active' => true],
-            ['name' => 'Bangalore', 'state' => 'Karnataka', 'is_active' => true],
-            ['name' => 'Pune', 'state' => 'Maharashtra', 'is_active' => true],
-            ['name' => 'Chennai', 'state' => 'Tamil Nadu', 'is_active' => true],
+            ['name' => 'Mumbai', 'state' => 'Maharashtra', 'code' => 'MUM', 'is_active' => true],
+            ['name' => 'Delhi', 'state' => 'Delhi', 'code' => 'DEL', 'is_active' => true],
+            ['name' => 'Bangalore', 'state' => 'Karnataka', 'code' => 'BLR', 'is_active' => true],
+            ['name' => 'Pune', 'state' => 'Maharashtra', 'code' => 'PUN', 'is_active' => true],
+            ['name' => 'Chennai', 'state' => 'Tamil Nadu', 'code' => 'CHN', 'is_active' => true],
         ];
 
         foreach ($cities as $city) {

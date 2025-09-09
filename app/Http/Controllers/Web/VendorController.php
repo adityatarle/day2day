@@ -68,43 +68,61 @@ class VendorController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:vendors,code',
-            'email' => 'required|email|unique:vendors,email',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
-            'gst_number' => 'nullable|string|max:15|unique:vendors,gst_number',
-            'products' => 'array',
-            'products.*.product_id' => 'required_with:products|exists:products,id',
-            'products.*.supply_price' => 'required_with:products|numeric|min:0',
-            'products.*.is_primary_supplier' => 'boolean',
-        ]);
-
-        DB::transaction(function () use ($request) {
-            $vendor = Vendor::create([
-                'name' => $request->name,
-                'code' => $request->code,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'gst_number' => $request->gst_number,
-                'is_active' => true,
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'code' => 'required|string|max:50|unique:vendors,code',
+                'email' => 'required|email|unique:vendors,email',
+                'phone' => 'required|string|max:20',
+                'address' => 'required|string',
+                'gst_number' => 'nullable|string|max:15|unique:vendors,gst_number',
+                'products' => 'array',
+                'products.*.product_id' => 'required_with:products|exists:products,id',
+                'products.*.supply_price' => 'required_with:products|numeric|min:0',
+                'products.*.is_primary_supplier' => 'boolean',
             ]);
 
-            // Attach products with pricing
-            if ($request->has('products')) {
-                foreach ($request->products as $product) {
-                    $vendor->products()->attach($product['product_id'], [
-                        'supply_price' => $product['supply_price'],
-                        'is_primary_supplier' => $product['is_primary_supplier'] ?? false,
-                    ]);
-                }
-            }
-        });
+            DB::transaction(function () use ($request) {
+                $vendor = Vendor::create([
+                    'name' => $request->name,
+                    'code' => $request->code,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'gst_number' => $request->gst_number,
+                    'is_active' => true,
+                ]);
 
-        return redirect()->route('vendors.index')
-            ->with('success', 'Vendor created successfully!');
+                // Attach products with pricing
+                if ($request->has('products') && is_array($request->products)) {
+                    foreach ($request->products as $product) {
+                        if (isset($product['product_id']) && isset($product['supply_price'])) {
+                            $vendor->products()->attach($product['product_id'], [
+                                'supply_price' => $product['supply_price'],
+                                'is_primary_supplier' => $product['is_primary_supplier'] ?? false,
+                            ]);
+                        }
+                    }
+                }
+            });
+
+            return redirect()->route('vendors.index')
+                ->with('success', 'Vendor created successfully!');
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Vendor creation failed: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'exception' => $e
+            ]);
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to create vendor. Please check all fields and try again. Error: ' . $e->getMessage()]);
+        }
     }
 
     /**

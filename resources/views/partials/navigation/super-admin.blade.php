@@ -51,6 +51,20 @@
         </div>
         <span class="font-medium">Global Inventory</span>
     </a>
+
+    <a href="{{ route('transfers.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('transfers.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <span class="font-medium">Transfers</span>
+    </a>
+
+    <a href="{{ route('discrepancies.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('discrepancies.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <span class="font-medium">Discrepancies</span>
+    </a>
     
     <a href="{{ route('vendors.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('vendors.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">

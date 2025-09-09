@@ -25,6 +25,8 @@ use App\Http\Controllers\Web\PosWebController;
 use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\BranchManagementController;
 use App\Http\Controllers\Web\PosSessionController;
+use App\Http\Controllers\Web\TransferWebController;
+use App\Http\Controllers\Web\DiscrepancyWebController;
 use App\Http\Controllers\Auth\OutletAuthController;
 
 // Home page - redirects to login if not authenticated
@@ -96,6 +98,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/loss-tracking', [InventoryController::class, 'lossTracking'])->name('inventory.lossTracking');
         Route::get('/inventory/valuation', [InventoryController::class, 'valuation'])->name('inventory.valuation');
         Route::get('/inventory/low-stock-alerts', [InventoryController::class, 'lowStockAlerts'])->name('inventory.lowStockAlerts');
+
+        // Transfers (staged) web views
+        Route::get('/transfers', [TransferWebController::class, 'index'])->name('transfers.index');
+        Route::get('/transfers/create', [TransferWebController::class, 'create'])->name('transfers.create');
+        Route::post('/transfers', [TransferWebController::class, 'store'])->name('transfers.store');
+        Route::get('/transfers/{transfer}', [TransferWebController::class, 'show'])->name('transfers.show');
+        Route::post('/transfers/{transfer}/approve', [TransferWebController::class, 'approve'])->name('transfers.approve');
+        Route::post('/transfers/{transfer}/dispatch', [TransferWebController::class, 'dispatch'])->name('transfers.dispatch');
+        Route::post('/transfers/{transfer}/mark-delivered', [TransferWebController::class, 'markDelivered'])->name('transfers.markDelivered');
+        Route::post('/transfers/{transfer}/receive', [TransferWebController::class, 'receive'])->name('transfers.receive');
+
+        // Discrepancies web views
+        Route::get('/discrepancies', [DiscrepancyWebController::class, 'index'])->name('discrepancies.index');
+        Route::get('/discrepancies/{discrepancy}', [DiscrepancyWebController::class, 'show'])->name('discrepancies.show');
+        Route::post('/discrepancies/{discrepancy}/resolve', [DiscrepancyWebController::class, 'resolve'])->name('discrepancies.resolve');
     });
     
     // Order management

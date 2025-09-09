@@ -316,4 +316,41 @@ class VendorController extends Controller
         return redirect()->route('vendors.credit-management', $vendor)
             ->with('success', 'Credit transaction added successfully!');
     }
+
+    /**
+     * Display vendor purchase orders overview.
+     */
+    public function purchaseOrders(Request $request)
+    {
+        $query = PurchaseOrder::with(['vendor', 'items.product', 'branch'])
+            ->latest();
+
+        // Filter by status
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by vendor
+        if ($request->has('vendor') && $request->vendor !== '') {
+            $query->where('vendor_id', $request->vendor);
+        }
+
+        // Search by PO number
+        if ($request->has('search') && $request->search !== '') {
+            $query->where('po_number', 'like', "%{$request->search}%");
+        }
+
+        $purchaseOrders = $query->paginate(15);
+        $vendors = Vendor::where('is_active', true)->get();
+
+        // Statistics
+        $stats = [
+            'total_orders' => PurchaseOrder::count(),
+            'pending_orders' => PurchaseOrder::where('status', 'pending')->count(),
+            'confirmed_orders' => PurchaseOrder::where('status', 'confirmed')->count(),
+            'total_value' => PurchaseOrder::where('status', '!=', 'cancelled')->sum('total_amount'),
+        ];
+
+        return view('vendors.purchase-orders', compact('purchaseOrders', 'vendors', 'stats'));
+    }
 }

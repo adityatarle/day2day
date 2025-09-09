@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/inventory/add-stock', [InventoryController::class, 'addStockForm'])->name('inventory.addStockForm');
         Route::post('/inventory/add-stock', [InventoryController::class, 'addStock'])->name('inventory.addStock');
         Route::get('/inventory/record-loss', [InventoryController::class, 'recordLossForm'])->name('inventory.recordLossForm');
+        Route::post('/inventory/record-loss', [InventoryController::class, 'recordLoss'])->name('inventory.recordLoss');
         Route::get('/inventory/batches', [InventoryController::class, 'batches'])->name('inventory.batches');
         Route::get('/inventory/stock-movements', [InventoryController::class, 'stockMovements'])->name('inventory.stockMovements');
         Route::get('/inventory/loss-tracking', [InventoryController::class, 'lossTracking'])->name('inventory.lossTracking');
@@ -132,6 +133,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/vendors/{vendor}/analytics', [VendorController::class, 'analytics'])->name('vendors.analytics');
         Route::get('/vendors/{vendor}/credit-management', [VendorController::class, 'creditManagement'])->name('vendors.credit-management');
         Route::post('/vendors/{vendor}/credit-transaction', [VendorController::class, 'addCreditTransaction'])->name('vendors.addCreditTransaction');
+        Route::get('/vendors/purchase-orders', [VendorController::class, 'purchaseOrders'])->name('vendors.purchaseOrders');
     });
     
     // Purchase Order management

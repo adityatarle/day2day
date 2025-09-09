@@ -197,6 +197,20 @@ Route::middleware('auth')->group(function () {
             ->name('admin.branches.toggle-status');
         Route::patch('/admin/branches/{branch}/assign-manager', [AdminBranchManagementController::class, 'assignManager'])
             ->name('admin.branches.assign-manager');
+        
+        // Additional branch management routes
+        Route::post('/admin/branches/{branch}/add-staff', [AdminBranchManagementController::class, 'addStaff'])
+            ->name('admin.branches.add-staff');
+        Route::post('/admin/users/{user}/reset-password', [AdminBranchManagementController::class, 'resetStaffPassword'])
+            ->name('admin.users.reset-password');
+        Route::patch('/admin/users/{user}/toggle-status', [AdminBranchManagementController::class, 'toggleStaffStatus'])
+            ->name('admin.users.toggle-status');
+        Route::get('/admin/branches/{branch}/pos-details', [AdminBranchManagementController::class, 'getPosDetails'])
+            ->name('admin.branches.pos-details');
+        Route::get('/admin/branches/{branch}/inventory', [AdminBranchManagementController::class, 'getInventory'])
+            ->name('admin.branches.inventory');
+        Route::get('/admin/branches/{branch}/reports', [AdminBranchManagementController::class, 'getReports'])
+            ->name('admin.branches.reports');
 
         // Branch performance analytics
         Route::get('/admin/branches/performance', [AdminController::class, 'branchPerformance'])

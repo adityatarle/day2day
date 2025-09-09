@@ -188,7 +188,7 @@ class AdminBranchManagementController extends Controller
         $manager = User::findOrFail($validated['manager_id']);
         
         // Verify the user is a branch manager
-        if (!$manager->isBranchManager()) {
+        if (!$manager->hasRole('branch_manager')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Selected user is not a branch manager.'
@@ -208,5 +208,137 @@ class AdminBranchManagementController extends Controller
             'success' => true,
             'message' => 'Manager assigned successfully.'
         ]);
+    }
+
+    /**
+     * Add staff member to branch.
+     */
+    public function addStaff(Request $request, Branch $branch)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role_id' => 'required|exists:roles,id'
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'role_id' => $validated['role_id'],
+            'branch_id' => $branch->id,
+            'is_active' => true,
+        ]);
+
+        return redirect()->route('admin.branches.show', $branch)
+            ->with('success', 'Staff member added successfully.');
+    }
+
+    /**
+     * Reset password for branch staff.
+     */
+    public function resetStaffPassword(User $user)
+    {
+        // Generate a random password
+        $newPassword = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
+        
+        $user->update([
+            'password' => bcrypt($newPassword)
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password reset successfully.',
+            'password' => $newPassword
+        ]);
+    }
+
+    /**
+     * Toggle staff status.
+     */
+    public function toggleStaffStatus(User $user)
+    {
+        $user->update(['is_active' => !$user->is_active]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff status updated successfully.',
+            'is_active' => $user->is_active
+        ]);
+    }
+
+    /**
+     * Get POS details for branch.
+     */
+    public function getPosDetails(Branch $branch)
+    {
+        $posData = [
+            'sessions' => $branch->posSessions()
+                ->with(['user', 'orders'])
+                ->latest()
+                ->take(10)
+                ->get(),
+            'today_sessions' => $branch->posSessions()
+                ->whereDate('created_at', today())
+                ->count(),
+            'today_sales' => $branch->todaySales(),
+            'active_sessions' => $branch->activePosSessionsCount(),
+            'total_sessions' => $branch->posSessions()->count(),
+        ];
+
+        return view('admin.branches.pos-details', compact('branch', 'posData'));
+    }
+
+    /**
+     * Get branch inventory.
+     */
+    public function getInventory(Branch $branch)
+    {
+        $inventory = $branch->products()
+            ->withPivot(['current_stock', 'selling_price', 'is_available_online'])
+            ->paginate(20);
+
+        return view('admin.branches.inventory', compact('branch', 'inventory'));
+    }
+
+    /**
+     * Get branch reports.
+     */
+    public function getReports(Branch $branch)
+    {
+        $reports = [
+            'daily_sales' => $branch->orders()
+                ->whereDate('created_at', today())
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+            'weekly_sales' => $branch->orders()
+                ->where('created_at', '>=', now()->startOfWeek())
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+            'monthly_sales' => $branch->orders()
+                ->whereMonth('created_at', now()->month)
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+            'top_products' => $branch->orders()
+                ->with('orderItems.product')
+                ->where('status', 'completed')
+                ->get()
+                ->flatMap(function ($order) {
+                    return $order->orderItems;
+                })
+                ->groupBy('product_id')
+                ->map(function ($items) {
+                    return [
+                        'product' => $items->first()->product,
+                        'quantity' => $items->sum('quantity'),
+                        'revenue' => $items->sum('total_price')
+                    ];
+                })
+                ->sortByDesc('quantity')
+                ->take(10),
+        ];
+
+        return view('admin.branches.reports', compact('branch', 'reports'));
     }
 }

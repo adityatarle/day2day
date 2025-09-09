@@ -112,7 +112,9 @@
                             <span class="text-white font-bold">{{ strtoupper(substr($branch->name, 0, 2)) }}</span>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ $branch->name }}</h3>
+                            <a href="{{ route('admin.branches.show', $branch) }}" class="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                                {{ $branch->name }}
+                            </a>
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                 {{ $branch->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                 {{ $branch->is_active ? 'Active' : 'Inactive' }}
@@ -178,9 +180,14 @@
 
                 <!-- Branch Actions -->
                 <div class="mt-6 pt-6 border-t border-gray-200 flex justify-between">
-                    <a href="{{ route('admin.branches.edit', $branch) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        Edit Branch
-                    </a>
+                    <div class="flex space-x-4">
+                        <a href="{{ route('admin.branches.show', $branch) }}" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                            View Details
+                        </a>
+                        <a href="{{ route('admin.branches.edit', $branch) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            Edit Branch
+                        </a>
+                    </div>
                     @if($branch->users_count == 0 && $branch->orders_count == 0)
                     <form method="POST" action="{{ route('admin.branches.destroy', $branch) }}" class="inline">
                         @csrf

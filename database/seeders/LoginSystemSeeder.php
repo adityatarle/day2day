@@ -133,6 +133,20 @@ class LoginSystemSeeder extends Seeder
         ];
 
         foreach ($branches as $branchData) {
+            // Check if a branch with this pos_terminal_id already exists
+            if (isset($branchData['pos_terminal_id'])) {
+                $existingBranch = Branch::where('pos_terminal_id', $branchData['pos_terminal_id'])->first();
+                if ($existingBranch && $existingBranch->code !== $branchData['code']) {
+                    // Generate a unique pos_terminal_id if there's a conflict
+                    $counter = 1;
+                    $basePosId = $branchData['pos_terminal_id'];
+                    do {
+                        $branchData['pos_terminal_id'] = $basePosId . '_' . $counter;
+                        $counter++;
+                    } while (Branch::where('pos_terminal_id', $branchData['pos_terminal_id'])->exists());
+                }
+            }
+            
             Branch::firstOrCreate(['code' => $branchData['code']], $branchData);
         }
 

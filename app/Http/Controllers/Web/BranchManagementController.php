@@ -73,7 +73,7 @@ class BranchManagementController extends Controller
             'outlet_type' => 'required|in:restaurant,takeaway,delivery_only,hybrid',
             'operating_hours' => 'nullable|array',
             'pos_enabled' => 'boolean',
-            'pos_terminal_id' => 'nullable|string|max:50',
+            'pos_terminal_id' => 'nullable|string|max:50|unique:branches,pos_terminal_id',
         ]);
 
         if ($validator->fails()) {
@@ -178,7 +178,7 @@ class BranchManagementController extends Controller
             'outlet_type' => 'required|in:restaurant,takeaway,delivery_only,hybrid',
             'operating_hours' => 'nullable|array',
             'pos_enabled' => 'boolean',
-            'pos_terminal_id' => 'nullable|string|max:50',
+            'pos_terminal_id' => ['nullable', 'string', 'max:50', Rule::unique('branches')->ignore($branch->id)],
             'is_active' => 'boolean',
         ]);
 

@@ -76,9 +76,10 @@ class VendorController extends Controller
                 'phone' => 'required|string|max:20',
                 'address' => 'required|string',
                 'gst_number' => 'nullable|string|max:15|unique:vendors,gst_number',
-                'products' => 'array',
-                'products.*.product_id' => 'required_with:products|exists:products,id',
-                'products.*.supply_price' => 'required_with:products|numeric|min:0',
+                // Only validate products when at least one product entry is present
+                'products' => 'nullable|array',
+                'products.*.product_id' => 'required_with:products.*|exists:products,id',
+                'products.*.supply_price' => 'required_with:products.*|numeric|min:0.01',
                 'products.*.is_primary_supplier' => 'boolean',
             ]);
 
@@ -94,14 +95,17 @@ class VendorController extends Controller
                 ]);
 
                 // Attach products with pricing
-                if ($request->has('products') && is_array($request->products)) {
-                    foreach ($request->products as $product) {
-                        if (isset($product['product_id']) && isset($product['supply_price'])) {
-                            $vendor->products()->attach($product['product_id'], [
-                                'supply_price' => $product['supply_price'],
-                                'is_primary_supplier' => $product['is_primary_supplier'] ?? false,
-                            ]);
-                        }
+                if ($request->filled('products') && is_array($request->products)) {
+                    // Filter out any empty template rows
+                    $validProducts = collect($request->products)
+                        ->filter(fn ($p) => !empty($p['product_id']) && isset($p['supply_price']))
+                        ->all();
+
+                    foreach ($validProducts as $product) {
+                        $vendor->products()->attach($product['product_id'], [
+                            'supply_price' => $product['supply_price'],
+                            'is_primary_supplier' => !empty($product['is_primary_supplier']),
+                        ]);
                     }
                 }
             });
@@ -198,9 +202,9 @@ class VendorController extends Controller
             'address' => 'required|string',
             'gst_number' => 'nullable|string|max:15|unique:vendors,gst_number,' . $vendor->id,
             'is_active' => 'boolean',
-            'products' => 'array',
-            'products.*.product_id' => 'required_with:products|exists:products,id',
-            'products.*.supply_price' => 'required_with:products|numeric|min:0',
+            'products' => 'nullable|array',
+            'products.*.product_id' => 'required_with:products.*|exists:products,id',
+            'products.*.supply_price' => 'required_with:products.*|numeric|min:0.01',
             'products.*.is_primary_supplier' => 'boolean',
         ]);
 
@@ -217,11 +221,15 @@ class VendorController extends Controller
 
             // Update product relationships
             $vendor->products()->detach();
-            if ($request->has('products')) {
-                foreach ($request->products as $product) {
+            if ($request->filled('products')) {
+                $validProducts = collect($request->products)
+                    ->filter(fn ($p) => !empty($p['product_id']) && isset($p['supply_price']))
+                    ->all();
+
+                foreach ($validProducts as $product) {
                     $vendor->products()->attach($product['product_id'], [
                         'supply_price' => $product['supply_price'],
-                        'is_primary_supplier' => $product['is_primary_supplier'] ?? false,
+                        'is_primary_supplier' => !empty($product['is_primary_supplier']),
                     ]);
                 }
             }

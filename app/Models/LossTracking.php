@@ -10,6 +10,11 @@ class LossTracking extends Model
 {
     use HasFactory;
 
+    /**
+     * Explicit table name because migration uses singular 'loss_tracking'
+     */
+    protected $table = 'loss_tracking';
+
     protected $fillable = [
         'product_id',
         'branch_id',

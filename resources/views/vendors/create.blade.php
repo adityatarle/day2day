@@ -159,7 +159,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div>
                             <label class="form-label">Product</label>
-                            <select name="products[INDEX][product_id]" class="form-input" required>
+                            <select name="products[INDEX][product_id]" class="form-input" disabled>
                                 <option value="">Select Product</option>
                                 @foreach($products as $product)
                                     <option value="{{ $product->id }}">{{ $product->name }} ({{ ucfirst($product->category) }})</option>
@@ -168,12 +168,12 @@
                         </div>
                         <div>
                             <label class="form-label">Supply Price (₹)</label>
-                            <input type="number" name="products[INDEX][supply_price]" step="0.01" min="0" class="form-input" required>
+                            <input type="number" name="products[INDEX][supply_price]" step="0.01" min="0" class="form-input" disabled>
                         </div>
                         <div>
                             <label class="form-label">Primary Supplier</label>
                             <div class="flex items-center h-10">
-                                <input type="checkbox" name="products[INDEX][is_primary_supplier]" value="1" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <input type="checkbox" name="products[INDEX][is_primary_supplier]" value="1" class="h-4 w-4 text-blue-600 border-gray-300 rounded" disabled>
                                 <span class="ml-2 text-sm text-gray-600">Primary supplier for this product</span>
                             </div>
                         </div>
@@ -261,7 +261,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add product functionality
     addProductBtn.addEventListener('click', function() {
-        const template = productTemplate.innerHTML;
+        const template = productTemplate.innerHTML
+            .replace('disabled', '') // enable inputs on real row
+            .replace('disabled', '');
         const newProduct = template.replace(/INDEX/g, productIndex);
         
         const div = document.createElement('div');

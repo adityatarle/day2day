@@ -19,11 +19,18 @@ class StockMovement extends Model
         'unit_price',
         'notes',
         'user_id',
+        'movement_type',
+        'reference_type',
+        'reference_id',
+        'movement_date',
+        'stock_transfer_id',
+        'reconciliation_id',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
         'unit_price' => 'decimal:2',
+        'movement_date' => 'datetime',
     ];
 
     /**
@@ -56,6 +63,22 @@ class StockMovement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the stock transfer associated with this movement.
+     */
+    public function stockTransfer(): BelongsTo
+    {
+        return $this->belongsTo(StockTransfer::class);
+    }
+
+    /**
+     * Get the reconciliation associated with this movement.
+     */
+    public function reconciliation(): BelongsTo
+    {
+        return $this->belongsTo(StockReconciliation::class);
     }
 
     /**
@@ -103,7 +126,7 @@ class StockMovement extends Model
      */
     public function isIncoming(): bool
     {
-        return in_array($this->type, ['purchase', 'return', 'adjustment']);
+        return in_array($this->type, ['purchase', 'return', 'adjustment', 'transfer_in']);
     }
 
     /**
@@ -111,7 +134,7 @@ class StockMovement extends Model
      */
     public function isOutgoing(): bool
     {
-        return in_array($this->type, ['sale', 'loss']);
+        return in_array($this->type, ['sale', 'loss', 'transfer_out', 'wastage']);
     }
 
     /**
@@ -125,7 +148,11 @@ class StockMovement extends Model
             'adjustment' => 'Adjustment',
             'loss' => 'Loss',
             'return' => 'Return',
-            default => ucfirst($this->type),
+            'transfer_in' => 'Transfer In',
+            'transfer_out' => 'Transfer Out',
+            'wastage' => 'Wastage',
+            'complimentary' => 'Complimentary',
+            default => ucfirst(str_replace('_', ' ', $this->type)),
         };
     }
 }

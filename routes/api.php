@@ -18,6 +18,8 @@ use App\Http\Controllers\WholesaleController;
 use App\Http\Controllers\LossTrackingController;
 use App\Http\Controllers\DeliveryAdjustmentController;
 use App\Http\Controllers\InventoryDashboardController;
+use App\Http\Controllers\Admin\StockTransferController;
+use App\Http\Controllers\Branch\StockReceiptController;
 
 /*
 |--------------------------------------------------------------------------
@@ -201,6 +203,202 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pos/products', [PosController::class, 'getProducts']);
         Route::get('/pos/session-history', [PosController::class, 'getSessionHistory']);
         Route::get('/pos/session-summary', [PosController::class, 'getSessionSummary']);
+    });
+
+    // Advanced Stock Management System
+    
+    // Admin Stock Transfer Management
+    Route::middleware('role:admin,super_admin')->prefix('admin/stock-transfers')->group(function () {
+        Route::get('/', [StockTransferController::class, 'index']);
+        Route::post('/', [StockTransferController::class, 'store']);
+        Route::get('/dashboard', [StockTransferController::class, 'dashboard']);
+        Route::get('/reports', [StockTransferController::class, 'report']);
+        Route::get('/{stockTransfer}', [StockTransferController::class, 'show']);
+        Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'dispatch']);
+        Route::post('/{stockTransfer}/cancel', [StockTransferController::class, 'cancel']);
+        
+        // Query Management
+        Route::get('/queries/all', [StockTransferController::class, 'queries']);
+        Route::get('/queries/{query}', [StockTransferController::class, 'showQuery']);
+        Route::post('/queries/{query}/assign', [StockTransferController::class, 'assignQuery']);
+        Route::post('/queries/{query}/respond', [StockTransferController::class, 'addQueryResponse']);
+        Route::post('/queries/{query}/resolve', [StockTransferController::class, 'resolveQuery']);
+    });
+    
+    // Branch Stock Receipt Management
+    Route::middleware('role:branch_manager,admin,super_admin')->prefix('branch/stock-receipts')->group(function () {
+        Route::get('/', [StockReceiptController::class, 'index']);
+        Route::get('/dashboard', [StockReceiptController::class, 'dashboard']);
+        Route::get('/{stockTransfer}', [StockReceiptController::class, 'show']);
+        Route::post('/{stockTransfer}/confirm-receipt', [StockReceiptController::class, 'confirmReceipt']);
+        
+        // Query Management for Branch
+        Route::get('/queries/all', [StockReceiptController::class, 'queries']);
+        Route::get('/queries/{query}', [StockReceiptController::class, 'showQuery']);
+        Route::post('/{stockTransfer}/queries', [StockReceiptController::class, 'storeQuery']);
+        Route::post('/queries/{query}/respond', [StockReceiptController::class, 'addQueryResponse']);
+        Route::post('/queries/{query}/escalate', [StockReceiptController::class, 'escalateQuery']);
+        
+        // Stock Reconciliation
+        Route::post('/{stockTransfer}/reconciliation', [StockReceiptController::class, 'storeReconciliation']);
+    });
+    
+    // Stock Transfer APIs for Mobile/External Integration
+    Route::prefix('stock-transfers')->group(function () {
+        // For delivery personnel to mark as delivered
+        Route::post('/{stockTransfer}/mark-delivered', function(\App\Models\StockTransfer $stockTransfer, Request $request) {
+            $service = app(\App\Services\StockTransferService::class);
+            $result = $service->markAsDelivered($stockTransfer, $request->all());
+            return response()->json(['success' => $result]);
+        });
+        
+        // Get transfer status for tracking
+        Route::get('/{stockTransfer}/status', function(\App\Models\StockTransfer $stockTransfer) {
+            return response()->json([
+                'transfer_number' => $stockTransfer->transfer_number,
+                'status' => $stockTransfer->status,
+                'status_display' => $stockTransfer->getStatusDisplayName(),
+                'dispatch_date' => $stockTransfer->dispatch_date,
+                'expected_delivery' => $stockTransfer->expected_delivery,
+                'delivered_date' => $stockTransfer->delivered_date,
+                'confirmed_date' => $stockTransfer->confirmed_date,
+                'is_overdue' => $stockTransfer->isOverdue(),
+                'days_until_delivery' => $stockTransfer->getDaysUntilDelivery(),
+            ]);
+        });
+        
+        // Get transfer items for verification
+        Route::get('/{stockTransfer}/items', function(\App\Models\StockTransfer $stockTransfer) {
+            $items = $stockTransfer->items()->with('product:id,name,code')->get();
+            return response()->json($items);
+        });
+    });
+    
+    // Financial Impact and Transport Expense APIs
+    Route::middleware('role:admin,super_admin,branch_manager')->prefix('stock-management')->group(function () {
+        
+        // Financial Impact Reports
+        Route::get('/financial-impacts', function(Request $request) {
+            $query = \App\Models\StockFinancialImpact::with(['branch:id,name', 'impactable']);
+            
+            if ($request->filled('branch_id')) {
+                $query->where('branch_id', $request->branch_id);
+            }
+            
+            if ($request->filled('impact_type')) {
+                $query->where('impact_type', $request->impact_type);
+            }
+            
+            if ($request->filled('date_from')) {
+                $query->whereDate('impact_date', '>=', $request->date_from);
+            }
+            
+            if ($request->filled('date_to')) {
+                $query->whereDate('impact_date', '<=', $request->date_to);
+            }
+            
+            $impacts = $query->orderBy('impact_date', 'desc')->paginate(20);
+            
+            return response()->json([
+                'impacts' => $impacts,
+                'summary' => [
+                    'total_impact' => $query->sum('amount'),
+                    'total_recovered' => $query->sum('recovered_amount'),
+                    'net_impact' => $query->sum('amount') - $query->sum('recovered_amount'),
+                ]
+            ]);
+        });
+        
+        // Transport Expenses
+        Route::get('/transport-expenses', function(Request $request) {
+            $query = \App\Models\TransportExpense::with(['stockTransfer:id,transfer_number,to_branch_id']);
+            
+            if ($request->filled('transfer_id')) {
+                $query->where('stock_transfer_id', $request->transfer_id);
+            }
+            
+            if ($request->filled('expense_type')) {
+                $query->where('expense_type', $request->expense_type);
+            }
+            
+            if ($request->filled('date_from')) {
+                $query->whereDate('expense_date', '>=', $request->date_from);
+            }
+            
+            if ($request->filled('date_to')) {
+                $query->whereDate('expense_date', '<=', $request->date_to);
+            }
+            
+            $expenses = $query->orderBy('expense_date', 'desc')->paginate(20);
+            
+            return response()->json([
+                'expenses' => $expenses,
+                'summary' => [
+                    'total_amount' => $query->sum('amount'),
+                    'expense_breakdown' => $query->groupBy('expense_type')
+                        ->selectRaw('expense_type, SUM(amount) as total')
+                        ->pluck('total', 'expense_type'),
+                ]
+            ]);
+        });
+        
+        // Stock Alerts
+        Route::get('/alerts', function(Request $request) {
+            $query = \App\Models\StockAlert::with(['branch:id,name', 'product:id,name', 'stockTransfer:id,transfer_number']);
+            
+            if ($request->filled('branch_id')) {
+                $query->where('branch_id', $request->branch_id);
+            }
+            
+            if ($request->filled('alert_type')) {
+                $query->where('alert_type', $request->alert_type);
+            }
+            
+            if ($request->filled('severity')) {
+                $query->where('severity', $request->severity);
+            }
+            
+            if ($request->boolean('unresolved_only')) {
+                $query->where('is_resolved', false);
+            }
+            
+            $alerts = $query->orderBy('created_at', 'desc')->paginate(20);
+            
+            return response()->json($alerts);
+        });
+        
+        // Mark alert as resolved
+        Route::post('/alerts/{alert}/resolve', function(\App\Models\StockAlert $alert) {
+            $alert->markAsResolved();
+            return response()->json(['success' => true]);
+        });
+        
+        // Stock Management Statistics
+        Route::get('/statistics', function(Request $request) {
+            $branchId = $request->get('branch_id');
+            $startDate = $request->get('date_from');
+            $endDate = $request->get('date_to');
+            
+            $transferService = app(\App\Services\StockTransferService::class);
+            $queryService = app(\App\Services\StockQueryService::class);
+            
+            return response()->json([
+                'transfers' => $transferService->getTransferStatistics($branchId, $startDate, $endDate),
+                'queries' => $queryService->getQueryStatistics($branchId, $startDate, $endDate),
+                'financial_summary' => [
+                    'total_losses' => \App\Models\StockFinancialImpact::getTotalLosses($branchId, $startDate, $endDate),
+                    'recoverable_amount' => \App\Models\StockFinancialImpact::getTotalRecoverableAmount($branchId, $startDate, $endDate),
+                ],
+                'recent_activities' => [
+                    'overdue_transfers' => $transferService->getOverdueTransfers($branchId)->count(),
+                    'pending_queries' => $queryService->getOverdueQueries($branchId)->count(),
+                    'critical_alerts' => \App\Models\StockAlert::where('severity', 'critical')
+                        ->where('is_resolved', false)
+                        ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+                        ->count(),
+                ]
+            ]);
+        });
     });
 
     // System Monitoring and Real-time Data

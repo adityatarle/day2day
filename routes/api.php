@@ -17,6 +17,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\WholesaleController;
 use App\Http\Controllers\LossTrackingController;
 use App\Http\Controllers\DeliveryAdjustmentController;
+use App\Http\Controllers\InventoryDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -121,6 +122,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/inventory/thresholds/bulk', [InventoryController::class, 'bulkUpdateThresholds']);
     Route::get('/inventory/valuation-with-costs', [InventoryController::class, 'getValuationWithCosts']);
     Route::post('/inventory/process-expired-batches', [InventoryController::class, 'processExpiredBatches']);
+
+    // Inventory Dashboard & Analytics
+    Route::get('/inventory/dashboard', [InventoryDashboardController::class, 'getDashboardData']);
+    Route::get('/inventory/profit-analysis', [InventoryDashboardController::class, 'getProfitAnalysis']);
+    Route::get('/inventory/forecast', [InventoryDashboardController::class, 'getInventoryForecast']);
 
     // Loss Tracking Management
     Route::apiResource('loss-tracking', LossTrackingController::class);

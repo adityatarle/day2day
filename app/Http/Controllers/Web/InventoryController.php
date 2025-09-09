@@ -156,6 +156,68 @@ class InventoryController extends Controller
     }
 
     /**
+     * Record a loss.
+     */
+    public function recordLoss(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'branch_id' => 'required|exists:branches,id',
+            'loss_type' => 'required|in:weight_loss,water_loss,wastage,complimentary',
+            'quantity_lost' => 'required|numeric|min:0.01',
+            'financial_loss' => 'required|numeric|min:0.01',
+            'reason' => 'required|string|max:500',
+            'batch_id' => 'nullable|exists:batches,id',
+            'initial_quantity' => 'nullable|numeric|min:0',
+            'final_quantity' => 'nullable|numeric|min:0',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            // Create loss tracking record
+            \App\Models\LossTracking::create([
+                'product_id' => $request->product_id,
+                'branch_id' => $request->branch_id,
+                'batch_id' => $request->batch_id,
+                'loss_type' => $request->loss_type,
+                'quantity_lost' => $request->quantity_lost,
+                'financial_loss' => $request->financial_loss,
+                'reason' => $request->reason,
+                'user_id' => auth()->id(),
+                'initial_quantity' => $request->initial_quantity,
+                'final_quantity' => $request->final_quantity,
+            ]);
+
+            // Update inventory - reduce stock
+            $product = Product::find($request->product_id);
+            $branch = Branch::find($request->branch_id);
+            
+            // Get current stock
+            $currentStock = $product->getCurrentStock($branch);
+            $newStock = max(0, $currentStock - $request->quantity_lost);
+            
+            // Update stock in pivot table
+            $product->branches()->updateExistingPivot($branch->id, [
+                'current_stock' => $newStock
+            ]);
+
+            // Create stock movement record
+            StockMovement::create([
+                'product_id' => $request->product_id,
+                'branch_id' => $request->branch_id,
+                'type' => 'loss',
+                'quantity' => -$request->quantity_lost, // Negative for loss
+                'reference_type' => 'loss_tracking',
+                'reference_id' => null, // Will be updated after loss tracking is created
+                'user_id' => auth()->id(),
+                'notes' => "Loss recorded: {$request->reason}",
+            ]);
+        });
+
+        return redirect()->route('inventory.lossTracking')
+            ->with('success', 'Loss recorded successfully!');
+    }
+
+    /**
      * Display inventory batches.
      */
     public function batches()
@@ -182,14 +244,48 @@ class InventoryController extends Controller
     /**
      * Display loss tracking.
      */
-    public function lossTracking()
+    public function lossTracking(Request $request)
     {
-        $losses = StockMovement::where('type', 'loss')
-            ->with(['product', 'branch'])
-            ->latest()
-            ->paginate(20);
+        $query = \App\Models\LossTracking::with(['product', 'branch', 'batch', 'user']);
 
-        return view('inventory.loss-tracking', compact('losses'));
+        // Filter by loss type
+        if ($request->has('loss_type') && $request->loss_type !== '') {
+            $query->where('loss_type', $request->loss_type);
+        }
+
+        // Filter by branch
+        if ($request->has('branch_id') && $request->branch_id !== '') {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        // Filter by product
+        if ($request->has('product_id') && $request->product_id !== '') {
+            $query->where('product_id', $request->product_id);
+        }
+
+        // Date range filter
+        if ($request->has('date_from') && $request->date_from !== '') {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->has('date_to') && $request->date_to !== '') {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $losses = $query->latest()->paginate(20);
+        
+        // Get filter options
+        $products = Product::active()->get();
+        $branches = Branch::all();
+        
+        // Statistics
+        $stats = [
+            'total_losses' => \App\Models\LossTracking::count(),
+            'weight_losses' => \App\Models\LossTracking::where('loss_type', 'weight_loss')->count(),
+            'total_financial_loss' => \App\Models\LossTracking::sum('financial_loss'),
+            'avg_loss_per_incident' => \App\Models\LossTracking::avg('financial_loss'),
+        ];
+
+        return view('inventory.loss-tracking', compact('losses', 'products', 'branches', 'stats'));
     }
 
     /**

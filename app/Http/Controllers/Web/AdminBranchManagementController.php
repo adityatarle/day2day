@@ -56,7 +56,7 @@ class AdminBranchManagementController extends Controller
             'outlet_type' => 'required|in:retail,wholesale,hybrid',
             'operating_hours' => 'nullable|array',
             'pos_enabled' => 'boolean',
-            'pos_terminal_id' => 'nullable|string|max:50',
+            'pos_terminal_id' => 'nullable|string|max:50|unique:branches,pos_terminal_id',
             'is_active' => 'boolean',
         ]);
 
@@ -129,7 +129,7 @@ class AdminBranchManagementController extends Controller
             'outlet_type' => 'required|in:retail,wholesale,hybrid',
             'operating_hours' => 'nullable|array',
             'pos_enabled' => 'boolean',
-            'pos_terminal_id' => 'nullable|string|max:50',
+            'pos_terminal_id' => ['nullable', 'string', 'max:50', Rule::unique('branches')->ignore($branch->id)],
             'is_active' => 'boolean',
         ]);
 

@@ -54,7 +54,7 @@ class InventorySystemSeeder extends Seeder
                 'city_id' => City::where('name', 'Mumbai')->first()->id,
                 'outlet_type' => 'retail',
                 'pos_enabled' => true,
-                'pos_terminal_id' => 'POS001',
+                'pos_terminal_id' => 'POS101',
             ],
             [
                 'name' => 'Branch Store - Delhi',
@@ -65,11 +65,25 @@ class InventorySystemSeeder extends Seeder
                 'city_id' => City::where('name', 'Delhi')->first()->id,
                 'outlet_type' => 'retail',
                 'pos_enabled' => true,
-                'pos_terminal_id' => 'POS002',
+                'pos_terminal_id' => 'POS102',
             ],
         ];
 
         foreach ($branches as $branchData) {
+            // Check if a branch with this pos_terminal_id already exists
+            if (isset($branchData['pos_terminal_id'])) {
+                $existingBranch = Branch::where('pos_terminal_id', $branchData['pos_terminal_id'])->first();
+                if ($existingBranch && $existingBranch->code !== $branchData['code']) {
+                    // Generate a unique pos_terminal_id if there's a conflict
+                    $counter = 1;
+                    $basePosId = $branchData['pos_terminal_id'];
+                    do {
+                        $branchData['pos_terminal_id'] = $basePosId . '_' . $counter;
+                        $counter++;
+                    } while (Branch::where('pos_terminal_id', $branchData['pos_terminal_id'])->exists());
+                }
+            }
+            
             Branch::firstOrCreate(['code' => $branchData['code']], $branchData);
         }
 

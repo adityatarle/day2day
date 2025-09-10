@@ -152,7 +152,7 @@ return new class extends Migration
             $table->decimal('financial_impact', 12, 2)->default(0); // Financial impact
             $table->timestamps();
 
-            $table->index(['stock_reconciliation_id', 'product_id']);
+            $table->index(['stock_reconciliation_id', 'product_id'], 'stock_recon_items_recon_id_product_id_idx');
         });
 
         // Create financial impact tracking table

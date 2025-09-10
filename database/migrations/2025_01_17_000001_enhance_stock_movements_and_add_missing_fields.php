@@ -164,6 +164,7 @@ return new class extends Migration
 
         Schema::table('orders', function (Blueprint $table) {
             if (Schema::hasColumn('orders', 'created_by')) {
+                $table->dropForeign(['created_by']);
                 $table->dropColumn('created_by');
             }
         });

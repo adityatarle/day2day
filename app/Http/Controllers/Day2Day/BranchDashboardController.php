@@ -98,13 +98,14 @@ class BranchDashboardController extends Controller
     }
 
     /**
-     * Create purchase entry for received materials
+     * Record material receipt from main branch or vendor (via main branch)
      */
-    public function createPurchaseEntry(Request $request)
+    public function recordMaterialReceipt(Request $request)
     {
         $request->validate([
-            'vendor_id' => 'required|exists:vendors,id',
+            'source' => 'required|in:main_branch,vendor_via_main_branch',
             'stock_transfer_id' => 'nullable|exists:stock_transfers,id',
+            'vendor_name' => 'nullable|string|max:255', // For reference only, not linked to vendor table
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity_ordered' => 'required|numeric|min:0',
@@ -121,21 +122,21 @@ class BranchDashboardController extends Controller
         
         DB::beginTransaction();
         try {
-            // Create purchase order
-            $purchaseOrder = PurchaseOrder::create([
-                'order_number' => $this->generatePurchaseOrderNumber(),
+            // Create material receipt record (not a purchase order to vendor)
+            $materialReceipt = PurchaseOrder::create([
+                'po_number' => $this->generateMaterialReceiptNumber(),
                 'branch_id' => $user->branch_id,
-                'vendor_id' => $request->vendor_id,
+                'vendor_id' => null, // No direct vendor relationship for sub-branches
                 'stock_transfer_id' => $request->stock_transfer_id,
                 'status' => 'received',
-                'order_date' => now(),
-                'expected_date' => now(),
-                'received_date' => now(),
+                'order_type' => 'material_receipt',
+                'payment_terms' => 'N/A - Material received from main branch',
                 'total_amount' => 0,
-                'notes' => $request->notes,
-                'invoice_number' => $request->invoice_number,
-                'invoice_date' => $request->invoice_date,
-                'created_by' => $user->id,
+                'notes' => $request->notes . ($request->vendor_name ? ' | Original Vendor: ' . $request->vendor_name : ''),
+                'terminology_notes' => 'Material Receipt - ' . ($request->source === 'main_branch' ? 'Direct from main branch' : 'From vendor via main branch'),
+                'expected_delivery_date' => now(),
+                'actual_delivery_date' => now(),
+                'user_id' => $user->id,
             ]);
 
             $totalAmount = 0;
@@ -145,12 +146,12 @@ class BranchDashboardController extends Controller
                 $itemTotal = $item['quantity_received'] * $item['unit_price'];
                 $totalAmount += $itemTotal;
 
-                // Create purchase order item
-                $purchaseOrderItem = PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
+                // Create material receipt item
+                $receiptItem = PurchaseOrderItem::create([
+                    'purchase_order_id' => $materialReceipt->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity_ordered'],
-                    'quantity_received' => $item['quantity_received'],
+                    'received_quantity' => $item['quantity_received'],
                     'unit_price' => $item['unit_price'],
                     'total_price' => $itemTotal,
                 ]);
@@ -176,7 +177,7 @@ class BranchDashboardController extends Controller
                         'quantity_lost' => $item['damage_quantity'],
                         'unit_cost' => $item['unit_price'],
                         'total_loss_value' => $damageValue,
-                        'reason' => 'Damaged goods received in purchase entry',
+                        'reason' => 'Damaged goods received in material receipt',
                         'loss_date' => now(),
                         'recorded_by' => $user->id,
                     ]);
@@ -191,7 +192,7 @@ class BranchDashboardController extends Controller
             }
 
             // Update total amount
-            $purchaseOrder->update(['total_amount' => $totalAmount]);
+            $materialReceipt->update(['total_amount' => $totalAmount]);
 
             // Mark stock transfer as received if applicable
             if ($request->stock_transfer_id) {
@@ -209,8 +210,8 @@ class BranchDashboardController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Purchase entry created successfully',
-                'purchase_order_id' => $purchaseOrder->id,
+                'message' => 'Material receipt recorded successfully',
+                'receipt_id' => $materialReceipt->id,
                 'total_damage_value' => $totalDamageValue,
             ]);
             
@@ -218,7 +219,7 @@ class BranchDashboardController extends Controller
             DB::rollback();
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create purchase entry: ' . $e->getMessage(),
+                'message' => 'Failed to record material receipt: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -571,15 +572,15 @@ class BranchDashboardController extends Controller
             ->increment('current_stock', $quantity);
     }
 
-    private function generatePurchaseOrderNumber()
+    private function generateMaterialReceiptNumber()
     {
-        $prefix = 'PO-' . date('Ymd') . '-';
-        $lastOrder = PurchaseOrder::where('order_number', 'like', $prefix . '%')
+        $prefix = 'MR-' . date('Ymd') . '-';
+        $lastReceipt = PurchaseOrder::where('po_number', 'like', $prefix . '%')
             ->orderBy('id', 'desc')
             ->first();
 
-        if ($lastOrder) {
-            $lastNumber = intval(substr($lastOrder->order_number, -4));
+        if ($lastReceipt) {
+            $lastNumber = intval(substr($lastReceipt->po_number, -4));
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
@@ -589,11 +590,81 @@ class BranchDashboardController extends Controller
     }
 
     /**
-     * Get vendors for purchase entries
+     * Create purchase request to main branch (sub-branches cannot order from vendors directly)
      */
-    public function getVendors()
+    public function createPurchaseRequest(Request $request)
     {
-        return response()->json(Vendor::active()->get());
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.reason' => 'required|string|max:255',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'expected_delivery_date' => 'required|date|after:today',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $user = auth()->user();
+        
+        DB::beginTransaction();
+        try {
+            // Generate request number
+            $requestNumber = 'PR-' . date('Y') . '-' . str_pad(
+                PurchaseOrder::where('order_type', 'branch_request')->count() + 1, 
+                4, '0', STR_PAD_LEFT
+            );
+
+            // Create purchase request to main branch
+            $purchaseRequest = PurchaseOrder::create([
+                'po_number' => $requestNumber,
+                'branch_id' => $user->branch_id,
+                'vendor_id' => null, // No vendor - this is a request to main branch
+                'user_id' => $user->id,
+                'status' => 'pending',
+                'order_type' => 'branch_request',
+                'payment_terms' => 'As per main branch policy',
+                'total_amount' => 0,
+                'notes' => $request->notes,
+                'expected_delivery_date' => $request->expected_delivery_date,
+                'priority' => $request->priority,
+                'terminology_notes' => 'Branch Purchase Request - sent to main branch for approval and fulfillment',
+            ]);
+
+            $totalEstimatedAmount = 0;
+
+            foreach ($request->items as $item) {
+                $product = Product::find($item['product_id']);
+                $estimatedPrice = $product->purchase_price ?? 0;
+                $totalPrice = $item['quantity'] * $estimatedPrice;
+                $totalEstimatedAmount += $totalPrice;
+
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $purchaseRequest->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $estimatedPrice,
+                    'total_price' => $totalPrice,
+                    'notes' => $item['reason'],
+                ]);
+            }
+
+            $purchaseRequest->update(['total_amount' => $totalEstimatedAmount]);
+
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase request sent to main branch successfully',
+                'request_id' => $purchaseRequest->id,
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create purchase request: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

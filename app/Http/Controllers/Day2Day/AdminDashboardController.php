@@ -219,25 +219,48 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * Get recent purchase orders from branches
+     * Get recent purchase requests from branches (sub-branches send requests to main branch)
      */
     private function getRecentPurchaseOrders()
     {
-        return PurchaseOrder::with(['branch', 'vendor'])
+        // Get both regular purchase orders (to vendors) and branch requests (from sub-branches)
+        $regularOrders = PurchaseOrder::with(['branch', 'vendor'])
+            ->where('order_type', 'purchase_order')
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(5)
             ->get()
             ->map(function($po) {
                 return [
                     'id' => $po->id,
-                    'order_number' => $po->order_number,
-                    'branch_name' => $po->branch->name ?? 'Unknown',
+                    'order_number' => $po->po_number ?? $po->order_number,
+                    'branch_name' => $po->branch->name ?? 'Main Branch',
                     'vendor_name' => $po->vendor->name ?? 'Unknown',
                     'total_amount' => $po->total_amount,
                     'status' => $po->status,
+                    'type' => 'Purchase Order',
                     'created_at' => $po->created_at->format('M d, Y H:i'),
                 ];
             });
+
+        $branchRequests = PurchaseOrder::with(['branch'])
+            ->where('order_type', 'branch_request')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($pr) {
+                return [
+                    'id' => $pr->id,
+                    'order_number' => $pr->po_number,
+                    'branch_name' => $pr->branch->name ?? 'Unknown',
+                    'vendor_name' => 'Main Branch',
+                    'total_amount' => $pr->total_amount,
+                    'status' => $pr->status,
+                    'type' => 'Branch Request',
+                    'created_at' => $pr->created_at->format('M d, Y H:i'),
+                ];
+            });
+
+        return $regularOrders->merge($branchRequests)->sortByDesc('created_at')->take(10)->values();
     }
 
     /**

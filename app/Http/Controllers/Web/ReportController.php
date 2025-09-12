@@ -72,29 +72,54 @@ class ReportController extends Controller
 
     /**
      * Display sales reports.
+     * Main branch (admin) can view all branch sales, sub-branches can only view their own.
      */
     public function sales(Request $request)
     {
+        $user = auth()->user();
         $query = Order::with(['customer', 'branch']);
+
+        // Branch filtering based on user role
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            // Sub-branch managers can only see their own branch sales
+            $query->where('branch_id', $user->branch_id);
+            $branches = Branch::where('id', $user->branch_id)->get();
+        } else {
+            // Main branch (admin/super_admin) can see all branch sales
+            $branches = Branch::orderBy('name')->get();
+            
+            // Filter by branch if specified
+            if ($request->has('branch_id') && $request->branch_id !== '') {
+                $query->where('branch_id', $request->branch_id);
+            }
+        }
 
         // Filter by date range
         if ($request->has('start_date') && $request->has('end_date')) {
             $query->whereBetween('created_at', [$request->start_date, $request->end_date]);
         }
 
-        // Filter by branch
-        if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
-        }
-
         $orders = $query->where('status', 'completed')->latest()->paginate(20);
-        $branches = Branch::all();
 
         // Calculate totals
         $totalSales = $orders->sum('total_amount');
         $totalOrders = $orders->count();
 
-        return view('reports.sales', compact('orders', 'branches', 'totalSales', 'totalOrders'));
+        // For main branch, also show branch-wise summary
+        $branchSummary = [];
+        if (!$user->hasRole('branch_manager')) {
+            $branchSummary = Order::with('branch')
+                ->where('status', 'completed')
+                ->when($request->has('start_date') && $request->has('end_date'), function($q) use ($request) {
+                    return $q->whereBetween('created_at', [$request->start_date, $request->end_date]);
+                })
+                ->selectRaw('branch_id, COUNT(*) as order_count, SUM(total_amount) as total_sales')
+                ->groupBy('branch_id')
+                ->orderByDesc('total_sales')
+                ->get();
+        }
+
+        return view('reports.sales', compact('orders', 'branches', 'totalSales', 'totalOrders', 'branchSummary'));
     }
 
     /**

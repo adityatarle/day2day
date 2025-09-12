@@ -45,14 +45,26 @@
 
                 <div class="form-group">
                     <label for="branch_id" class="form-label">Branch *</label>
-                    <select name="branch_id" id="branch_id" class="form-input @error('branch_id') border-red-500 @enderror" required>
-                        <option value="">Select Branch</option>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
-                                {{ $branch->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @if(isset($selectedBranch) && $selectedBranch)
+                        <select id="branch_id_display" class="form-input bg-gray-100" disabled>
+                            @foreach($branches as $branch)
+                                @if($branch->id == $selectedBranch)
+                                    <option value="{{ $branch->id }}" selected>{{ $branch->name }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="branch_id" value="{{ $selectedBranch }}">
+                        <p class="text-sm text-gray-500 mt-1">Branch is pre-selected for your role</p>
+                    @else
+                        <select name="branch_id" id="branch_id" class="form-input @error('branch_id') border-red-500 @enderror" required>
+                            <option value="">Select Branch</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                     @error('branch_id')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror

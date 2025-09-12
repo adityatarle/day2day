@@ -461,4 +461,159 @@ class PurchaseOrderController extends Controller
 
         return view('purchase-orders.dashboard', compact('stats', 'recentOrders', 'topVendors', 'pendingDeliveries'));
     }
+
+    /**
+     * Display branch purchase requests (for sub-branches).
+     * Sub-branches can only send purchase requests to main branch.
+     */
+    public function branchRequests(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Only branch managers can access this
+        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
+            abort(403, 'Access denied. Branch managers only.');
+        }
+
+        $query = PurchaseOrder::with(['vendor', 'branch', 'user'])
+            ->where('branch_id', $user->branch_id)
+            ->where('order_type', 'branch_request')
+            ->withCount('purchaseOrderItems');
+
+        // Filter by status
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        // Search by request number
+        if ($request->has('search') && $request->search !== '') {
+            $query->where('po_number', 'like', '%' . $request->search . '%');
+        }
+
+        $purchaseRequests = $query->latest()->paginate(15);
+
+        $stats = [
+            'total_requests' => PurchaseOrder::where('branch_id', $user->branch_id)
+                ->where('order_type', 'branch_request')->count(),
+            'pending_requests' => PurchaseOrder::where('branch_id', $user->branch_id)
+                ->where('order_type', 'branch_request')
+                ->where('status', 'pending')->count(),
+            'approved_requests' => PurchaseOrder::where('branch_id', $user->branch_id)
+                ->where('order_type', 'branch_request')
+                ->where('status', 'approved')->count(),
+            'this_month_requests' => PurchaseOrder::where('branch_id', $user->branch_id)
+                ->where('order_type', 'branch_request')
+                ->whereMonth('created_at', now()->month)->count(),
+        ];
+
+        return view('purchase-requests.index', compact('purchaseRequests', 'stats'));
+    }
+
+    /**
+     * Show form for creating branch purchase request.
+     */
+    public function createBranchRequest()
+    {
+        $user = Auth::user();
+        
+        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
+            abort(403, 'Access denied. Branch managers only.');
+        }
+
+        $products = Product::active()->orderBy('name')->get();
+        $branch = Branch::find($user->branch_id);
+
+        return view('purchase-requests.create', compact('products', 'branch'));
+    }
+
+    /**
+     * Store branch purchase request.
+     */
+    public function storeBranchRequest(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
+            abort(403, 'Access denied. Branch managers only.');
+        }
+
+        $request->validate([
+            'expected_delivery_date' => 'required|date|after:today',
+            'notes' => 'nullable|string',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.reason' => 'required|string|max:255',
+        ]);
+
+        DB::transaction(function () use ($request, $user) {
+            // Generate request number
+            $requestNumber = 'PR-' . date('Y') . '-' . str_pad(
+                PurchaseOrder::where('order_type', 'branch_request')->count() + 1, 
+                4, '0', STR_PAD_LEFT
+            );
+
+            // Create purchase request (not to vendor, but to main branch)
+            $purchaseRequest = PurchaseOrder::create([
+                'po_number' => $requestNumber,
+                'vendor_id' => null, // No vendor - this is a request to main branch
+                'branch_id' => $user->branch_id,
+                'user_id' => $user->id,
+                'status' => 'pending',
+                'order_type' => 'branch_request',
+                'payment_terms' => 'As per main branch policy',
+                'transport_cost' => 0,
+                'notes' => $request->notes,
+                'expected_delivery_date' => $request->expected_delivery_date,
+                'priority' => $request->priority,
+                'terminology_notes' => 'Branch Purchase Request - sent to main branch for approval and fulfillment',
+            ]);
+
+            // Create purchase request items
+            $subtotal = 0;
+            foreach ($request->items as $item) {
+                $product = Product::find($item['product_id']);
+                $estimatedPrice = $product->purchase_price ?? 0; // Use product's standard price for estimation
+                $totalPrice = $item['quantity'] * $estimatedPrice;
+                $subtotal += $totalPrice;
+
+                PurchaseOrderItem::create([
+                    'purchase_order_id' => $purchaseRequest->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $estimatedPrice,
+                    'total_price' => $totalPrice,
+                    'notes' => $item['reason'],
+                ]);
+            }
+
+            // Update totals (estimated)
+            $purchaseRequest->update([
+                'subtotal' => $subtotal,
+                'tax_amount' => 0, // Will be calculated by main branch
+                'total_amount' => $subtotal,
+            ]);
+        });
+
+        return redirect()->route('purchase-requests.index')
+            ->with('success', 'Purchase request sent to main branch successfully!');
+    }
+
+    /**
+     * Show branch purchase request.
+     */
+    public function showBranchRequest(PurchaseOrder $purchaseOrder)
+    {
+        $user = Auth::user();
+        
+        // Verify access
+        if (!$user->hasRole('branch_manager') || $purchaseOrder->branch_id !== $user->branch_id) {
+            abort(403, 'Access denied.');
+        }
+
+        $purchaseOrder->load(['branch', 'user', 'purchaseOrderItems.product']);
+
+        return view('purchase-requests.show', compact('purchaseOrder'));
+    }
 }

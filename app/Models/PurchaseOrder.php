@@ -37,6 +37,7 @@ class PurchaseOrder extends Model
         'terminology_notes',
         'expected_delivery_date',
         'actual_delivery_date',
+        'priority',
     ];
 
     protected $casts = [

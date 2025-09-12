@@ -142,7 +142,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Enhanced Product Management
     Route::get('/products/categories', [ProductController::class, 'getCategories']);
     Route::put('/products/{product}/branch-pricing', [ProductController::class, 'updateBranchPricing']);
-    Route::put('/products/{product}/vendor-pricing', [ProductController::class, 'updateVendorPricing']);
+    // Vendor pricing - ONLY for main branch (admin role)
+    Route::middleware('role:admin')->group(function () {
+        Route::put('/products/{product}/vendor-pricing', [ProductController::class, 'updateVendorPricing']);
+    });
     Route::put('/products/categories/bulk', [ProductController::class, 'bulkUpdateCategories']);
     Route::get('/products/category/{category}', [ProductController::class, 'getByCategory']);
 

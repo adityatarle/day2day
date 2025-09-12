@@ -123,8 +123,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/customers/{customer}/purchase-history', [CustomerController::class, 'purchaseHistory'])->name('customers.purchaseHistory');
     });
     
-    // Vendor management
-    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
+    // Vendor management - ONLY for main branch (super_admin, admin)
+    // Sub-branches should NOT have access to vendors as vendors are confidential to main branch
+    Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
         Route::get('/vendors/create', [VendorController::class, 'create'])->name('vendors.create');
         Route::post('/vendors', [VendorController::class, 'store'])->name('vendors.store');
@@ -139,12 +140,19 @@ Route::middleware('auth')->group(function () {
     });
     
     // Purchase Order management
+    // Main branch (admin) can create orders to vendors and manage all orders
+    // Sub-branches (branch_manager) can only create purchase REQUESTS to main branch and view their own orders
     Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
         Route::get('/purchase-orders/dashboard', [PurchaseOrderController::class, 'dashboard'])->name('purchase-orders.dashboard');
+        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+        Route::get('/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'generatePdf'])->name('purchase-orders.pdf');
+    });
+    
+    // Purchase Order creation and vendor operations - ONLY for main branch
+    Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
         Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
-        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
         Route::get('/purchase-orders/{purchaseOrder}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
         Route::put('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
         Route::post('/purchase-orders/{purchaseOrder}/send', [PurchaseOrderController::class, 'send'])->name('purchase-orders.send');
@@ -152,8 +160,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'showReceiveForm'])->name('purchase-orders.receive-form');
         Route::post('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
         Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
-        Route::get('/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'generatePdf'])->name('purchase-orders.pdf');
         Route::get('/api/vendors/{vendor}/products', [PurchaseOrderController::class, 'getVendorProducts'])->name('api.vendor-products');
+    });
+    
+    // Branch Purchase Requests - Sub-branches can only send requests to main branch
+    Route::middleware('role:branch_manager')->group(function () {
+        Route::get('/purchase-requests', [PurchaseOrderController::class, 'branchRequests'])->name('purchase-requests.index');
+        Route::get('/purchase-requests/create', [PurchaseOrderController::class, 'createBranchRequest'])->name('purchase-requests.create');
+        Route::post('/purchase-requests', [PurchaseOrderController::class, 'storeBranchRequest'])->name('purchase-requests.store');
+        Route::get('/purchase-requests/{purchaseOrder}', [PurchaseOrderController::class, 'showBranchRequest'])->name('purchase-requests.show');
     });
     
     // Reports
@@ -370,12 +385,13 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware('role:branch_manager,cashier')->group(function () {
         Route::get('/day2day/branch/dashboard', [Day2DayBranchController::class, 'index'])->name('day2day.branch.dashboard');
-        Route::get('/day2day/branch/vendors', [Day2DayBranchController::class, 'getVendors'])->name('day2day.branch.vendors');
+        // Removed vendor access - sub-branches should NOT interact with vendors directly
         Route::get('/day2day/branch/products', [Day2DayBranchController::class, 'getBranchProducts'])->name('day2day.branch.products');
-        Route::post('/day2day/branch/purchase-entry', [Day2DayBranchController::class, 'createPurchaseEntry'])->name('day2day.branch.purchase-entry');
+        Route::post('/day2day/branch/material-receipt', [Day2DayBranchController::class, 'recordMaterialReceipt'])->name('day2day.branch.material-receipt');
         Route::post('/day2day/branch/record-damage', [Day2DayBranchController::class, 'recordDamage'])->name('day2day.branch.record-damage');
         Route::get('/day2day/branch/sales-report', [Day2DayBranchController::class, 'getSalesReport'])->name('day2day.branch.sales-report');
         Route::get('/day2day/branch/purchase-report', [Day2DayBranchController::class, 'getPurchaseReport'])->name('day2day.branch.purchase-report');
+        Route::post('/day2day/branch/purchase-request', [Day2DayBranchController::class, 'createPurchaseRequest'])->name('day2day.branch.purchase-request');
     });
 });
 

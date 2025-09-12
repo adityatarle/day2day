@@ -409,6 +409,15 @@
                 </div>
                 <span class="font-medium">Purchase Orders</span>
             </a>
+
+            @if($user && $user->isAdmin())
+            <a href="{{ route('admin.branch-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.branch-orders.*') ? 'active text-white' : '' }}">
+                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-store"></i>
+                </div>
+                <span class="font-medium">Orders from Branches</span>
+            </a>
+            @endif
             
             <a href="{{ route('reports.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('reports.*') ? 'active text-white' : '' }}">
                 <div class="nav-icon rounded-lg flex items-center justify-center mr-3">

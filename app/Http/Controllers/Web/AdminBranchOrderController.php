@@ -93,7 +93,7 @@ class AdminBranchOrderController extends Controller
     public function approve(Request $request, PurchaseOrder $branchOrder)
     {
         $request->validate([
-            'vendor_id' => 'required|exists:vendors,id',
+            'vendor_id' => 'nullable|exists:vendors,id',
             'admin_notes' => 'nullable|string',
         ]);
 
@@ -101,23 +101,25 @@ class AdminBranchOrderController extends Controller
             $branchOrder->update([
                 'status' => 'approved',
                 'vendor_id' => $request->vendor_id,
-                'notes' => $branchOrder->notes . "\n\nAdmin Notes: " . $request->admin_notes,
+                'notes' => trim(($branchOrder->notes ?? '') . (filled($request->admin_notes) ? ("\n\nAdmin Notes: " . $request->admin_notes) : '')),
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
             ]);
 
-            // Update items with vendor pricing if available
-            foreach ($branchOrder->purchaseOrderItems as $item) {
-                $vendorProduct = DB::table('product_vendors')
-                    ->where('product_id', $item->product_id)
-                    ->where('vendor_id', $request->vendor_id)
-                    ->first();
+            // If a vendor is assigned, update items with vendor pricing
+            if ($request->vendor_id) {
+                foreach ($branchOrder->purchaseOrderItems as $item) {
+                    $vendorProduct = DB::table('product_vendors')
+                        ->where('product_id', $item->product_id)
+                        ->where('vendor_id', $request->vendor_id)
+                        ->first();
 
-                if ($vendorProduct) {
-                    $item->update([
-                        'unit_price' => $vendorProduct->supply_price,
-                        'total_price' => $item->quantity * $vendorProduct->supply_price,
-                    ]);
+                    if ($vendorProduct) {
+                        $item->update([
+                            'unit_price' => $vendorProduct->supply_price,
+                            'total_price' => $item->quantity * $vendorProduct->supply_price,
+                        ]);
+                    }
                 }
             }
 

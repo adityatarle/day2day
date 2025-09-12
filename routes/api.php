@@ -273,6 +273,26 @@ Route::middleware('auth:sanctum')->group(function () {
             return response()->json($items);
         });
     });
+
+    // Mobile App API Routes for Branch Managers
+    Route::prefix('mobile')->middleware('role:branch_manager,admin,super_admin')->group(function () {
+        // Dashboard data
+        Route::get('/dashboard', [\App\Http\Controllers\Api\StockTransferApiController::class, 'getDashboardData']);
+        
+        // Stock transfers for mobile
+        Route::get('/transfers', [\App\Http\Controllers\Api\StockTransferApiController::class, 'getBranchTransfers']);
+        Route::get('/transfers/{transferId}', [\App\Http\Controllers\Api\StockTransferApiController::class, 'getTransferDetails']);
+        Route::post('/transfers/{transferId}/confirm-receipt', [\App\Http\Controllers\Api\StockTransferApiController::class, 'confirmReceipt']);
+        
+        // Queries management for mobile
+        Route::get('/queries', [\App\Http\Controllers\Api\StockTransferApiController::class, 'getBranchQueries']);
+        Route::get('/queries/{queryId}', [\App\Http\Controllers\Api\StockTransferApiController::class, 'getQueryDetails']);
+        Route::post('/queries', [\App\Http\Controllers\Api\StockTransferApiController::class, 'createQuery']);
+        Route::post('/queries/{queryId}/respond', [\App\Http\Controllers\Api\StockTransferApiController::class, 'addQueryResponse']);
+        
+        // Statistics for mobile dashboard
+        Route::get('/statistics', [\App\Http\Controllers\Api\StockTransferApiController::class, 'getBranchStatistics']);
+    });
     
     // Financial Impact and Transport Expense APIs
     Route::middleware('role:admin,super_admin,branch_manager')->prefix('stock-management')->group(function () {

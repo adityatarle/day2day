@@ -52,8 +52,16 @@ class InventoryController extends Controller
      */
     public function addStockForm()
     {
+        $user = auth()->user();
         $products = Product::with(['branches'])->active()->get();
-        $branches = Branch::all();
+        
+        // Filter branches for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branches = collect([$user->branch])->filter();
+        } else {
+            $branches = Branch::all();
+        }
+        
         $vendors = \App\Models\Vendor::all();
 
         return view('inventory.add-stock', compact('products', 'branches', 'vendors'));
@@ -133,8 +141,14 @@ class InventoryController extends Controller
 
             DB::commit();
 
-            return redirect()->route('inventory.addStockForm')
-                ->with('success', 'Stock added successfully! New stock quantity: ' . ($currentStock + $request->quantity));
+            // Redirect based on user role
+            if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+                return redirect()->route('inventory.addStockForm')
+                    ->with('success', 'Stock added successfully! New stock quantity: ' . ($currentStock + $request->quantity));
+            } else {
+                return redirect()->route('inventory.addStockForm')
+                    ->with('success', 'Stock added successfully! New stock quantity: ' . ($currentStock + $request->quantity));
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -149,8 +163,15 @@ class InventoryController extends Controller
      */
     public function recordLossForm()
     {
+        $user = auth()->user();
         $products = Product::with(['branches'])->active()->get();
-        $branches = Branch::all();
+        
+        // Filter branches for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branches = collect([$user->branch])->filter();
+        } else {
+            $branches = Branch::all();
+        }
 
         return view('inventory.record-loss', compact('products', 'branches'));
     }
@@ -213,8 +234,14 @@ class InventoryController extends Controller
             ]);
         });
 
-        return redirect()->route('inventory.lossTracking')
-            ->with('success', 'Loss recorded successfully!');
+        // Redirect based on user role  
+        if (auth()->user()->hasRole('branch_manager') || auth()->user()->hasRole('cashier')) {
+            return redirect()->route('inventory.lossTracking')
+                ->with('success', 'Loss recorded successfully!');
+        } else {
+            return redirect()->route('inventory.lossTracking')
+                ->with('success', 'Loss recorded successfully!');
+        }
     }
 
     /**
@@ -222,9 +249,18 @@ class InventoryController extends Controller
      */
     public function batches()
     {
-        $batches = Batch::with(['product', 'branch'])
-            ->latest()
-            ->paginate(20);
+        $user = auth()->user();
+        $query = Batch::with(['product', 'branch']);
+        
+        // Filter by branch for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branch = $user->branch;
+            if ($branch) {
+                $query->where('branch_id', $branch->id);
+            }
+        }
+        
+        $batches = $query->latest()->paginate(20);
 
         return view('inventory.batches', compact('batches'));
     }
@@ -234,9 +270,18 @@ class InventoryController extends Controller
      */
     public function stockMovements()
     {
-        $movements = StockMovement::with(['product', 'branch'])
-            ->latest()
-            ->paginate(20);
+        $user = auth()->user();
+        $query = StockMovement::with(['product', 'branch']);
+        
+        // Filter by branch for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branch = $user->branch;
+            if ($branch) {
+                $query->where('branch_id', $branch->id);
+            }
+        }
+        
+        $movements = $query->latest()->paginate(20);
 
         return view('inventory.stock-movements', compact('movements'));
     }
@@ -246,15 +291,24 @@ class InventoryController extends Controller
      */
     public function lossTracking(Request $request)
     {
+        $user = auth()->user();
         $query = \App\Models\LossTracking::with(['product', 'branch', 'batch', 'user']);
+
+        // Filter by branch for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branch = $user->branch;
+            if ($branch) {
+                $query->where('branch_id', $branch->id);
+            }
+        }
 
         // Filter by loss type
         if ($request->has('loss_type') && $request->loss_type !== '') {
             $query->where('loss_type', $request->loss_type);
         }
 
-        // Filter by branch
-        if ($request->has('branch_id') && $request->branch_id !== '') {
+        // Filter by branch (for admin users who can select specific branches)
+        if ($request->has('branch_id') && $request->branch_id !== '' && !($user->hasRole('branch_manager') || $user->hasRole('cashier'))) {
             $query->where('branch_id', $request->branch_id);
         }
 
@@ -293,11 +347,27 @@ class InventoryController extends Controller
      */
     public function valuation()
     {
-        $products = Product::with(['branches'])
-            ->whereHas('branches', function ($query) {
-                $query->where('current_stock', '>', 0);
-            })
-            ->get();
+        $user = auth()->user();
+        $query = Product::with(['branches']);
+        
+        // Filter by branch for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branch = $user->branch;
+            if ($branch) {
+                $query->with(['branches' => function ($branchQuery) use ($branch) {
+                    $branchQuery->where('branches.id', $branch->id);
+                }])->whereHas('branches', function ($branchQuery) use ($branch) {
+                    $branchQuery->where('branches.id', $branch->id)
+                              ->where('current_stock', '>', 0);
+                });
+            }
+        } else {
+            $query->whereHas('branches', function ($branchQuery) {
+                $branchQuery->where('current_stock', '>', 0);
+            });
+        }
+        
+        $products = $query->get();
 
         $totalValue = $products->sum(function ($product) {
             return $product->branches->sum(function ($branch) use ($product) {

@@ -9,7 +9,11 @@
             <h1 class="text-2xl font-bold text-gray-900">Add Stock</h1>
             <p class="text-gray-600 mt-1">Record incoming stock for products and branches.</p>
         </div>
-        <a href="{{ route('inventory.index') }}" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">Back to Inventory</a>
+        @if(auth()->user()->hasRole('branch_manager') || auth()->user()->hasRole('cashier'))
+            <a href="{{ route('branch.inventory.index') }}" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">Back to Inventory</a>
+        @else
+            <a href="{{ route('inventory.index') }}" class="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50">Back to Inventory</a>
+        @endif
     </div>
 
     @if(session('success'))

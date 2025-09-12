@@ -259,4 +259,144 @@ class StockFinancialImpact extends Model
 
         return $query->sum('amount') - $query->sum('recovered_amount');
     }
+
+    /**
+     * Get age of impact in days
+     */
+    public function getAgeInDays(): int
+    {
+        return now()->diffInDays($this->impact_date);
+    }
+
+    /**
+     * Check if impact is old (more than 30 days)
+     */
+    public function isOld(): bool
+    {
+        return $this->getAgeInDays() > 30;
+    }
+
+    /**
+     * Get recovery status text
+     */
+    public function getRecoveryStatusText(): string
+    {
+        if (!$this->is_recoverable) {
+            return 'Non-recoverable';
+        }
+
+        if ($this->isFullyRecovered()) {
+            return 'Fully recovered';
+        } elseif ($this->isPartiallyRecovered()) {
+            return 'Partially recovered';
+        } else {
+            return 'Pending recovery';
+        }
+    }
+
+    /**
+     * Get remaining recoverable amount
+     */
+    public function getRemainingRecoverableAmount(): float
+    {
+        if (!$this->is_recoverable) {
+            return 0;
+        }
+
+        return max(0, $this->amount - $this->recovered_amount);
+    }
+
+    /**
+     * Check if impact requires urgent attention (old and unrecovered)
+     */
+    public function requiresUrgentAttention(): bool
+    {
+        return $this->is_recoverable && 
+               $this->getRemainingRecoverableAmount() > 0 && 
+               $this->getAgeInDays() > 14; // Older than 2 weeks
+    }
+
+    /**
+     * Scope for impacts requiring urgent attention
+     */
+    public function scopeRequiringUrgentAttention($query)
+    {
+        return $query->where('is_recoverable', true)
+                    ->whereRaw('amount > recovered_amount')
+                    ->where('impact_date', '<', now()->subDays(14));
+    }
+
+    /**
+     * Scope for recent impacts (last 7 days)
+     */
+    public function scopeRecent($query)
+    {
+        return $query->where('impact_date', '>=', now()->subDays(7));
+    }
+
+    /**
+     * Scope for high value impacts (above threshold)
+     */
+    public function scopeHighValue($query, float $threshold = 1000)
+    {
+        return $query->where('amount', '>', $threshold);
+    }
+
+    /**
+     * Static method to get impact summary for dashboard
+     */
+    public static function getImpactSummary(?int $branchId = null, ?string $period = 'month'): array
+    {
+        $query = static::query();
+
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        // Set date range based on period
+        switch ($period) {
+            case 'week':
+                $query->where('impact_date', '>=', now()->subWeek());
+                break;
+            case 'month':
+                $query->where('impact_date', '>=', now()->subMonth());
+                break;
+            case 'quarter':
+                $query->where('impact_date', '>=', now()->subQuarter());
+                break;
+            case 'year':
+                $query->where('impact_date', '>=', now()->subYear());
+                break;
+        }
+
+        $impacts = $query->get();
+
+        return [
+            'total_count' => $impacts->count(),
+            'total_amount' => $impacts->sum('amount'),
+            'total_recovered' => $impacts->sum('recovered_amount'),
+            'net_impact' => $impacts->sum('amount') - $impacts->sum('recovered_amount'),
+            'recovery_rate' => $impacts->sum('amount') > 0 ? 
+                ($impacts->sum('recovered_amount') / $impacts->sum('amount')) * 100 : 0,
+            'by_category' => [
+                'direct_loss' => $impacts->where('impact_category', 'direct_loss')->sum('amount'),
+                'indirect_loss' => $impacts->where('impact_category', 'indirect_loss')->sum('amount'),
+                'cost' => $impacts->where('impact_category', 'cost')->sum('amount'),
+                'recovery' => $impacts->where('impact_category', 'recovery')->sum('amount'),
+            ],
+            'recoverable_stats' => [
+                'total_recoverable' => $impacts->where('is_recoverable', true)->sum('amount'),
+                'recovered_amount' => $impacts->where('is_recoverable', true)->sum('recovered_amount'),
+                'pending_recovery' => $impacts->where('is_recoverable', true)->sum(function ($impact) {
+                    return max(0, $impact->amount - $impact->recovered_amount);
+                }),
+                'urgent_count' => $impacts->filter(fn($i) => $i->requiresUrgentAttention())->count(),
+            ],
+            'top_impact_types' => $impacts->groupBy('impact_type')
+                                        ->map(fn($group) => $group->sum('amount'))
+                                        ->sortDesc()
+                                        ->take(5)
+                                        ->toArray(),
+        ];
+    }
 }

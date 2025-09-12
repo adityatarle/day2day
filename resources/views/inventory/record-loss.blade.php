@@ -15,9 +15,15 @@
                 <a href="{{ route('inventory.lossTracking') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                     <i class="fas fa-chart-line mr-2"></i>View Loss Records
                 </a>
-                <a href="{{ route('inventory.index') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Inventory
-                </a>
+                @if(auth()->user()->hasRole('branch_manager') || auth()->user()->hasRole('cashier'))
+                    <a href="{{ route('branch.inventory.index') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Inventory
+                    </a>
+                @else
+                    <a href="{{ route('inventory.index') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Inventory
+                    </a>
+                @endif
             </div>
         </div>
     </div>

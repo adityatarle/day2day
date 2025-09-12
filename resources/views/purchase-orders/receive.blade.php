@@ -13,8 +13,9 @@
                 </svg>
             </a>
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Receive Purchase Order</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Receive Materials (Convert to Received Order)</h1>
                 <p class="text-gray-600">{{ $purchaseOrder->po_number }} - {{ $purchaseOrder->vendor->name }}</p>
+                <p class="text-sm text-blue-600 mt-1">Converting Purchase Order to Received Order</p>
             </div>
         </div>
     </div>

@@ -16,7 +16,13 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900">{{ $purchaseOrder->po_number }}</h1>
-                        <p class="text-gray-600">Purchase Order Details</p>
+                        <p class="text-gray-600">
+                            @if($purchaseOrder->isReceived())
+                                Received Order Details (Materials Received)
+                            @else
+                                Purchase Order Details (Outgoing to Vendor)
+                            @endif
+                        </p>
                     </div>
                     <div class="flex gap-3">
                         <a href="{{ route('purchase-orders.pdf', $purchaseOrder) }}" target="_blank" 
@@ -41,7 +47,7 @@
                                 <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                 </svg>
-                                Receive Order
+                                Receive Materials
                             </a>
                         @endif
                     </div>
@@ -321,8 +327,8 @@
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="font-medium text-gray-900">Order Received</p>
-                    <p class="text-sm text-gray-600">{{ $purchaseOrder->actual_delivery_date ? $purchaseOrder->actual_delivery_date->format('M d, Y H:i') : 'Received' }}</p>
+                    <p class="font-medium text-gray-900">Received Order (Materials Received)</p>
+                    <p class="text-sm text-gray-600">{{ $purchaseOrder->actual_delivery_date ? $purchaseOrder->actual_delivery_date->format('M d, Y H:i') : 'Materials Received' }}</p>
                 </div>
             </div>
             @endif

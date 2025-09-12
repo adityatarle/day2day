@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Purchase Orders</h1>
-            <p class="text-gray-600">Manage vendor purchase orders and inventory procurement</p>
+            <p class="text-gray-600">Manage outgoing Purchase Orders to vendors and track Received Orders (incoming materials)</p>
         </div>
         <div class="flex gap-3 mt-4 sm:mt-0">
             <a href="{{ route('purchase-orders.dashboard') }}" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">

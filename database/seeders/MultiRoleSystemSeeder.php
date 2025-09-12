@@ -249,7 +249,7 @@ class MultiRoleSystemSeeder extends Seeder
         $cashierRole = Role::where('name', 'cashier')->first();
         $deliveryRole = Role::where('name', 'delivery_boy')->first();
 
-        $mumbaibranch = Branch::where('code', 'MBC001')->first();
+        $mumbaiBranch = Branch::where('code', 'MBC001')->first();
         $delhiBranch = Branch::where('code', 'DMB001')->first();
         $bangaloreBranch = Branch::where('code', 'BTP001')->first();
 

@@ -24,7 +24,16 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
-        // Redirect to role-specific dashboards
+        // Check if this is a Day2Day user and redirect to Day2Day dashboards
+        if ($user->branch && str_starts_with($user->branch->code, 'D2D-')) {
+            if ($user->hasRole('admin')) {
+                return redirect()->route('day2day.admin.dashboard');
+            } elseif ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+                return redirect()->route('day2day.branch.dashboard');
+            }
+        }
+        
+        // Redirect to role-specific dashboards for non-Day2Day users
         if ($user->isSuperAdmin()) {
             return redirect()->route('dashboard.super_admin');
         } elseif ($user->isAdmin()) {

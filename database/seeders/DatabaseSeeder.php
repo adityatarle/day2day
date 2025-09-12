@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MultiRoleSystemSeeder::class,
             InventorySystemSeeder::class,
+            Day2DaySeeder::class,
         ]);
 
         // Optionally call other data seeders for products and demo data

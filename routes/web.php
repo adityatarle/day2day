@@ -26,6 +26,8 @@ use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\BranchManagementController;
 use App\Http\Controllers\Web\PosSessionController;
 use App\Http\Controllers\Auth\OutletAuthController;
+use App\Http\Controllers\Day2Day\AdminDashboardController as Day2DayAdminController;
+use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -354,6 +356,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', function () {
         return view('settings');
     })->name('settings');
+    
+    // Day2Day specific routes
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/day2day/admin/dashboard', [Day2DayAdminController::class, 'index'])->name('day2day.admin.dashboard');
+        Route::get('/day2day/admin/branches', [Day2DayAdminController::class, 'getBranches'])->name('day2day.admin.branches');
+        Route::get('/day2day/admin/products', [Day2DayAdminController::class, 'getProducts'])->name('day2day.admin.products');
+        Route::get('/day2day/admin/cities', [Day2DayAdminController::class, 'getCities'])->name('day2day.admin.cities');
+        Route::post('/day2day/admin/supply-materials', [Day2DayAdminController::class, 'supplyMaterials'])->name('day2day.admin.supply-materials');
+        Route::get('/day2day/admin/branch-reports/{branch}', [Day2DayAdminController::class, 'getBranchReports'])->name('day2day.admin.branch-reports');
+        Route::post('/day2day/admin/update-city-pricing', [Day2DayAdminController::class, 'updateCityPricing'])->name('day2day.admin.update-city-pricing');
+    });
+    
+    Route::middleware('role:branch_manager,cashier')->group(function () {
+        Route::get('/day2day/branch/dashboard', [Day2DayBranchController::class, 'index'])->name('day2day.branch.dashboard');
+        Route::get('/day2day/branch/vendors', [Day2DayBranchController::class, 'getVendors'])->name('day2day.branch.vendors');
+        Route::get('/day2day/branch/products', [Day2DayBranchController::class, 'getBranchProducts'])->name('day2day.branch.products');
+        Route::post('/day2day/branch/purchase-entry', [Day2DayBranchController::class, 'createPurchaseEntry'])->name('day2day.branch.purchase-entry');
+        Route::post('/day2day/branch/record-damage', [Day2DayBranchController::class, 'recordDamage'])->name('day2day.branch.record-damage');
+        Route::get('/day2day/branch/sales-report', [Day2DayBranchController::class, 'getSalesReport'])->name('day2day.branch.sales-report');
+        Route::get('/day2day/branch/purchase-report', [Day2DayBranchController::class, 'getPurchaseReport'])->name('day2day.branch.purchase-report');
+    });
 });
 
 // Fallback route

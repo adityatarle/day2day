@@ -24,9 +24,13 @@ class PurchaseOrder extends Model
         'po_number',
         'vendor_id',
         'branch_id',
+        'branch_request_id',
         'user_id',
         'status',
         'order_type',
+        'delivery_address_type',
+        'ship_to_branch_id',
+        'delivery_address',
         'is_received_order',
         'payment_terms',
         'subtotal',
@@ -79,6 +83,22 @@ class PurchaseOrder extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Get the referenced branch request (self-relation when this PO is created for a branch order).
+     */
+    public function branchRequest(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'branch_request_id');
+    }
+
+    /**
+     * Get the branch where goods should be delivered (ship-to), may differ from ordering branch.
+     */
+    public function shipToBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'ship_to_branch_id');
     }
 
     /**
@@ -271,5 +291,28 @@ class PurchaseOrder extends Model
             $q->where('order_type', 'received_order')
               ->orWhere('is_received_order', true);
         });
+    }
+
+    /**
+     * Resolve delivery address string for display/printing.
+     */
+    public function getResolvedDeliveryAddress(): string
+    {
+        if ($this->delivery_address_type === 'custom' && filled($this->delivery_address)) {
+            return $this->delivery_address;
+        }
+
+        if ($this->delivery_address_type === 'branch' && $this->ship_to_branch_id && $this->shipToBranch) {
+            $branch = $this->shipToBranch;
+            return trim(($branch->name ? ($branch->name . ' - ') : '') . ($branch->address ?? ''));
+        }
+
+        // Default: Admin/Main warehouse address from the main branch if available
+        $mainBranch = Branch::where('code', 'FDC001')->first();
+        if ($mainBranch && $mainBranch->address) {
+            return 'Main Warehouse - ' . $mainBranch->address;
+        }
+
+        return 'Main Warehouse';
     }
 }

@@ -143,12 +143,16 @@
             <h3>Order Information</h3>
             <p><strong>Order Date:</strong> {{ $purchaseOrder->created_at->format('M d, Y') }}</p>
             <p><strong>Branch:</strong> {{ $purchaseOrder->branch->name }}</p>
+            @if($purchaseOrder->branch_request_id && $purchaseOrder->branchRequest)
+                <p><strong>Branch Request Ref:</strong> #{{ $purchaseOrder->branchRequest->po_number }} ({{ $purchaseOrder->branchRequest->branch->name ?? 'Branch' }})</p>
+            @endif
             <p><strong>Payment Terms:</strong> {{ ucfirst(str_replace('_', ' ', $purchaseOrder->payment_terms)) }}</p>
             <p><strong>Expected Delivery:</strong> {{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</p>
             @if($purchaseOrder->actual_delivery_date)
                 <p><strong>Actual Delivery:</strong> {{ $purchaseOrder->actual_delivery_date->format('M d, Y') }}</p>
             @endif
             <p><strong>Created By:</strong> {{ $purchaseOrder->user->name }}</p>
+            <p><strong>Ship To:</strong> {{ $purchaseOrder->getResolvedDeliveryAddress() }}</p>
         </div>
     </div>
 

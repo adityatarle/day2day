@@ -124,6 +124,7 @@
                 <div class="space-y-3">
                     <div class="alert alert-info">Order approved. You can fulfill it now.</div>
                     <a href="{{ route('admin.branch-orders.fulfill-form', $branchOrder) }}" class="btn btn-success w-full text-center">Fulfill Order</a>
+                    <a href="{{ route('purchase-orders.create', ['branch_request_id' => $branchOrder->id]) }}" class="btn btn-primary w-full text-center">Create Vendor PO from this Request</a>
                 </div>
                 @elseif($branchOrder->status === 'fulfilled')
                 <div class="alert alert-success">Order fulfilled on {{ optional($branchOrder->fulfilled_at)->format('M d, Y H:i') }}</div>

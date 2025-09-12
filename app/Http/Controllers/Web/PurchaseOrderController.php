@@ -113,7 +113,17 @@ class PurchaseOrderController extends Controller
             $selectedBranch = null;
         }
 
-        return view('purchase-orders.create', compact('vendors', 'branches', 'products', 'selectedBranch'));
+        // Optional prefill: branch_request_id from query to link PO to branch request
+        $branchRequestId = request('branch_request_id');
+        $branchRequest = null;
+        if ($branchRequestId) {
+            $branchRequest = PurchaseOrder::where('id', $branchRequestId)
+                ->where('order_type', 'branch_request')
+                ->with(['purchaseOrderItems.product', 'branch'])
+                ->first();
+        }
+
+        return view('purchase-orders.create', compact('vendors', 'branches', 'products', 'selectedBranch', 'branchRequest'));
     }
 
     /**
@@ -133,10 +143,15 @@ class PurchaseOrderController extends Controller
         $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
             'branch_id' => 'required|exists:branches,id',
+            'branch_request_id' => 'nullable|exists:purchase_orders,id',
             'payment_terms' => 'required|string',
             'expected_delivery_date' => 'required|date|after:today',
             'transport_cost' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
+            // Delivery address
+            'delivery_address_type' => 'required|in:admin_main,branch,custom',
+            'ship_to_branch_id' => 'nullable|required_if:delivery_address_type,branch|exists:branches,id',
+            'delivery_address' => 'nullable|required_if:delivery_address_type,custom|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
@@ -152,8 +167,13 @@ class PurchaseOrderController extends Controller
                 'po_number' => $poNumber,
                 'vendor_id' => $request->vendor_id,
                 'branch_id' => $request->branch_id,
+                'branch_request_id' => $request->branch_request_id,
                 'user_id' => Auth::id(),
                 'status' => 'draft',
+                'order_type' => 'purchase_order',
+                'delivery_address_type' => $request->delivery_address_type,
+                'ship_to_branch_id' => $request->delivery_address_type === 'branch' ? $request->ship_to_branch_id : null,
+                'delivery_address' => $request->delivery_address_type === 'custom' ? $request->delivery_address : null,
                 'payment_terms' => $request->payment_terms,
                 'transport_cost' => $request->transport_cost ?? 0,
                 'notes' => $request->notes,
@@ -182,6 +202,13 @@ class PurchaseOrderController extends Controller
                 'tax_amount' => $taxAmount,
                 'total_amount' => $subtotal + $taxAmount + $purchaseOrder->transport_cost,
             ]);
+
+            // If linked to a branch request, annotate terminology notes
+            if ($request->branch_request_id) {
+                $purchaseOrder->update([
+                    'terminology_notes' => trim(($purchaseOrder->terminology_notes ?? '') . '\nLinked to Branch Request #' . $request->branch_request_id),
+                ]);
+            }
         });
 
         return redirect()->route('purchase-orders.index')
@@ -231,10 +258,15 @@ class PurchaseOrderController extends Controller
         $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
             'branch_id' => 'required|exists:branches,id',
+            'branch_request_id' => 'nullable|exists:purchase_orders,id',
             'payment_terms' => 'required|string',
             'expected_delivery_date' => 'required|date|after:today',
             'transport_cost' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
+            // Delivery address
+            'delivery_address_type' => 'required|in:admin_main,branch,custom',
+            'ship_to_branch_id' => 'nullable|required_if:delivery_address_type,branch|exists:branches,id',
+            'delivery_address' => 'nullable|required_if:delivery_address_type,custom|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
@@ -246,6 +278,11 @@ class PurchaseOrderController extends Controller
             $purchaseOrder->update([
                 'vendor_id' => $request->vendor_id,
                 'branch_id' => $request->branch_id,
+                'branch_request_id' => $request->branch_request_id,
+                'order_type' => 'purchase_order',
+                'delivery_address_type' => $request->delivery_address_type,
+                'ship_to_branch_id' => $request->delivery_address_type === 'branch' ? $request->ship_to_branch_id : null,
+                'delivery_address' => $request->delivery_address_type === 'custom' ? $request->delivery_address : null,
                 'payment_terms' => $request->payment_terms,
                 'transport_cost' => $request->transport_cost ?? 0,
                 'notes' => $request->notes,
@@ -333,6 +370,17 @@ class PurchaseOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $purchaseOrder) {
+            // Determine where to receive stock based on delivery address
+            $targetBranchId = $purchaseOrder->branch_id; // default fallback
+            if ($purchaseOrder->delivery_address_type === 'branch' && $purchaseOrder->ship_to_branch_id) {
+                $targetBranchId = $purchaseOrder->ship_to_branch_id;
+            } elseif ($purchaseOrder->delivery_address_type === 'admin_main') {
+                $mainBranch = Branch::where('code', 'FDC001')->first();
+                if ($mainBranch) {
+                    $targetBranchId = $mainBranch->id;
+                }
+            }
+
             // Update purchase order status
             $purchaseOrder->markAsReceived();
 
@@ -345,7 +393,7 @@ class PurchaseOrderController extends Controller
                     // Add stock to inventory (Received Order - materials received from vendor)
                     StockMovement::create([
                         'product_id' => $purchaseOrderItem->product_id,
-                        'branch_id' => $purchaseOrder->branch_id,
+                        'branch_id' => $targetBranchId,
                         'type' => 'purchase',
                         'quantity' => $receivedQuantity,
                         'reference_type' => 'purchase_order',
@@ -355,8 +403,8 @@ class PurchaseOrderController extends Controller
 
                     // Update the product's current stock in the branch
                     $product = $purchaseOrderItem->product;
-                    $currentStock = $product->getCurrentStock($purchaseOrder->branch_id);
-                    $product->updateBranchStock($purchaseOrder->branch_id, $currentStock + $receivedQuantity);
+                    $currentStock = $product->getCurrentStock($targetBranchId);
+                    $product->updateBranchStock($targetBranchId, $currentStock + $receivedQuantity);
                 }
 
                 // Update received quantity in purchase order item

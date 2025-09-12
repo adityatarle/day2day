@@ -20,18 +20,32 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with(['branches' => function ($query) {
+        $user = auth()->user();
+        
+        $query = Product::with(['branches' => function ($query) use ($user) {
             $query->select('branches.id', 'branches.name', 'branches.code')
                   ->withPivot(['current_stock', 'is_available_online']);
+            
+            // Branch filtering for branch managers
+            if ($user && $user->hasRole('branch_manager') && $user->branch_id) {
+                $query->where('branches.id', $user->branch_id);
+            }
         }]);
+
+        // Branch filtering for branch managers in main query
+        if ($user && $user->hasRole('branch_manager') && $user->branch_id) {
+            $query->whereHas('branches', function ($q) use ($user) {
+                $q->where('branches.id', $user->branch_id);
+            });
+        }
 
         // Filter by category
         if ($request->has('category')) {
             $query->byCategory($request->category);
         }
 
-        // Filter by branch
-        if ($request->has('branch_id')) {
+        // Filter by branch (only for non-branch managers)
+        if ($request->has('branch_id') && (!$user || !$user->hasRole('branch_manager'))) {
             $query->whereHas('branches', function ($q) use ($request) {
                 $q->where('branch_id', $request->branch_id);
             });

@@ -23,6 +23,12 @@ class PurchaseOrderController extends Controller
         $query = PurchaseOrder::with(['vendor', 'branch', 'user'])
             ->withCount('purchaseOrderItems');
 
+        // Branch filtering for branch managers
+        $user = Auth::user();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
         // Filter by status
         if ($request->has('status') && $request->status !== '') {
             $query->where('status', $request->status);
@@ -33,8 +39,8 @@ class PurchaseOrderController extends Controller
             $query->where('vendor_id', $request->vendor_id);
         }
 
-        // Filter by branch
-        if ($request->has('branch_id') && $request->branch_id !== '') {
+        // Filter by branch (only for super admin and admin)
+        if ($request->has('branch_id') && $request->branch_id !== '' && !$user->hasRole('branch_manager')) {
             $query->where('branch_id', $request->branch_id);
         }
 
@@ -55,15 +61,27 @@ class PurchaseOrderController extends Controller
 
         // Get filter options
         $vendors = Vendor::active()->orderBy('name')->get();
-        $branches = Branch::orderBy('name')->get();
+        
+        // Branch filtering for dropdowns
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $branches = Branch::where('id', $user->branch_id)->orderBy('name')->get();
+        } else {
+            $branches = Branch::orderBy('name')->get();
+        }
+        
         $statuses = ['draft', 'sent', 'confirmed', 'received', 'cancelled'];
 
-        // Statistics
+        // Statistics (branch-specific for branch managers)
+        $statsQuery = PurchaseOrder::query();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $statsQuery->where('branch_id', $user->branch_id);
+        }
+        
         $stats = [
-            'total_orders' => PurchaseOrder::count(),
-            'pending_orders' => PurchaseOrder::whereIn('status', ['draft', 'sent', 'confirmed'])->count(),
-            'total_value' => PurchaseOrder::where('status', '!=', 'cancelled')->sum('total_amount'),
-            'this_month_orders' => PurchaseOrder::whereMonth('created_at', now()->month)->count(),
+            'total_orders' => (clone $statsQuery)->count(),
+            'pending_orders' => (clone $statsQuery)->whereIn('status', ['draft', 'sent', 'confirmed'])->count(),
+            'total_value' => (clone $statsQuery)->where('status', '!=', 'cancelled')->sum('total_amount'),
+            'this_month_orders' => (clone $statsQuery)->whereMonth('created_at', now()->month)->count(),
         ];
 
         return view('purchase-orders.index', compact('purchaseOrders', 'vendors', 'branches', 'statuses', 'stats'));
@@ -74,11 +92,20 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
+        $user = Auth::user();
         $vendors = Vendor::active()->orderBy('name')->get();
-        $branches = Branch::orderBy('name')->get();
         $products = Product::active()->with('vendors')->orderBy('name')->get();
+        
+        // Branch filtering for branch managers
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $branches = Branch::where('id', $user->branch_id)->get();
+            $selectedBranch = $user->branch_id;
+        } else {
+            $branches = Branch::orderBy('name')->get();
+            $selectedBranch = null;
+        }
 
-        return view('purchase-orders.create', compact('vendors', 'branches', 'products'));
+        return view('purchase-orders.create', compact('vendors', 'branches', 'products', 'selectedBranch'));
     }
 
     /**
@@ -86,6 +113,15 @@ class PurchaseOrderController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        
+        // Branch validation for branch managers
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            if ($request->branch_id != $user->branch_id) {
+                return redirect()->back()->withErrors(['branch_id' => 'You can only create purchase orders for your assigned branch.']);
+            }
+        }
+        
         $request->validate([
             'vendor_id' => 'required|exists:vendors,id',
             'branch_id' => 'required|exists:branches,id',

@@ -82,6 +82,13 @@
         <span class="font-medium">Purchase Orders</span>
     </a>
     
+    <a href="{{ route('purchase-orders.create') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('purchase-orders.create') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-plus-circle"></i>
+        </div>
+        <span class="font-medium">Purchase Entry</span>
+    </a>
+    
     <a href="{{ route('branch.expenses.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.expenses.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-receipt"></i>

@@ -103,7 +103,7 @@
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
                     <option value="partially_received" {{ request('status') == 'partially_received' ? 'selected' : '' }}>Partially Received</option>
-                    <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received</option>
+                    <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Received Orders</option>
                     <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                 </select>
             </div>

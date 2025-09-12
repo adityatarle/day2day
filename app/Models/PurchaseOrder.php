@@ -7,6 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * PurchaseOrder Model
+ * 
+ * Terminology (following Tally conventions):
+ * - "Purchase Order" refers to orders SENT FROM main branch TO vendors (outgoing orders)
+ * - When status becomes "received", it represents a "Received Order" (materials received FROM vendors)
+ * 
+ * Status Flow: draft -> sent -> confirmed -> received (Received Order) -> [completed]
+ */
 class PurchaseOrder extends Model
 {
     use HasFactory;
@@ -17,12 +26,15 @@ class PurchaseOrder extends Model
         'branch_id',
         'user_id',
         'status',
+        'order_type',
+        'is_received_order',
         'payment_terms',
         'subtotal',
         'tax_amount',
         'transport_cost',
         'total_amount',
         'notes',
+        'terminology_notes',
         'expected_delivery_date',
         'actual_delivery_date',
     ];
@@ -32,6 +44,7 @@ class PurchaseOrder extends Model
         'tax_amount' => 'decimal:2',
         'transport_cost' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'is_received_order' => 'boolean',
         'expected_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
     ];
@@ -117,7 +130,8 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Check if purchase order is received.
+     * Check if purchase order materials have been received.
+     * Note: This represents the "Received Order" status in Tally terminology.
      */
     public function isReceived(): bool
     {
@@ -143,13 +157,17 @@ class PurchaseOrder extends Model
     }
 
     /**
-     * Mark purchase order as received.
+     * Mark purchase order as received (becomes a "Received Order" in Tally terminology).
+     * This indicates that the materials ordered from vendor have been received.
      */
     public function markAsReceived(): void
     {
         $this->update([
             'status' => 'received',
+            'order_type' => 'received_order',
+            'is_received_order' => true,
             'actual_delivery_date' => now(),
+            'terminology_notes' => 'Converted from Purchase Order to Received Order - materials received from vendor',
         ]);
     }
 
@@ -159,5 +177,83 @@ class PurchaseOrder extends Model
     public function getTotalQuantityOrdered(): float
     {
         return $this->purchaseOrderItems->sum('quantity');
+    }
+
+    /**
+     * Get display name for status using Tally terminology.
+     */
+    public function getStatusDisplayName(): string
+    {
+        return match($this->status) {
+            'draft' => 'Draft Purchase Order',
+            'sent' => 'Purchase Order Sent',
+            'confirmed' => 'Purchase Order Confirmed',
+            'received' => 'Received Order (Materials Received)',
+            'cancelled' => 'Cancelled Purchase Order',
+            default => ucfirst($this->status)
+        };
+    }
+
+    /**
+     * Get status badge color class.
+     */
+    public function getStatusBadgeClass(): string
+    {
+        return match($this->status) {
+            'draft' => 'bg-gray-100 text-gray-800',
+            'sent' => 'bg-blue-100 text-blue-800',
+            'confirmed' => 'bg-yellow-100 text-yellow-800',
+            'received' => 'bg-green-100 text-green-800',
+            'cancelled' => 'bg-red-100 text-red-800',
+            default => 'bg-gray-100 text-gray-800'
+        };
+    }
+
+    /**
+     * Check if this is a Purchase Order (outgoing to vendor).
+     */
+    public function isPurchaseOrder(): bool
+    {
+        return $this->order_type === 'purchase_order' && !$this->is_received_order;
+    }
+
+    /**
+     * Check if this is a Received Order (materials received from vendor).
+     */
+    public function isReceivedOrderType(): bool
+    {
+        return $this->order_type === 'received_order' || $this->is_received_order;
+    }
+
+    /**
+     * Get the appropriate terminology display text.
+     */
+    public function getTerminologyDisplayText(): string
+    {
+        if ($this->isReceivedOrderType()) {
+            return 'Received Order (Materials Received)';
+        }
+        
+        return 'Purchase Order (Outgoing to Vendor)';
+    }
+
+    /**
+     * Scope to get only Purchase Orders (not yet received).
+     */
+    public function scopePurchaseOrdersOnly($query)
+    {
+        return $query->where('order_type', 'purchase_order')
+                    ->where('is_received_order', false);
+    }
+
+    /**
+     * Scope to get only Received Orders.
+     */
+    public function scopeReceivedOrdersOnly($query)
+    {
+        return $query->where(function($q) {
+            $q->where('order_type', 'received_order')
+              ->orWhere('is_received_order', true);
+        });
     }
 }

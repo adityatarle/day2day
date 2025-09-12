@@ -13,10 +13,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * PurchaseOrderController
+ * 
+ * Handles Purchase Orders (outgoing orders to vendors) and Received Orders (incoming materials).
+ * Following Tally terminology:
+ * - Purchase Order: Orders sent FROM main branch TO vendors
+ * - Received Order: When purchase order status becomes "received" (materials received FROM vendors)
+ */
 class PurchaseOrderController extends Controller
 {
     /**
-     * Display a listing of purchase orders.
+     * Display a listing of purchase orders and received orders.
      */
     public function index(Request $request)
     {
@@ -308,7 +316,8 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Mark purchase order as received and update inventory.
+     * Mark purchase order as received (convert to "Received Order") and update inventory.
+     * This represents the transition from Purchase Order to Received Order in Tally terminology.
      */
     public function receive(Request $request, PurchaseOrder $purchaseOrder)
     {
@@ -333,7 +342,7 @@ class PurchaseOrderController extends Controller
                 $receivedQuantity = $receivedItem['received_quantity'];
 
                 if ($receivedQuantity > 0) {
-                    // Add stock to inventory
+                    // Add stock to inventory (Received Order - materials received from vendor)
                     StockMovement::create([
                         'product_id' => $purchaseOrderItem->product_id,
                         'branch_id' => $purchaseOrder->branch_id,
@@ -341,7 +350,7 @@ class PurchaseOrderController extends Controller
                         'quantity' => $receivedQuantity,
                         'reference_type' => 'purchase_order',
                         'reference_id' => $purchaseOrder->id,
-                        'notes' => "Received from PO: {$purchaseOrder->po_number}",
+                        'notes' => "Received Order from PO: {$purchaseOrder->po_number}",
                     ]);
 
                     // Update the product's current stock in the branch
@@ -356,7 +365,7 @@ class PurchaseOrderController extends Controller
         });
 
         return redirect()->route('purchase-orders.show', $purchaseOrder)
-            ->with('success', 'Purchase order received and inventory updated successfully!');
+            ->with('success', 'Materials received successfully! Purchase Order converted to Received Order and inventory updated.');
     }
 
     /**

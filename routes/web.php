@@ -28,6 +28,9 @@ use App\Http\Controllers\Web\PosSessionController;
 use App\Http\Controllers\Auth\OutletAuthController;
 use App\Http\Controllers\Day2Day\AdminDashboardController as Day2DayAdminController;
 use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchController;
+use App\Http\Controllers\Web\AdminBranchOrderController;
+use App\Http\Controllers\Web\BranchProductOrderController;
+use App\Http\Controllers\Web\BranchPurchaseEntryController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -188,6 +191,14 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,admin')->group(function () {
         // Admin Dashboard
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+
+        // Branch Orders Management - Admin can see all branch orders and assign vendors
+        Route::get('/admin/branch-orders', [AdminBranchOrderController::class, 'index'])->name('admin.branch-orders.index');
+        Route::get('/admin/branch-orders/{branchOrder}', [AdminBranchOrderController::class, 'show'])->name('admin.branch-orders.show');
+        Route::post('/admin/branch-orders/{branchOrder}/approve', [AdminBranchOrderController::class, 'approve'])->name('admin.branch-orders.approve');
+        Route::get('/admin/branch-orders/{branchOrder}/fulfill', [AdminBranchOrderController::class, 'showFulfillForm'])->name('admin.branch-orders.fulfill-form');
+        Route::post('/admin/branch-orders/{branchOrder}/fulfill', [AdminBranchOrderController::class, 'fulfill'])->name('admin.branch-orders.fulfill');
+        Route::post('/admin/branch-orders/{branchOrder}/cancel', [AdminBranchOrderController::class, 'cancel'])->name('admin.branch-orders.cancel');
         
         // User Management
         Route::resource('admin/users', AdminUserManagementController::class)->names([
@@ -259,6 +270,23 @@ Route::middleware('auth')->group(function () {
         ]);
         Route::patch('/branch/staff/{staff}/toggle-status', [BranchStaffController::class, 'toggleStatus'])
             ->name('branch.staff.toggle-status');
+
+        // Branch Product Orders - Branch managers order products from admin
+        Route::get('/branch/product-orders', [BranchProductOrderController::class, 'index'])->name('branch.product-orders.index');
+        Route::get('/branch/product-orders/create', [BranchProductOrderController::class, 'create'])->name('branch.product-orders.create');
+        Route::post('/branch/product-orders', [BranchProductOrderController::class, 'store'])->name('branch.product-orders.store');
+        Route::get('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'show'])->name('branch.product-orders.show');
+        Route::get('/branch/product-orders/{productOrder}/edit', [BranchProductOrderController::class, 'edit'])->name('branch.product-orders.edit');
+        Route::put('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'update'])->name('branch.product-orders.update');
+        Route::delete('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'destroy'])->name('branch.product-orders.destroy');
+
+        // Branch Purchase Entries - Track deliveries from admin with discrepancies
+        Route::get('/branch/purchase-entries', [BranchPurchaseEntryController::class, 'index'])->name('branch.purchase-entries.index');
+        Route::get('/branch/purchase-entries/{purchaseEntry}', [BranchPurchaseEntryController::class, 'show'])->name('branch.purchase-entries.show');
+        Route::get('/branch/purchase-entries/{purchaseEntry}/create-receipt', [BranchPurchaseEntryController::class, 'createReceipt'])->name('branch.purchase-entries.create-receipt');
+        Route::post('/branch/purchase-entries/{purchaseEntry}/store-receipt', [BranchPurchaseEntryController::class, 'storeReceipt'])->name('branch.purchase-entries.store-receipt');
+        Route::get('/branch/purchase-entries/{purchaseEntry}/receipt', [BranchPurchaseEntryController::class, 'showReceipt'])->name('branch.purchase-entries.receipt');
+        Route::get('/branch/discrepancy-report', [BranchPurchaseEntryController::class, 'discrepancyReport'])->name('branch.purchase-entries.discrepancy-report');
 
         // Branch-specific routes
         Route::get('/branch/inventory', [InventoryController::class, 'branchIndex'])->name('branch.inventory.index');

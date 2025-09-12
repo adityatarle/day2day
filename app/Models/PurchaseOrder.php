@@ -38,6 +38,17 @@ class PurchaseOrder extends Model
         'expected_delivery_date',
         'actual_delivery_date',
         'priority',
+        'approved_by',
+        'approved_at',
+        'fulfilled_by',
+        'fulfilled_at',
+        'received_by',
+        'received_at',
+        'cancelled_by',
+        'cancelled_at',
+        'delivery_notes',
+        'delivery_person',
+        'delivery_vehicle',
     ];
 
     protected $casts = [
@@ -48,6 +59,10 @@ class PurchaseOrder extends Model
         'is_received_order' => 'boolean',
         'expected_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
+        'approved_at' => 'datetime',
+        'fulfilled_at' => 'datetime',
+        'received_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     /**

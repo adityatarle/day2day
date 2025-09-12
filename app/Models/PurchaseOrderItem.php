@@ -18,6 +18,16 @@ class PurchaseOrderItem extends Model
         'total_price',
         'received_quantity',
         'notes',
+        'fulfilled_quantity',
+        'actual_received_quantity',
+        'actual_weight',
+        'expected_weight',
+        'weight_difference',
+        'spoiled_quantity',
+        'damaged_quantity',
+        'usable_quantity',
+        'quality_notes',
+        'fulfillment_notes',
     ];
 
     protected $casts = [
@@ -25,6 +35,14 @@ class PurchaseOrderItem extends Model
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
         'received_quantity' => 'decimal:2',
+        'fulfilled_quantity' => 'decimal:2',
+        'actual_received_quantity' => 'decimal:2',
+        'actual_weight' => 'decimal:3',
+        'expected_weight' => 'decimal:3',
+        'weight_difference' => 'decimal:3',
+        'spoiled_quantity' => 'decimal:2',
+        'damaged_quantity' => 'decimal:2',
+        'usable_quantity' => 'decimal:2',
     ];
 
     /**

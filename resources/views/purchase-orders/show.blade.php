@@ -124,6 +124,15 @@
                             <label class="text-sm font-medium text-gray-500">Branch</label>
                             <p class="text-gray-900">{{ $purchaseOrder->branch->name }}</p>
                         </div>
+                        @if($purchaseOrder->branch_request_id && $purchaseOrder->branchRequest)
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Branch Request Reference</label>
+                            <p class="text-gray-900">
+                                <a class="text-blue-600 hover:text-blue-800" href="{{ route('admin.branch-orders.show', $purchaseOrder->branchRequest) }}">#{{ $purchaseOrder->branchRequest->po_number }}</a>
+                                <span class="text-gray-600">({{ $purchaseOrder->branchRequest->branch->name ?? 'Branch' }})</span>
+                            </p>
+                        </div>
+                        @endif
                         <div>
                             <label class="text-sm font-medium text-gray-500">Payment Terms</label>
                             <p class="text-gray-900">{{ ucfirst(str_replace('_', ' ', $purchaseOrder->payment_terms)) }}</p>
@@ -143,6 +152,10 @@
                             <p class="text-gray-900">{{ $purchaseOrder->actual_delivery_date->format('M d, Y') }}</p>
                         </div>
                         @endif
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Ship To</label>
+                            <p class="text-gray-900">{{ $purchaseOrder->getResolvedDeliveryAddress() }}</p>
+                        </div>
                         @if($purchaseOrder->notes)
                         <div>
                             <label class="text-sm font-medium text-gray-500">Notes</label>

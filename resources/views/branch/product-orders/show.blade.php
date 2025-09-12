@@ -87,6 +87,13 @@
                     <a href="{{ route('branch.product-orders.edit', $productOrder) }}" class="btn btn-primary w-full text-center">Edit Order</a>
                 @elseif($productOrder->status === 'approved')
                     <div class="alert alert-success">Admin approved your order. Awaiting delivery.</div>
+                    <div class="text-sm text-gray-600">Admin may create a vendor purchase order to fulfill this request.</div>
+                    @if($productOrder->vendor)
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="font-medium text-gray-900 mb-2">Assigned Vendor</div>
+                        <div class="text-sm text-gray-700">{{ $productOrder->vendor->name }} ({{ $productOrder->vendor->code }})</div>
+                    </div>
+                    @endif
                 @elseif($productOrder->status === 'fulfilled')
                     <div class="alert alert-success">Order delivered by admin. Please record receipt in Purchase Entry if not done yet.</div>
                 @elseif($productOrder->status === 'cancelled')

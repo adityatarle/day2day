@@ -28,6 +28,22 @@
             <h2 class="text-xl font-semibold text-gray-900 mb-6">Purchase Order Details</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @if(isset($branchRequest) && $branchRequest)
+                <div class="form-group md:col-span-3">
+                    <label class="form-label">Branch Request Reference</label>
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm text-gray-600">Linked to Branch Request</div>
+                                <div class="font-semibold text-gray-900">#{{ $branchRequest->po_number }} — {{ $branchRequest->branch->name }}</div>
+                            </div>
+                            <a href="{{ route('admin.branch-orders.show', $branchRequest) }}" class="text-blue-600 hover:text-blue-800 text-sm">View Request →</a>
+                        </div>
+                        <input type="hidden" name="branch_request_id" value="{{ $branchRequest->id }}">
+                    </div>
+                </div>
+                @endif
+
                 <div class="form-group">
                     <label for="vendor_id" class="form-label">Vendor *</label>
                     <select name="vendor_id" id="vendor_id" class="form-input @error('vendor_id') border-red-500 @enderror" required>
@@ -59,13 +75,52 @@
                         <select name="branch_id" id="branch_id" class="form-input @error('branch_id') border-red-500 @enderror" required>
                             <option value="">Select Branch</option>
                             @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
+                                <option value="{{ $branch->id }}" {{ old('branch_id', (isset($branchRequest) && $branchRequest) ? $branchRequest->branch_id : null) == $branch->id ? 'selected' : '' }}>
                                     {{ $branch->name }}
                                 </option>
                             @endforeach
                         </select>
                     @endif
                     @error('branch_id')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Delivery Address Options -->
+                <div class="form-group md:col-span-3">
+                    <label class="form-label">Delivery Address</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="delivery_address_type" value="admin_main" class="form-radio" {{ old('delivery_address_type', (isset($branchRequest) && $branchRequest) ? 'branch' : 'admin_main') === 'admin_main' ? 'checked' : '' }}>
+                                <span>Admin Main Warehouse (default)</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="delivery_address_type" value="branch" class="form-radio" {{ old('delivery_address_type', (isset($branchRequest) && $branchRequest) ? 'branch' : null) === 'branch' ? 'checked' : '' }}>
+                                <span>Deliver to Branch</span>
+                            </label>
+                            <div id="branch-address-picker" class="mt-2 {{ old('delivery_address_type', (isset($branchRequest) && $branchRequest) ? 'branch' : null) === 'branch' ? '' : 'hidden' }}">
+                                <select name="ship_to_branch_id" class="form-input">
+                                    <option value="">Select Branch</option>
+                                    @foreach($branches as $branch)
+                                        <option value="{{ $branch->id }}" {{ old('ship_to_branch_id', (isset($branchRequest) && $branchRequest) ? $branchRequest->branch_id : null) == $branch->id ? 'selected' : '' }}>{{ $branch->name }} ({{ $branch->code }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="delivery_address_type" value="custom" class="form-radio" {{ old('delivery_address_type', (isset($branchRequest) && $branchRequest) ? 'branch' : null) === 'custom' ? 'checked' : '' }}>
+                                <span>Custom Address</span>
+                            </label>
+                            <div id="custom-address-editor" class="mt-2 {{ old('delivery_address_type', (isset($branchRequest) && $branchRequest) ? 'branch' : null) === 'custom' ? '' : 'hidden' }}">
+                                <textarea name="delivery_address" rows="3" class="form-input" placeholder="Enter delivery address">{{ old('delivery_address') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    @error('delivery_address_type')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -221,9 +276,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemTemplate = document.getElementById('item-template');
     const vendorSelect = document.getElementById('vendor_id');
     const transportCostInput = document.getElementById('transport_cost');
+    const branchAddressPicker = document.getElementById('branch-address-picker');
+    const customAddressEditor = document.getElementById('custom-address-editor');
 
-    // Add first item by default
-    addItem();
+    // Delivery address toggles
+    document.querySelectorAll('input[name="delivery_address_type"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            if (this.value === 'branch') {
+                branchAddressPicker.classList.remove('hidden');
+                customAddressEditor.classList.add('hidden');
+            } else if (this.value === 'custom') {
+                branchAddressPicker.classList.add('hidden');
+                customAddressEditor.classList.remove('hidden');
+            } else {
+                branchAddressPicker.classList.add('hidden');
+                customAddressEditor.classList.add('hidden');
+            }
+        });
+    });
+
+    // Add first item by default when no prefill
+    const hasBranchRequest = !!document.querySelector('input[name="branch_request_id"]');
+    if (!hasBranchRequest) {
+        addItem();
+    }
 
     addItemBtn.addEventListener('click', addItem);
 
@@ -278,6 +354,19 @@ document.addEventListener('DOMContentLoaded', function() {
         itemIndex++;
     }
 
+    function addPrefilledItem(productId, quantity) {
+        addItem();
+        const rows = document.querySelectorAll('.item-row');
+        const itemRow = rows[rows.length - 1];
+        const select = itemRow.querySelector('.product-select');
+        // Store desired product id to select after vendor products load
+        select.dataset.prefill = String(productId);
+        const qtyInput = itemRow.querySelector('.quantity-input');
+        qtyInput.value = quantity;
+        updateItemTotal(itemRow);
+        updateTotals();
+    }
+
     function updateItemTotal(itemRow) {
         const quantity = parseFloat(itemRow.querySelector('.quantity-input').value) || 0;
         const price = parseFloat(itemRow.querySelector('.price-input').value) || 0;
@@ -310,7 +399,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(products => {
                 document.querySelectorAll('.product-select').forEach(function(select) {
-                    const currentValue = select.value;
+                    let currentValue = select.value;
+                    if (select.dataset.prefill) {
+                        currentValue = select.dataset.prefill;
+                    }
                     select.innerHTML = '<option value="">Select Product</option>';
                     
                     products.forEach(function(product) {
@@ -334,6 +426,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             updateTotals();
                         }
                     });
+
+                    // If prefilled, trigger price fill and cleanup
+                    if (select.dataset.prefill) {
+                        const selectedOption = select.options[select.selectedIndex];
+                        if (selectedOption && selectedOption.dataset.supplyPrice) {
+                            const priceInput = select.closest('.item-row').querySelector('.price-input');
+                            priceInput.value = selectedOption.dataset.supplyPrice;
+                            updateItemTotal(select.closest('.item-row'));
+                            updateTotals();
+                        }
+                        delete select.dataset.prefill;
+                    }
                 });
             })
             .catch(error => {
@@ -366,6 +470,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateTotals();
                     }
                 });
+
+                // If prefilled, select and set price
+                if (select.dataset.prefill) {
+                    const prefillId = select.dataset.prefill;
+                    select.value = prefillId;
+                    const selectedOption = select.options[select.selectedIndex];
+                    if (selectedOption && selectedOption.dataset.supplyPrice) {
+                        const priceInput = itemRow.querySelector('.price-input');
+                        priceInput.value = selectedOption.dataset.supplyPrice;
+                        updateItemTotal(itemRow);
+                        updateTotals();
+                    }
+                    delete select.dataset.prefill;
+                }
             })
             .catch(error => {
                 console.error('Error loading vendor products:', error);
@@ -403,6 +521,13 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please ensure all items have product, quantity, and price filled.');
         }
     });
+
+    // Prefill items from branch request if available
+    @if(isset($branchRequest) && $branchRequest)
+        @foreach($branchRequest->purchaseOrderItems as $reqItem)
+            addPrefilledItem({{ $reqItem->product_id }}, {{ rtrim(rtrim(number_format($reqItem->quantity, 2, '.', ''), '0'), '.') }});
+        @endforeach
+    @endif
 });
 </script>
 @endsection

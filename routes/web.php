@@ -148,8 +148,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
         Route::get('/purchase-orders/dashboard', [PurchaseOrderController::class, 'dashboard'])->name('purchase-orders.dashboard');
-        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
-        Route::get('/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'generatePdf'])->name('purchase-orders.pdf');
+        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->where('purchaseOrder', '[0-9]+')->name('purchase-orders.show');
+        Route::get('/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'generatePdf'])->where('purchaseOrder', '[0-9]+')->name('purchase-orders.pdf');
     });
     
     // Purchase Order creation and vendor operations - ONLY for main branch

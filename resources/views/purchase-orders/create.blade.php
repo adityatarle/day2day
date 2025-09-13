@@ -23,6 +23,19 @@
     <form method="POST" action="{{ route('purchase-orders.store') }}" id="purchase-order-form" class="space-y-8">
         @csrf
 
+        @if($errors->any())
+        <div class="alert alert-error">
+            <div class="font-semibold mb-2">Please fix the following issues:</div>
+            <ul class="list-disc list-inside text-sm">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <div id="client-error" class="alert alert-error hidden"></div>
+
         <!-- Purchase Order Details -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-6">Purchase Order Details</h2>
@@ -256,7 +269,7 @@
             <a href="{{ route('purchase-orders.index') }}" class="btn-secondary">
                 Cancel
             </a>
-            <button type="submit" class="btn-primary">
+            <button type="submit" id="submit-btn" class="btn-primary">
                 <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
@@ -276,6 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const transportCostInput = document.getElementById('transport_cost');
     const branchAddressPicker = document.getElementById('branch-address-picker');
     const customAddressEditor = document.getElementById('custom-address-editor');
+    const clientError = document.getElementById('client-error');
+    const submitBtn = document.getElementById('submit-btn');
+    let isSubmitting = false;
 
     // Delivery address toggles
     document.querySelectorAll('input[name="delivery_address_type"]').forEach(function(radio) {
@@ -494,30 +510,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form validation
+    // Helpers
+    function showClientError(message) {
+        if (!clientError) return;
+        clientError.textContent = message;
+        clientError.classList.remove('hidden');
+        clientError.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function clearClientError() {
+        if (!clientError) return;
+        clientError.classList.add('hidden');
+        clientError.textContent = '';
+    }
+
+    function startSubmitting() {
+        if (!submitBtn) return;
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-75');
+        submitBtn.innerHTML = '<span class="spinner mr-2"></span>Creating...';
+    }
+
+    // Form validation + double-submit guard
     document.getElementById('purchase-order-form').addEventListener('submit', function(e) {
+        clearClientError();
+
+        if (isSubmitting) {
+            e.preventDefault();
+            return;
+        }
+
+        // Required high-level fields
+        if (!vendorSelect.value) {
+            e.preventDefault();
+            showClientError('Please select a vendor.');
+            return;
+        }
+
+        const termsSelect = document.getElementById('payment_terms');
+        if (!termsSelect.value) {
+            e.preventDefault();
+            showClientError('Please select payment terms.');
+            return;
+        }
+
+        // At least one complete item
         const items = document.querySelectorAll('.item-row');
         if (items.length === 0) {
             e.preventDefault();
-            alert('Please add at least one item to the purchase order.');
+            showClientError('Please add at least one item to the purchase order.');
             return;
         }
 
         let hasValidItems = false;
-        items.forEach(function(row) {
+        for (const row of items) {
             const productId = row.querySelector('.product-select').value;
-            const quantity = row.querySelector('.quantity-input').value;
-            const price = row.querySelector('.price-input').value;
-            
-            if (productId && quantity && price) {
+            const quantity = parseFloat(row.querySelector('.quantity-input').value);
+            const price = parseFloat(row.querySelector('.price-input').value);
+            if (productId && quantity > 0 && price >= 0) {
                 hasValidItems = true;
+                break;
             }
-        });
-
+        }
         if (!hasValidItems) {
             e.preventDefault();
-            alert('Please ensure all items have product, quantity, and price filled.');
+            showClientError('Please ensure at least one item has product, quantity and price.');
+            return;
         }
+
+        // Guard + UI feedback
+        isSubmitting = true;
+        startSubmitting();
     });
 
     // Prefill items from branch request if available

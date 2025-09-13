@@ -131,89 +131,147 @@ class PurchaseOrderController extends Controller
      */
     public function store(Request $request)
     {
+        \Log::info('Purchase Order Creation Attempt', [
+            'user_id' => Auth::id(),
+            'user_role' => Auth::user()?->role?->name,
+            'request_data' => $request->all()
+        ]);
+
         $user = Auth::user();
+        
+        if (!$user) {
+            \Log::error('Purchase Order Creation: User not authenticated');
+            return redirect()->route('login')->withErrors(['error' => 'Please log in to create purchase orders.']);
+        }
         
         // Branch validation for branch managers
         if ($user->hasRole('branch_manager') && $user->branch_id) {
             if ($request->branch_id != $user->branch_id) {
+                \Log::warning('Purchase Order Creation: Branch mismatch', [
+                    'user_branch' => $user->branch_id,
+                    'requested_branch' => $request->branch_id
+                ]);
                 return redirect()->back()->withErrors(['branch_id' => 'You can only create purchase orders for your assigned branch.']);
             }
         }
         
-        $request->validate([
-            'vendor_id' => 'required|exists:vendors,id',
-            'branch_id' => 'required|exists:branches,id',
-            'branch_request_id' => 'nullable|exists:purchase_orders,id',
-            // DB enum allows: immediate, 7_days, 15_days, 30_days
-            'payment_terms' => 'required|in:immediate,7_days,15_days,30_days',
-            'expected_delivery_date' => 'required|date|after:today',
-            'transport_cost' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            // Delivery address
-            'delivery_address_type' => 'required|in:admin_main,branch,custom',
-            'ship_to_branch_id' => 'nullable|required_if:delivery_address_type,branch|exists:branches,id',
-            'delivery_address' => 'nullable|required_if:delivery_address_type,custom|string',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0',
-        ]);
-
-        DB::transaction(function () use ($request) {
-            // Generate PO number
-            $poNumber = 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT);
-
-            // Create purchase order
-            $purchaseOrder = PurchaseOrder::create([
-                'po_number' => $poNumber,
-                'vendor_id' => $request->vendor_id,
-                'branch_id' => $request->branch_id,
-                'branch_request_id' => $request->branch_request_id,
-                'user_id' => Auth::id(),
-                'status' => 'draft',
-                'order_type' => 'purchase_order',
-                'delivery_address_type' => $request->delivery_address_type,
-                'ship_to_branch_id' => $request->delivery_address_type === 'branch' ? $request->ship_to_branch_id : null,
-                'delivery_address' => $request->delivery_address_type === 'custom' ? $request->delivery_address : null,
-                'payment_terms' => $request->payment_terms,
-                'transport_cost' => $request->transport_cost ?? 0,
-                'notes' => $request->notes,
-                'expected_delivery_date' => $request->expected_delivery_date,
+        try {
+            $request->validate([
+                'vendor_id' => 'required|exists:vendors,id',
+                'branch_id' => 'required|exists:branches,id',
+                'branch_request_id' => 'nullable|exists:purchase_orders,id',
+                // DB enum allows: immediate, 7_days, 15_days, 30_days
+                'payment_terms' => 'required|in:immediate,7_days,15_days,30_days',
+                'expected_delivery_date' => 'required|date|after:today',
+                'transport_cost' => 'nullable|numeric|min:0',
+                'notes' => 'nullable|string',
+                // Delivery address
+                'delivery_address_type' => 'required|in:admin_main,branch,custom',
+                'ship_to_branch_id' => 'nullable|required_if:delivery_address_type,branch|exists:branches,id',
+                'delivery_address' => 'nullable|required_if:delivery_address_type,custom|string',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric|min:0.01',
+                'items.*.unit_price' => 'required|numeric|min:0',
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Purchase Order Validation Failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            throw $e;
+        }
 
-            // Create purchase order items
-            $subtotal = 0;
-            foreach ($request->items as $item) {
-                $totalPrice = $item['quantity'] * $item['unit_price'];
-                $subtotal += $totalPrice;
+        try {
+            $purchaseOrder = DB::transaction(function () use ($request) {
+                \Log::info('Purchase Order Transaction Started');
+                
+                // Generate PO number
+                $poNumber = 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT);
+                \Log::info('Generated PO Number: ' . $poNumber);
 
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total_price' => $totalPrice,
+                // Create purchase order
+                $purchaseOrder = PurchaseOrder::create([
+                    'po_number' => $poNumber,
+                    'vendor_id' => $request->vendor_id,
+                    'branch_id' => $request->branch_id,
+                    'branch_request_id' => $request->branch_request_id,
+                    'user_id' => Auth::id(),
+                    'status' => 'draft',
+                    'order_type' => 'purchase_order',
+                    'delivery_address_type' => $request->delivery_address_type,
+                    'ship_to_branch_id' => $request->delivery_address_type === 'branch' ? $request->ship_to_branch_id : null,
+                    'delivery_address' => $request->delivery_address_type === 'custom' ? $request->delivery_address : null,
+                    'payment_terms' => $request->payment_terms,
+                    'transport_cost' => $request->transport_cost ?? 0,
+                    'notes' => $request->notes,
+                    'expected_delivery_date' => $request->expected_delivery_date,
                 ]);
-            }
+                
+                \Log::info('Purchase Order Created', ['po_id' => $purchaseOrder->id]);
 
-            // Update totals
-            $taxAmount = $subtotal * 0.18; // 18% GST (can be configurable)
-            $purchaseOrder->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $taxAmount,
-                'total_amount' => $subtotal + $taxAmount + $purchaseOrder->transport_cost,
-            ]);
+                // Create purchase order items
+                $subtotal = 0;
+                foreach ($request->items as $index => $item) {
+                    $totalPrice = $item['quantity'] * $item['unit_price'];
+                    $subtotal += $totalPrice;
 
-            // If linked to a branch request, annotate terminology notes
-            if ($request->branch_request_id) {
+                    $poItem = PurchaseOrderItem::create([
+                        'purchase_order_id' => $purchaseOrder->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_price' => $totalPrice,
+                    ]);
+                    
+                    \Log::info('Purchase Order Item Created', [
+                        'item_index' => $index,
+                        'po_item_id' => $poItem->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity']
+                    ]);
+                }
+
+                // Update totals
+                $taxAmount = $subtotal * 0.18; // 18% GST (can be configurable)
                 $purchaseOrder->update([
-                    'terminology_notes' => trim(($purchaseOrder->terminology_notes ?? '') . '\nLinked to Branch Request #' . $request->branch_request_id),
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $taxAmount,
+                    'total_amount' => $subtotal + $taxAmount + $purchaseOrder->transport_cost,
                 ]);
-            }
-        });
+                
+                \Log::info('Purchase Order Totals Updated', [
+                    'subtotal' => $subtotal,
+                    'tax_amount' => $taxAmount,
+                    'total_amount' => $subtotal + $taxAmount + $purchaseOrder->transport_cost
+                ]);
 
-        return redirect()->route('purchase-orders.index')
-            ->with('success', 'Purchase order created successfully!');
+                // If linked to a branch request, annotate terminology notes
+                if ($request->branch_request_id) {
+                    $purchaseOrder->update([
+                        'terminology_notes' => trim(($purchaseOrder->terminology_notes ?? '') . '\nLinked to Branch Request #' . $request->branch_request_id),
+                    ]);
+                }
+                
+                return $purchaseOrder;
+            });
+
+            \Log::info('Purchase Order Created Successfully', ['po_id' => $purchaseOrder->id, 'po_number' => $purchaseOrder->po_number]);
+
+            return redirect()->route('purchase-orders.index')
+                ->with('success', 'Purchase order created successfully!');
+                
+        } catch (\Exception $e) {
+            \Log::error('Purchase Order Creation Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to create purchase order. Please check all fields and try again. Error: ' . $e->getMessage()]);
+        }
     }
 
     /**

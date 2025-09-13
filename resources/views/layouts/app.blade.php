@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Food Company Management')</title>
+    <title>@yield('title', 'Day2Day Fresh')</title>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -346,7 +346,7 @@
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
                 <i class="fas fa-leaf text-2xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-bold text-white">FoodCo</h1>
+            <h1 class="text-2xl font-bold text-white">Day2Day Fresh</h1>
             <p class="text-sm text-gray-300">Management System</p>
         </div>
         

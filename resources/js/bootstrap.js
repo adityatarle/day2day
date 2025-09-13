@@ -5,9 +5,10 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 // Laravel Echo setup (using Pusher-compatible client)
 import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
-// Use native WebSocket server if available via Reverb or Pusher
-window.Pusher = undefined;
+// Provide Pusher constructor for Echo's Reverb/Pusher connector
+window.Pusher = Pusher;
 
 window.Echo = new Echo({
     broadcaster: 'reverb',

@@ -28,9 +28,16 @@
             <div class="font-semibold mb-2">Please fix the following issues:</div>
             <ul class="list-disc list-inside text-sm">
                 @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
+                    <li style="white-space: pre-line;">{{ $error }}</li>
                 @endforeach
             </ul>
+        </div>
+        @endif
+
+        @if(session('error'))
+        <div class="alert alert-error">
+            <div class="font-semibold mb-2">Error:</div>
+            <div style="white-space: pre-line;">{{ session('error') }}</div>
         </div>
         @endif
 
@@ -544,6 +551,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!vendorSelect.value) {
             e.preventDefault();
             showClientError('Please select a vendor.');
+            vendorSelect.focus();
+            return;
+        }
+
+        const branchSelect = document.getElementById('branch_id') || document.querySelector('input[name="branch_id"]');
+        if (branchSelect && !branchSelect.value) {
+            e.preventDefault();
+            showClientError('Please select a branch.');
+            if (branchSelect.focus) branchSelect.focus();
             return;
         }
 
@@ -551,6 +567,48 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!termsSelect.value) {
             e.preventDefault();
             showClientError('Please select payment terms.');
+            termsSelect.focus();
+            return;
+        }
+
+        const deliveryDate = document.getElementById('expected_delivery_date');
+        if (!deliveryDate.value) {
+            e.preventDefault();
+            showClientError('Please select an expected delivery date.');
+            deliveryDate.focus();
+            return;
+        }
+
+        // Check delivery address type
+        const deliveryTypeRadios = document.querySelectorAll('input[name="delivery_address_type"]');
+        let deliveryTypeSelected = false;
+        for (const radio of deliveryTypeRadios) {
+            if (radio.checked) {
+                deliveryTypeSelected = true;
+                // Validate specific delivery address requirements
+                if (radio.value === 'branch') {
+                    const shipToBranch = document.querySelector('select[name="ship_to_branch_id"]');
+                    if (!shipToBranch.value) {
+                        e.preventDefault();
+                        showClientError('Please select a branch for delivery.');
+                        shipToBranch.focus();
+                        return;
+                    }
+                } else if (radio.value === 'custom') {
+                    const customAddress = document.querySelector('textarea[name="delivery_address"]');
+                    if (!customAddress.value.trim()) {
+                        e.preventDefault();
+                        showClientError('Please enter a custom delivery address.');
+                        customAddress.focus();
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+        if (!deliveryTypeSelected) {
+            e.preventDefault();
+            showClientError('Please select a delivery address type.');
             return;
         }
 
@@ -563,15 +621,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         let hasValidItems = false;
-        for (const row of items) {
-            const productId = row.querySelector('.product-select').value;
-            const quantity = parseFloat(row.querySelector('.quantity-input').value);
-            const price = parseFloat(row.querySelector('.price-input').value);
+        let itemErrors = [];
+        for (let i = 0; i < items.length; i++) {
+            const row = items[i];
+            const productSelect = row.querySelector('.product-select');
+            const quantityInput = row.querySelector('.quantity-input');
+            const priceInput = row.querySelector('.price-input');
+            
+            const productId = productSelect.value;
+            const quantity = parseFloat(quantityInput.value);
+            const price = parseFloat(priceInput.value);
+            
+            if (!productId) {
+                itemErrors.push(`Item ${i + 1}: Please select a product`);
+            }
+            if (!quantity || quantity <= 0) {
+                itemErrors.push(`Item ${i + 1}: Please enter a valid quantity`);
+            }
+            if (isNaN(price) || price < 0) {
+                itemErrors.push(`Item ${i + 1}: Please enter a valid unit price`);
+            }
+            
             if (productId && quantity > 0 && price >= 0) {
                 hasValidItems = true;
-                break;
             }
         }
+        
+        if (itemErrors.length > 0) {
+            e.preventDefault();
+            showClientError('Item validation errors:\n' + itemErrors.join('\n'));
+            return;
+        }
+        
         if (!hasValidItems) {
             e.preventDefault();
             showClientError('Please ensure at least one item has product, quantity and price.');
@@ -581,6 +662,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Guard + UI feedback
         isSubmitting = true;
         startSubmitting();
+        
+        console.log('Form submission started with data:', {
+            vendor_id: vendorSelect.value,
+            branch_id: branchSelect ? branchSelect.value : 'N/A',
+            payment_terms: termsSelect.value,
+            expected_delivery_date: deliveryDate.value,
+            items_count: items.length
+        });
     });
 
     // Prefill items from branch request if available

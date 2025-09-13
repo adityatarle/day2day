@@ -75,11 +75,9 @@
                     <select name="payment_terms" id="payment_terms" class="form-input @error('payment_terms') border-red-500 @enderror" required>
                         <option value="">Select Payment Terms</option>
                         <option value="immediate" {{ old('payment_terms', $purchaseOrder->payment_terms) === 'immediate' ? 'selected' : '' }}>Immediate</option>
-                        <option value="net_7" {{ old('payment_terms', $purchaseOrder->payment_terms) === 'net_7' ? 'selected' : '' }}>Net 7 Days</option>
-                        <option value="net_15" {{ old('payment_terms', $purchaseOrder->payment_terms) === 'net_15' ? 'selected' : '' }}>Net 15 Days</option>
-                        <option value="net_30" {{ old('payment_terms', $purchaseOrder->payment_terms) === 'net_30' ? 'selected' : '' }}>Net 30 Days</option>
-                        <option value="net_60" {{ old('payment_terms', $purchaseOrder->payment_terms) === 'net_60' ? 'selected' : '' }}>Net 60 Days</option>
-                        <option value="advance" {{ old('payment_terms', $purchaseOrder->payment_terms) === 'advance' ? 'selected' : '' }}>Advance Payment</option>
+                        <option value="7_days" {{ old('payment_terms', $purchaseOrder->payment_terms) === '7_days' ? 'selected' : '' }}>Net 7 Days</option>
+                        <option value="15_days" {{ old('payment_terms', $purchaseOrder->payment_terms) === '15_days' ? 'selected' : '' }}>Net 15 Days</option>
+                        <option value="30_days" {{ old('payment_terms', $purchaseOrder->payment_terms) === '30_days' ? 'selected' : '' }}>Net 30 Days</option>
                     </select>
                     @error('payment_terms')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>

@@ -117,7 +117,7 @@ class BranchProductOrderController extends Controller
                 'user_id' => $user->id,
                 'status' => 'pending',
                 'order_type' => 'branch_request',
-                'payment_terms' => 'As per admin policy',
+                'payment_terms' => 'immediate',
                 'transport_cost' => 0,
                 'notes' => $request->notes,
                 'expected_delivery_date' => $request->expected_delivery_date,

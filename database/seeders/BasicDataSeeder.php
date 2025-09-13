@@ -322,6 +322,56 @@ class BasicDataSeeder extends Seeder
 
         DB::table('vendors')->insert($vendors);
 
+        // Map products to vendors with supply prices (for PO product selection)
+        $productVendors = [
+            // Apples
+            [
+                'product_id' => 1,
+                'vendor_id' => 1,
+                'supply_price' => 120.00,
+                'is_primary_supplier' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Tomatoes
+            [
+                'product_id' => 2,
+                'vendor_id' => 2,
+                'supply_price' => 40.00,
+                'is_primary_supplier' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Spinach
+            [
+                'product_id' => 3,
+                'vendor_id' => 1,
+                'supply_price' => 30.00,
+                'is_primary_supplier' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Oranges
+            [
+                'product_id' => 4,
+                'vendor_id' => 2,
+                'supply_price' => 80.00,
+                'is_primary_supplier' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Carrots
+            [
+                'product_id' => 5,
+                'vendor_id' => 1,
+                'supply_price' => 35.00,
+                'is_primary_supplier' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ];
+        DB::table('product_vendors')->insert($productVendors);
+
         // Create orders
         $orders = [
             [

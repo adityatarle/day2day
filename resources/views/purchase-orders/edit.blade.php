@@ -193,24 +193,24 @@
             </div>
 
             <!-- Item Template (hidden) -->
-            <div id="item-template" class="hidden">
+            <div id="item-template" class="hidden" aria-hidden="true">
                 <div class="item-row border border-gray-200 rounded-lg p-4">
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div>
                             <label class="form-label">Product</label>
-                            <select name="items[INDEX][product_id]" class="form-input product-select" required>
+                            <select name="items[INDEX][product_id]" class="form-input product-select" required disabled>
                                 <option value="">Select Product</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">Quantity</label>
                             <input type="number" name="items[INDEX][quantity]" step="0.01" min="0.01" 
-                                   class="form-input quantity-input" required>
+                                   class="form-input quantity-input" required disabled>
                         </div>
                         <div>
                             <label class="form-label">Unit Price (₹)</label>
                             <input type="number" name="items[INDEX][unit_price]" step="0.01" min="0" 
-                                   class="form-input price-input" required>
+                                   class="form-input price-input" required disabled>
                         </div>
                         <div>
                             <label class="form-label">Total Price</label>
@@ -277,6 +277,9 @@ document.addEventListener('DOMContentLoaded', function() {
         itemsContainer.appendChild(itemRow);
 
         addItemEventListeners(itemRow);
+
+        // Enable inputs now that row is live in the DOM
+        itemRow.querySelectorAll('select, input').forEach(function(el){ el.disabled = false; });
 
         // Load vendor products if vendor is already selected
         const vendorId = vendorSelect.value;

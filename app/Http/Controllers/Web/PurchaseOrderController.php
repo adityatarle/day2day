@@ -190,7 +190,16 @@ class PurchaseOrderController extends Controller
                 $poNumber = 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT);
                 \Log::info('Generated PO Number: ' . $poNumber);
 
-                // Create purchase order
+                // Pre-calculate totals to satisfy NOT NULL DB constraints on insert
+                $calculatedSubtotal = 0;
+                foreach ($request->items as $calcItem) {
+                    $calculatedSubtotal += ((float) $calcItem['quantity']) * ((float) $calcItem['unit_price']);
+                }
+                $calculatedTransport = (float) ($request->transport_cost ?? 0);
+                $calculatedTax = $calculatedSubtotal * 0.18; // 18% GST
+                $calculatedTotal = $calculatedSubtotal + $calculatedTax + $calculatedTransport;
+
+                // Create purchase order (include totals on insert)
                 $purchaseOrder = PurchaseOrder::create([
                     'po_number' => $poNumber,
                     'vendor_id' => $request->vendor_id,
@@ -203,9 +212,12 @@ class PurchaseOrderController extends Controller
                     'ship_to_branch_id' => $request->delivery_address_type === 'branch' ? $request->ship_to_branch_id : null,
                     'delivery_address' => $request->delivery_address_type === 'custom' ? $request->delivery_address : null,
                     'payment_terms' => $request->payment_terms,
-                    'transport_cost' => $request->transport_cost ?? 0,
+                    'transport_cost' => $calculatedTransport,
                     'notes' => $request->notes,
                     'expected_delivery_date' => $request->expected_delivery_date,
+                    'subtotal' => $calculatedSubtotal,
+                    'tax_amount' => $calculatedTax,
+                    'total_amount' => $calculatedTotal,
                 ]);
                 
                 \Log::info('Purchase Order Created', ['po_id' => $purchaseOrder->id]);
@@ -232,7 +244,7 @@ class PurchaseOrderController extends Controller
                     ]);
                 }
 
-                // Update totals
+                // Recalculate and update totals once more after item creation to ensure consistency
                 $taxAmount = $subtotal * 0.18; // 18% GST (can be configurable)
                 $purchaseOrder->update([
                     'subtotal' => $subtotal,

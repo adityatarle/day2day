@@ -234,8 +234,8 @@
                 </div>
             </div>
 
-            <!-- Item Template (hidden) -->
-            <div id="item-template" class="hidden">
+            <!-- Item Template -->
+            <template id="item-template">
                 <div class="item-row border border-gray-200 rounded-lg p-4">
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div>
@@ -246,12 +246,12 @@
                         </div>
                         <div>
                             <label class="form-label">Quantity</label>
-                            <input type="number" name="items[INDEX][quantity]" step="0.01" min="0.01" 
+                            <input type="number" name="items[INDEX][quantity]" step="0.01" min="0.01"
                                    class="form-input quantity-input" required>
                         </div>
                         <div>
                             <label class="form-label">Unit Price (₹)</label>
-                            <input type="number" name="items[INDEX][unit_price]" step="0.01" min="0" 
+                            <input type="number" name="items[INDEX][unit_price]" step="0.01" min="0"
                                    class="form-input price-input" required>
                         </div>
                         <div>
@@ -268,7 +268,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </template>
         </div>
 
         <!-- Form Actions -->

@@ -174,117 +174,144 @@
     </div>
 
     <!-- Purchase Orders Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        @if($purchaseOrders->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>PO Number</th>
-                            <th>Vendor</th>
-                            <th>Branch</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Items</th>
-                            <th>Amount</th>
-                            <th>Expected Delivery</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($purchaseOrders as $order)
-                            <tr class="hover:bg-gray-50">
-                                <td>
-                                    <a href="{{ route('purchase-orders.show', $order) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                        {{ $order->po_number }}
-                                    </a>
-                                </td>
-                                <td>
-                                    <div>
-                                        <p class="font-medium text-gray-900">{{ $order->vendor->name }}</p>
-                                        <p class="text-sm text-gray-500">{{ $order->vendor->code }}</p>
-                                    </div>
-                                </td>
-                                <td>{{ $order->branch->name }}</td>
-                                <td>{{ $order->created_at->format('M d, Y') }}</td>
-                                <td>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium status-{{ $order->status }}">
-                                        {{ ucfirst($order->status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="text-gray-900 font-medium">{{ $order->purchase_order_items_count }}</span>
-                                    <span class="text-gray-500 text-sm">items</span>
-                                </td>
-                                <td class="font-semibold text-gray-900">₹{{ number_format($order->total_amount, 2) }}</td>
-                                <td>
-                                    @if($order->expected_delivery_date)
-                                        <span class="text-gray-900">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
-                                        @if($order->expected_delivery_date->isPast() && !$order->isReceived())
-                                            <span class="block text-xs text-red-600 font-medium">Overdue</span>
-                                        @endif
-                                    @else
-                                        <span class="text-gray-500">-</span>
+    <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    @if($purchaseOrders->count() > 0)
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            PO Number
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Vendor
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Branch
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Date
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Items
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Amount
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Expected Delivery
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    @foreach($purchaseOrders as $order)
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-4 py-3">
+                                <a href="{{ route('purchase-orders.show', $order) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
+                                    {{ $order->po_number }}
+                                </a>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ $order->vendor->name }}</p>
+                                    <p class="text-sm text-gray-500">{{ $order->vendor->code }}</p>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-gray-700">{{ $order->branch->name }}</td>
+                            <td class="px-4 py-3 text-gray-700">{{ $order->created_at->format('M d, Y') }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($order->status === 'confirmed') bg-green-100 text-green-800 
+                                    @elseif($order->status === 'draft') bg-yellow-100 text-yellow-800
+                                    @elseif($order->status === 'cancelled') bg-red-100 text-red-800
+                                    @else bg-gray-100 text-gray-800 @endif">
+                                    {{ ucfirst($order->status) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-gray-900 font-medium">{{ $order->purchase_order_items_count }}</span>
+                                <span class="text-gray-500 text-sm">items</span>
+                            </td>
+                            <td class="px-4 py-3 font-semibold text-gray-900">
+                                ₹{{ number_format($order->total_amount, 2) }}
+                            </td>
+                            <td class="px-4 py-3">
+                                @if($order->expected_delivery_date)
+                                    <span class="text-gray-900">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
+                                    @if($order->expected_delivery_date->isPast() && !$order->isReceived())
+                                        <span class="block text-xs text-red-600 font-medium">Overdue</span>
                                     @endif
-                                </td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('purchase-orders.show', $order) }}" 
-                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                            View
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex gap-3">
+                                    <a href="{{ route('purchase-orders.show', $order) }}" 
+                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        View
+                                    </a>
+                                    @if($order->isDraft())
+                                        <a href="{{ route('purchase-orders.edit', $order) }}" 
+                                           class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                            Edit
                                         </a>
-                                        @if($order->isDraft())
-                                            <a href="{{ route('purchase-orders.edit', $order) }}" 
-                                               class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                                Edit
-                                            </a>
-                                        @endif
-                                        @if($order->isConfirmed())
-                                            <a href="{{ route('purchase-orders.receive-form', $order) }}" 
-                                               class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                                                Receive
-                                            </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                                    @endif
+                                    @if($order->isConfirmed())
+                                        <a href="{{ route('purchase-orders.receive-form', $order) }}" 
+                                           class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                                            Receive
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-            <!-- Pagination -->
-            @if($purchaseOrders->hasPages())
-                <div class="p-6 border-t border-gray-200">
-                    {{ $purchaseOrders->appends(request()->query())->links() }}
-                </div>
-            @endif
-        @else
-            <div class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No purchase orders found</h3>
-                <p class="mt-1 text-sm text-gray-500">
-                    @if(request()->hasAny(['search', 'status', 'vendor_id', 'branch_id', 'date_from', 'date_to']))
-                        No purchase orders match your current filters.
-                    @else
-                        Get started by creating your first purchase order.
-                    @endif
-                </p>
-                <div class="mt-6">
-                    @if(request()->hasAny(['search', 'status', 'vendor_id', 'branch_id', 'date_from', 'date_to']))
-                        <a href="{{ route('purchase-orders.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200">
-                            Clear Filters
-                        </a>
-                    @else
-                        <a href="{{ route('purchase-orders.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                            Create Purchase Order
-                        </a>
-                    @endif
-                </div>
+        @if($purchaseOrders->hasPages())
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                {{ $purchaseOrders->appends(request()->query())->links() }}
             </div>
         @endif
-    </div>
+    @else
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No purchase orders found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+                @if(request()->hasAny(['search', 'status', 'vendor_id', 'branch_id', 'date_from', 'date_to']))
+                    No purchase orders match your current filters.
+                @else
+                    Get started by creating your first purchase order.
+                @endif
+            </p>
+            <div class="mt-6">
+                @if(request()->hasAny(['search', 'status', 'vendor_id', 'branch_id', 'date_from', 'date_to']))
+                    <a href="{{ route('purchase-orders.index') }}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200">
+                        Clear Filters
+                    </a>
+                @else
+                    <a href="{{ route('purchase-orders.create') }}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                        Create Purchase Order
+                    </a>
+                @endif
+            </div>
+        </div>
+    @endif
+</div>
+
 </div>
 @endsection

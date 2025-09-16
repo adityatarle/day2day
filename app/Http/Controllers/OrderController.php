@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Branch;
 use App\Services\InventoryService;
+use App\Services\OrderWorkflowService;
+use App\Services\OrderNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -129,7 +131,7 @@ class OrderController extends Controller
                 'branch_id' => $branch->id,
                 'user_id' => $user->id,
                 'order_type' => $request->order_type,
-                'status' => 'pending',
+                'status' => 'draft', // Start with draft status
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_method === 'cod' ? 'pending' : 'paid',
                 'subtotal' => 0,
@@ -138,6 +140,8 @@ class OrderController extends Controller
                 'total_amount' => 0,
                 'notes' => $request->notes,
                 'order_date' => now(),
+                'priority' => $request->priority ?? 'normal',
+                'is_urgent' => $request->boolean('is_urgent', false),
             ]);
 
             $subtotal = 0;
@@ -191,6 +195,19 @@ class OrderController extends Controller
             $order->tax_amount = $order->calculateTaxAmount();
             $order->total_amount = $subtotal + $order->tax_amount - $order->discount_amount;
             $order->save();
+
+            // Transition to pending status
+            $workflowService = app(OrderWorkflowService::class);
+            $workflowService->transitionOrder($order, 'pending', $user, 'Order created and ready for confirmation');
+
+            // Send notifications
+            $notificationService = app(OrderNotificationService::class);
+            $notificationService->notifyStatusChange($order, 'draft', 'pending', $user);
+
+            // If urgent, notify staff
+            if ($order->is_urgent) {
+                $notificationService->notifyUrgentOrder($order);
+            }
 
             DB::commit();
 

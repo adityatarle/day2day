@@ -97,6 +97,21 @@ class BranchProductOrderController extends Controller
         // Debug: Log the request data
         \Log::info('Product Order Request Data:', $request->all());
 
+        // Filter out empty items and items with INDEX key
+        $items = collect($request->items)->filter(function ($item, $key) {
+            // Remove items with INDEX key or empty values
+            return $key !== 'INDEX' && 
+                   !empty($item['product_id']) && 
+                   !empty($item['quantity']) && 
+                   !empty($item['reason']);
+        })->values()->toArray();
+
+        // Log filtered items for debugging
+        \Log::info('Filtered items after removing INDEX and empty items:', $items);
+
+        // Update the request with filtered items
+        $request->merge(['items' => $items]);
+
         try {
             $request->validate([
                 'expected_delivery_date' => 'required|date|after:today',
@@ -224,6 +239,21 @@ class BranchProductOrderController extends Controller
             return redirect()->route('branch.product-orders.show', $productOrder)
                 ->with('error', 'Only pending orders can be updated.');
         }
+
+        // Filter out empty items and items with INDEX key
+        $items = collect($request->items)->filter(function ($item, $key) {
+            // Remove items with INDEX key or empty values
+            return $key !== 'INDEX' && 
+                   !empty($item['product_id']) && 
+                   !empty($item['quantity']) && 
+                   !empty($item['reason']);
+        })->values()->toArray();
+
+        // Log filtered items for debugging
+        \Log::info('Update - Filtered items after removing INDEX and empty items:', $items);
+
+        // Update the request with filtered items
+        $request->merge(['items' => $items]);
 
         $request->validate([
             'expected_delivery_date' => 'required|date|after:today',

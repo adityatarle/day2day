@@ -145,10 +145,24 @@ class BranchProductOrderController extends Controller
                 $subtotal += $totalPrice;
             }
 
+            // Get or create a system vendor for branch requests
+            $systemVendor = \App\Models\Vendor::firstOrCreate(
+                ['code' => 'SYS001'],
+                [
+                    'name' => 'System - Branch Requests',
+                    'code' => 'SYS001',
+                    'email' => 'system@branch-requests.com',
+                    'phone' => '0000000000',
+                    'address' => 'System Vendor for Branch Requests',
+                    'gst_number' => 'SYSTEM001',
+                    'is_active' => true,
+                ]
+            );
+
             // Create product order request
             $productOrder = PurchaseOrder::create([
                 'po_number' => $requestNumber,
-                'vendor_id' => null, // No vendor - admin will assign
+                'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
                 'branch_id' => $user->branch_id,
                 'user_id' => $user->id,
                 'status' => 'pending',
@@ -278,8 +292,23 @@ class BranchProductOrderController extends Controller
                 $subtotal += $totalPrice;
             }
 
+            // Get or create a system vendor for branch requests
+            $systemVendor = \App\Models\Vendor::firstOrCreate(
+                ['code' => 'SYS001'],
+                [
+                    'name' => 'System - Branch Requests',
+                    'code' => 'SYS001',
+                    'email' => 'system@branch-requests.com',
+                    'phone' => '0000000000',
+                    'address' => 'System Vendor for Branch Requests',
+                    'gst_number' => 'SYSTEM001',
+                    'is_active' => true,
+                ]
+            );
+
             // Update product order
             $productOrder->update([
+                'vendor_id' => $systemVendor->id, // Ensure system vendor is used
                 'notes' => $request->notes,
                 'expected_delivery_date' => $request->expected_delivery_date,
                 'priority' => $request->priority,

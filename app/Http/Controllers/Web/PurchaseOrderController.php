@@ -673,10 +673,24 @@ class PurchaseOrderController extends Controller
                 4, '0', STR_PAD_LEFT
             );
 
+            // Get or create a system vendor for branch requests
+            $systemVendor = \App\Models\Vendor::firstOrCreate(
+                ['code' => 'SYS001'],
+                [
+                    'name' => 'System - Branch Requests',
+                    'code' => 'SYS001',
+                    'email' => 'system@branch-requests.com',
+                    'phone' => '0000000000',
+                    'address' => 'System Vendor for Branch Requests',
+                    'gst_number' => 'SYSTEM001',
+                    'is_active' => true,
+                ]
+            );
+
             // Create purchase request (not to vendor, but to main branch)
             $purchaseRequest = PurchaseOrder::create([
                 'po_number' => $requestNumber,
-                'vendor_id' => null, // No vendor - this is a request to main branch
+                'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
                 'branch_id' => $user->branch_id,
                 'user_id' => $user->id,
                 'status' => 'pending',

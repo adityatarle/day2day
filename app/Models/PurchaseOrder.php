@@ -183,6 +183,22 @@ class PurchaseOrder extends Model
     }
 
     /**
+     * Check if purchase order is approved.
+     */
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    /**
+     * Check if purchase order is fulfilled.
+     */
+    public function isFulfilled(): bool
+    {
+        return $this->status === 'fulfilled';
+    }
+
+    /**
      * Update purchase order totals.
      */
     public function updateTotals(): void
@@ -223,7 +239,9 @@ class PurchaseOrder extends Model
         return match($this->status) {
             'draft' => 'Draft Purchase Order',
             'sent' => 'Purchase Order Sent',
+            'approved' => 'Approved Order',
             'confirmed' => 'Purchase Order Confirmed',
+            'fulfilled' => 'Order Fulfilled',
             'received' => 'Received Order (Materials Received)',
             'cancelled' => 'Cancelled Purchase Order',
             default => ucfirst($this->status)
@@ -238,7 +256,9 @@ class PurchaseOrder extends Model
         return match($this->status) {
             'draft' => 'bg-gray-100 text-gray-800',
             'sent' => 'bg-blue-100 text-blue-800',
+            'approved' => 'bg-green-100 text-green-800',
             'confirmed' => 'bg-yellow-100 text-yellow-800',
+            'fulfilled' => 'bg-purple-100 text-purple-800',
             'received' => 'bg-green-100 text-green-800',
             'cancelled' => 'bg-red-100 text-red-800',
             default => 'bg-gray-100 text-gray-800'

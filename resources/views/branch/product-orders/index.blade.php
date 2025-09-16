@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Product Orders</h1>
-            <p class="text-gray-600">Order products from admin - no vendor selection needed</p>
+            <p class="text-gray-600">Request products from admin - admin will purchase materials from vendors</p>
         </div>
         <div class="flex gap-3 mt-4 sm:mt-0">
             <a href="{{ route('branch.product-orders.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
@@ -143,7 +143,6 @@
                             <th>Status</th>
                             <th>Priority</th>
                             <th>Items</th>
-                            <th>Assigned Vendor</th>
                             <th>Expected Delivery</th>
                             <th>Actions</th>
                         </tr>
@@ -178,14 +177,7 @@
                                     <span class="text-gray-500 text-sm">items</span>
                                 </td>
                                 <td>
-                                    @if($order->vendor)
-                                        <div>
-                                            <p class="font-medium text-gray-900">{{ $order->vendor->name }}</p>
-                                            <p class="text-sm text-gray-500">Assigned by admin</p>
-                                        </div>
-                                    @else
-                                        <span class="text-gray-500 text-sm">Pending assignment</span>
-                                    @endif
+                                    <span class="text-gray-500 text-sm">{{ ucfirst($order->status) }}</span>
                                 </td>
                                 <td>
                                     @if($order->expected_delivery_date)

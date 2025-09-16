@@ -196,6 +196,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/branch-orders', [AdminBranchOrderController::class, 'index'])->name('admin.branch-orders.index');
         Route::get('/admin/branch-orders/{branchOrder}', [AdminBranchOrderController::class, 'show'])->name('admin.branch-orders.show');
         Route::post('/admin/branch-orders/{branchOrder}/approve', [AdminBranchOrderController::class, 'approve'])->name('admin.branch-orders.approve');
+        Route::post('/admin/branch-orders/{branchOrder}/create-vendor-po', [AdminBranchOrderController::class, 'createVendorPurchaseOrder'])->name('admin.branch-orders.create-vendor-po');
         Route::get('/admin/branch-orders/{branchOrder}/fulfill', [AdminBranchOrderController::class, 'showFulfillForm'])->name('admin.branch-orders.fulfill-form');
         Route::post('/admin/branch-orders/{branchOrder}/fulfill', [AdminBranchOrderController::class, 'fulfill'])->name('admin.branch-orders.fulfill');
         Route::post('/admin/branch-orders/{branchOrder}/cancel', [AdminBranchOrderController::class, 'cancel'])->name('admin.branch-orders.cancel');

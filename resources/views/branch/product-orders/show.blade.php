@@ -45,8 +45,8 @@
                         <div class="text-sm font-medium text-gray-900">{{ optional($productOrder->expected_delivery_date)->format('M d, Y') ?? '-' }}</div>
                     </div>
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="text-xs text-gray-500">Assigned Vendor</div>
-                        <div class="text-sm font-medium text-gray-900">{{ $productOrder->vendor?->name ?? 'Pending assignment' }}</div>
+                        <div class="text-xs text-gray-500">Status</div>
+                        <div class="text-sm font-medium text-gray-900">{{ ucfirst($productOrder->status) }}</div>
                     </div>
                 </div>
 
@@ -83,17 +83,11 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                 <h2 class="text-lg font-semibold text-gray-900">Order Status</h2>
                 @if($productOrder->status === 'draft')
-                    <div class="alert alert-info">Your order has been sent to admin. Vendor will be assigned by admin.</div>
+                    <div class="alert alert-info">Your order has been sent to admin. Admin will purchase materials and fulfill your request.</div>
                     <a href="{{ route('branch.product-orders.edit', $productOrder) }}" class="btn btn-primary w-full text-center">Edit Order</a>
                 @elseif($productOrder->status === 'sent')
                     <div class="alert alert-success">Admin approved your order. Awaiting delivery.</div>
-                    <div class="text-sm text-gray-600">Admin may create a vendor purchase order to fulfill this request.</div>
-                    @if($productOrder->vendor)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="font-medium text-gray-900 mb-2">Assigned Vendor</div>
-                        <div class="text-sm text-gray-700">{{ $productOrder->vendor->name }} ({{ $productOrder->vendor->code }})</div>
-                    </div>
-                    @endif
+                    <div class="text-sm text-gray-600">Admin is processing your request and will purchase materials from vendors.</div>
                 @elseif($productOrder->status === 'fulfilled')
                     <div class="alert alert-success">Order delivered by admin. Please record receipt in Purchase Entry if not done yet.</div>
                 @elseif($productOrder->status === 'cancelled')

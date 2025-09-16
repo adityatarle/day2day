@@ -101,30 +101,65 @@
                 <form method="POST" action="{{ route('admin.branch-orders.approve', $branchOrder) }}" class="space-y-4">
                     @csrf
                     <div>
-                        <label class="form-label">Select Vendor</label>
-                        <select name="vendor_id" class="form-input" required>
-                            <option value="">Choose vendor</option>
-                            @foreach($vendors as $vendor)
-                                <option value="{{ $vendor->id }}" {{ $branchOrder->vendor_id == $vendor->id ? 'selected' : '' }}>
-                                    {{ $vendor->name }} ({{ $vendor->code }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
                         <label class="form-label">Admin Notes (optional)</label>
                         <textarea name="admin_notes" rows="3" class="form-input" placeholder="Notes for approval or instructions"></textarea>
                     </div>
                     <div class="flex gap-3">
-                        <button type="submit" class="btn btn-primary">Approve & Assign Vendor</button>
+                        <button type="submit" class="btn btn-primary">Approve Order</button>
                         <button type="button" onclick="document.getElementById('cancel-form').classList.toggle('hidden')" class="btn btn-danger">Cancel Order</button>
                     </div>
                 </form>
                 @elseif($branchOrder->status === 'approved')
-                <div class="space-y-3">
-                    <div class="alert alert-info">Order approved. You can fulfill it now.</div>
-                    <a href="{{ route('admin.branch-orders.fulfill-form', $branchOrder) }}" class="btn btn-success w-full text-center">Fulfill Order</a>
-                    <a href="{{ route('purchase-orders.create', ['branch_request_id' => $branchOrder->id]) }}" class="btn btn-primary w-full text-center">Create Vendor PO from this Request</a>
+                <div class="space-y-4">
+                    <div class="alert alert-info">
+                        <strong>Order approved!</strong> Now you need to purchase materials from vendors before fulfilling this order.
+                    </div>
+                    
+                    <!-- Create Vendor Purchase Order Form -->
+                    <div class="border rounded-lg p-4 bg-gray-50">
+                        <h3 class="font-semibold text-gray-900 mb-3">Step 1: Create Vendor Purchase Order</h3>
+                        <form method="POST" action="{{ route('admin.branch-orders.create-vendor-po', $branchOrder) }}" class="space-y-3">
+                            @csrf
+                            <div>
+                                <label class="form-label">Select Vendor</label>
+                                <select name="vendor_id" class="form-input" required>
+                                    <option value="">Choose vendor</option>
+                                    @foreach($vendors as $vendor)
+                                        <option value="{{ $vendor->id }}">
+                                            {{ $vendor->name }} ({{ $vendor->code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="form-label">Expected Delivery Date</label>
+                                    <input type="date" name="expected_delivery_date" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">Payment Terms</label>
+                                    <select name="payment_terms" class="form-input" required>
+                                        <option value="immediate">Immediate</option>
+                                        <option value="7_days">7 Days</option>
+                                        <option value="15_days">15 Days</option>
+                                        <option value="30_days">30 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Admin Notes (optional)</label>
+                                <textarea name="admin_notes" rows="2" class="form-input" placeholder="Notes for vendor purchase order"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-full">Create Vendor Purchase Order</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Fulfill Order Option -->
+                    <div class="border rounded-lg p-4 bg-green-50">
+                        <h3 class="font-semibold text-gray-900 mb-2">Step 2: Fulfill Order</h3>
+                        <p class="text-sm text-gray-600 mb-3">After purchasing materials from vendors, fulfill this order to send materials to the branch.</p>
+                        <a href="{{ route('admin.branch-orders.fulfill-form', $branchOrder) }}" class="btn btn-success w-full text-center">Fulfill Order from Stock</a>
+                    </div>
                 </div>
                 @elseif($branchOrder->status === 'fulfilled')
                 <div class="alert alert-success">Order fulfilled on {{ optional($branchOrder->fulfilled_at)->format('M d, Y H:i') }}</div>

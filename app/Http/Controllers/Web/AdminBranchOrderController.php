@@ -88,47 +88,90 @@ class AdminBranchOrderController extends Controller
     }
 
     /**
-     * Approve branch order and assign vendor.
+     * Approve branch order (without vendor assignment).
+     * Admin should purchase materials first, then fulfill the order.
      */
     public function approve(Request $request, PurchaseOrder $branchOrder)
     {
         $request->validate([
-            'vendor_id' => 'nullable|exists:vendors,id',
             'admin_notes' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $branchOrder) {
             $branchOrder->update([
                 'status' => 'approved',
-                'vendor_id' => $request->vendor_id,
                 'notes' => trim(($branchOrder->notes ?? '') . (filled($request->admin_notes) ? ("\n\nAdmin Notes: " . $request->admin_notes) : '')),
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
             ]);
-
-            // If a vendor is assigned, update items with vendor pricing
-            if ($request->vendor_id) {
-                foreach ($branchOrder->purchaseOrderItems as $item) {
-                    $vendorProduct = DB::table('product_vendors')
-                        ->where('product_id', $item->product_id)
-                        ->where('vendor_id', $request->vendor_id)
-                        ->first();
-
-                    if ($vendorProduct) {
-                        $item->update([
-                            'unit_price' => $vendorProduct->supply_price,
-                            'total_price' => $item->quantity * $vendorProduct->supply_price,
-                        ]);
-                    }
-                }
-            }
-
-            // Recalculate totals
-            $branchOrder->updateTotals();
         });
 
         return redirect()->route('admin.branch-orders.show', $branchOrder)
-            ->with('success', 'Branch order approved and vendor assigned successfully!');
+            ->with('success', 'Branch order approved! You can now purchase materials from vendors and fulfill the order.');
+    }
+
+    /**
+     * Create a vendor purchase order from a branch request.
+     * This allows admin to purchase materials from vendors for the branch order.
+     */
+    public function createVendorPurchaseOrder(Request $request, PurchaseOrder $branchOrder)
+    {
+        if ($branchOrder->status !== 'approved') {
+            return redirect()->back()->with('error', 'Only approved branch orders can be used to create vendor purchase orders.');
+        }
+
+        $request->validate([
+            'vendor_id' => 'required|exists:vendors,id',
+            'expected_delivery_date' => 'required|date|after:today',
+            'payment_terms' => 'required|in:immediate,7_days,15_days,30_days',
+            'admin_notes' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $branchOrder) {
+            // Create a new purchase order for the vendor
+            $vendorPO = PurchaseOrder::create([
+                'po_number' => 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::max('id') + 1, 4, '0', STR_PAD_LEFT),
+                'vendor_id' => $request->vendor_id,
+                'branch_id' => $branchOrder->branch_id, // Admin's main branch
+                'branch_request_id' => $branchOrder->id, // Link to the original branch request
+                'user_id' => Auth::id(),
+                'status' => 'draft',
+                'order_type' => 'purchase_order',
+                'delivery_address_type' => 'admin_main', // Deliver to admin first
+                'payment_terms' => $request->payment_terms,
+                'expected_delivery_date' => $request->expected_delivery_date,
+                'notes' => "Created from branch request: {$branchOrder->po_number}\n" . ($request->admin_notes ?? ''),
+                'subtotal' => 0,
+                'tax_amount' => 0,
+                'transport_cost' => 0,
+                'total_amount' => 0,
+            ]);
+
+            // Copy items from branch order to vendor purchase order
+            foreach ($branchOrder->purchaseOrderItems as $branchItem) {
+                $vendorProduct = DB::table('product_vendors')
+                    ->where('product_id', $branchItem->product_id)
+                    ->where('vendor_id', $request->vendor_id)
+                    ->first();
+
+                $unitPrice = $vendorProduct ? $vendorProduct->supply_price : $branchItem->unit_price;
+                $totalPrice = $branchItem->quantity * $unitPrice;
+
+                $vendorPO->purchaseOrderItems()->create([
+                    'product_id' => $branchItem->product_id,
+                    'quantity' => $branchItem->quantity,
+                    'unit_price' => $unitPrice,
+                    'total_price' => $totalPrice,
+                    'notes' => "From branch request: {$branchOrder->po_number}",
+                ]);
+            }
+
+            // Update totals
+            $vendorPO->updateTotals();
+        });
+
+        return redirect()->route('purchase-orders.show', $vendorPO)
+            ->with('success', 'Vendor purchase order created successfully! You can now send it to the vendor.');
     }
 
     /**

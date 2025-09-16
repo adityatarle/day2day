@@ -14,7 +14,7 @@
             </a>
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Order Products</h1>
-                <p class="text-gray-600">Request products from admin - vendor will be assigned automatically</p>
+                <p class="text-gray-600">Request products from admin - admin will purchase materials from vendors</p>
             </div>
         </div>
     </div>

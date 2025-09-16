@@ -467,8 +467,11 @@ class PurchaseOrderController extends Controller
                         'branch_id' => $targetBranchId,
                         'type' => 'purchase',
                         'quantity' => $receivedQuantity,
+                        'unit_price' => $purchaseOrderItem->unit_price ?? 0,
                         'reference_type' => 'purchase_order',
                         'reference_id' => $purchaseOrder->id,
+                        'user_id' => auth()->id(),
+                        'movement_date' => now(),
                         'notes' => "Received Order from PO: {$purchaseOrder->po_number}",
                     ]);
 

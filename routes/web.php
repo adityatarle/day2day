@@ -31,6 +31,7 @@ use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchContr
 use App\Http\Controllers\Web\AdminBranchOrderController;
 use App\Http\Controllers\Web\BranchProductOrderController;
 use App\Http\Controllers\Web\BranchPurchaseEntryController;
+use App\Http\Controllers\Web\OrderWorkflowController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -110,6 +111,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
         Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+        
+        // Order Workflow Routes
+        Route::get('/orders/workflow/dashboard', [OrderWorkflowController::class, 'dashboard'])->name('orders.workflow.dashboard');
+        Route::get('/orders/workflow/{order}', [OrderWorkflowController::class, 'show'])->name('orders.workflow.show');
+        Route::post('/orders/{order}/workflow/transition', [OrderWorkflowController::class, 'transition'])->name('orders.workflow.transition');
+        Route::post('/orders/workflow/bulk-transition', [OrderWorkflowController::class, 'bulkTransition'])->name('orders.workflow.bulk-transition');
+        Route::post('/orders/{order}/workflow/quality-check', [OrderWorkflowController::class, 'qualityCheck'])->name('orders.workflow.quality-check');
+        Route::get('/orders/workflow/analytics', [OrderWorkflowController::class, 'analytics'])->name('orders.workflow.analytics');
+        Route::get('/orders/workflow/status/{status}', [OrderWorkflowController::class, 'byStatus'])->name('orders.workflow.by-status');
+        Route::put('/orders/{order}/workflow/priority', [OrderWorkflowController::class, 'updatePriority'])->name('orders.workflow.update-priority');
         Route::get('/billing/quick-sale', [OrderController::class, 'quickSaleForm'])->name('billing.quickSale');
         Route::get('/billing/wholesale', [OrderController::class, 'wholesaleForm'])->name('billing.wholesale');
     });

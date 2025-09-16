@@ -86,21 +86,33 @@ class BranchProductOrderController extends Controller
      */
     public function store(Request $request)
     {
+        \Log::info('Product Order Store method called');
+        
         $user = Auth::user();
         
         if (!$user->hasRole('branch_manager') || !$user->branch_id) {
             abort(403, 'Access denied. Branch managers only.');
         }
 
-        $request->validate([
-            'expected_delivery_date' => 'required|date|after:today',
-            'notes' => 'nullable|string',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.reason' => 'required|string|max:255',
-        ]);
+        // Debug: Log the request data
+        \Log::info('Product Order Request Data:', $request->all());
+
+        try {
+            $request->validate([
+                'expected_delivery_date' => 'required|date|after:today',
+                'notes' => 'nullable|string',
+                'priority' => 'required|in:low,medium,high,urgent',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric|min:0.01',
+                'items.*.reason' => 'required|string|max:255',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', $e->errors());
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        }
 
         DB::transaction(function () use ($request, $user) {
             // Generate request number

@@ -198,19 +198,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div>
                             <label class="form-label">Product</label>
-                            <select name="items[INDEX][product_id]" class="form-input product-select" required>
+                            <select name="items[INDEX][product_id]" class="form-input product-select">
                                 <option value="">Select Product</option>
                             </select>
                         </div>
                         <div>
                             <label class="form-label">Quantity</label>
                             <input type="number" name="items[INDEX][quantity]" step="0.01" min="0.01"
-                                   class="form-input quantity-input" required>
+                                   class="form-input quantity-input">
                         </div>
                         <div>
                             <label class="form-label">Unit Price (₹)</label>
                             <input type="number" name="items[INDEX][unit_price]" step="0.01" min="0"
-                                   class="form-input price-input" required>
+                                   class="form-input price-input">
                         </div>
                         <div>
                             <label class="form-label">Total Price</label>
@@ -274,6 +274,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.innerHTML = newItem;
         const itemRow = div.firstElementChild;
+        
+        // Add required attributes to the dynamically created elements
+        const productSelect = itemRow.querySelector('.product-select');
+        const quantityInput = itemRow.querySelector('.quantity-input');
+        const priceInput = itemRow.querySelector('.price-input');
+        
+        productSelect.setAttribute('required', 'required');
+        quantityInput.setAttribute('required', 'required');
+        priceInput.setAttribute('required', 'required');
+        
         itemsContainer.appendChild(itemRow);
 
         addItemEventListeners(itemRow);

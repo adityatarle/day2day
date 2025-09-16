@@ -187,28 +187,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Form validation
     document.getElementById('product-order-form').addEventListener('submit', function(e) {
+        console.log('Form submit event triggered');
+        
         const items = document.querySelectorAll('.item-row');
+        console.log('Number of items found:', items.length);
+        
+        // Check if there are any items
         if (items.length === 0) {
             e.preventDefault();
             alert('Please add at least one product to the order.');
             return;
         }
 
-        let hasValidItems = false;
-        items.forEach(function(row) {
+        // Check if at least one item has all required fields filled
+        let hasValidItem = false;
+        let emptyFields = [];
+        
+        items.forEach(function(row, index) {
             const productId = row.querySelector('.product-select').value;
             const quantity = row.querySelector('.quantity-input').value;
             const reason = row.querySelector('.reason-input').value;
             
+            console.log(`Item ${index + 1}: productId=${productId}, quantity=${quantity}, reason=${reason}`);
+            
             if (productId && quantity && reason) {
-                hasValidItems = true;
+                hasValidItem = true;
+            } else {
+                if (!productId) emptyFields.push(`Item ${index + 1}: Product not selected`);
+                if (!quantity) emptyFields.push(`Item ${index + 1}: Quantity not entered`);
+                if (!reason) emptyFields.push(`Item ${index + 1}: Reason not provided`);
             }
         });
 
-        if (!hasValidItems) {
+        if (!hasValidItem) {
             e.preventDefault();
-            alert('Please ensure all items have product, quantity, and reason filled.');
+            alert('Please ensure at least one item has all fields filled:\n' + emptyFields.join('\n'));
+            return;
         }
+
+        // Debug: Log form data before submission
+        const formData = new FormData(this);
+        console.log('Form data being submitted:');
+        for (let [key, value] of formData.entries()) {
+            console.log(key, value);
+        }
+
+        // If we get here, validation passed - allow form submission
+        console.log('Form validation passed, submitting...');
     });
 });
 </script>

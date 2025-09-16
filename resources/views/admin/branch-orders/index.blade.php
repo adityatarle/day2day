@@ -209,8 +209,8 @@
                                 </td>
                                 <td>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                           ($order->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
+                                        {{ $order->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                                           ($order->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
                                            ($order->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
                                         {{ ucfirst($order->status) }}
                                     </span>
@@ -232,7 +232,7 @@
                                 <td>
                                     @if($order->expected_delivery_date)
                                         <span class="text-gray-900">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
-                                        @if($order->expected_delivery_date->isPast() && $order->status === 'pending')
+                                        @if($order->expected_delivery_date->isPast() && $order->status === 'draft')
                                             <span class="block text-xs text-red-600 font-medium">Overdue</span>
                                         @endif
                                     @else

@@ -22,7 +22,7 @@
                         <p class="text-gray-600">Branch: {{ $productOrder->branch->name }}</p>
                     </div>
                     <div class="text-right">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $productOrder->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ($productOrder->status === 'approved' ? 'bg-blue-100 text-blue-800' : ($productOrder->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $productOrder->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : ($productOrder->status === 'sent' ? 'bg-blue-100 text-blue-800' : ($productOrder->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
                             {{ ucfirst($productOrder->status) }}
                         </span>
                         @if($productOrder->priority)
@@ -82,10 +82,10 @@
         <div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                 <h2 class="text-lg font-semibold text-gray-900">Order Status</h2>
-                @if($productOrder->status === 'pending')
+                @if($productOrder->status === 'draft')
                     <div class="alert alert-info">Your order has been sent to admin. Vendor will be assigned by admin.</div>
                     <a href="{{ route('branch.product-orders.edit', $productOrder) }}" class="btn btn-primary w-full text-center">Edit Order</a>
-                @elseif($productOrder->status === 'approved')
+                @elseif($productOrder->status === 'sent')
                     <div class="alert alert-success">Admin approved your order. Awaiting delivery.</div>
                     <div class="text-sm text-gray-600">Admin may create a vendor purchase order to fulfill this request.</div>
                     @if($productOrder->vendor)

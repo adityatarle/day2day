@@ -36,16 +36,8 @@ return new class extends Migration
             }
         });
 
-        // Check if foreign keys already exist before trying to create them
-        $existingForeignKeys = DB::select("
-            SELECT CONSTRAINT_NAME 
-            FROM information_schema.KEY_COLUMN_USAGE 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'purchase_orders' 
-            AND CONSTRAINT_NAME LIKE '%_foreign'
-        ");
-        
-        $existingConstraintNames = array_column($existingForeignKeys, 'CONSTRAINT_NAME');
+        // For SQLite, we'll skip the foreign key check and just try to create them
+        $existingConstraintNames = [];
         
         Schema::table('purchase_orders', function (Blueprint $table) use ($existingConstraintNames) {
             // Add foreign keys only if columns exist and FKs aren't already present

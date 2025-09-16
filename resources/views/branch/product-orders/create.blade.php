@@ -96,7 +96,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div>
                             <label class="form-label">Product *</label>
-                            <select name="items[INDEX][product_id]" class="form-input product-select" required>
+                            <select name="items[INDEX][product_id]" class="form-input product-select">
                                 <option value="">Select Product</option>
                                 @foreach($products as $product)
                                     <option value="{{ $product->id }}" data-category="{{ $product->category }}">
@@ -108,13 +108,13 @@
                         <div>
                             <label class="form-label">Quantity *</label>
                             <input type="number" name="items[INDEX][quantity]" step="0.01" min="0.01" 
-                                   class="form-input quantity-input" required>
+                                   class="form-input quantity-input">
                         </div>
                         <div>
                             <label class="form-label">Reason for Request *</label>
                             <input type="text" name="items[INDEX][reason]" 
                                    class="form-input reason-input" 
-                                   placeholder="e.g., Low stock, customer demand" required>
+                                   placeholder="e.g., Low stock, customer demand">
                         </div>
                         <div>
                             <button type="button" class="remove-item w-full bg-red-50 hover:bg-red-100 text-red-700 font-medium py-2 px-4 rounded-lg transition-colors">
@@ -163,6 +163,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.innerHTML = newItem;
         const itemRow = div.firstElementChild;
+        
+        // Add required attributes to the dynamically created elements
+        const productSelect = itemRow.querySelector('.product-select');
+        const quantityInput = itemRow.querySelector('.quantity-input');
+        const reasonInput = itemRow.querySelector('.reason-input');
+        
+        productSelect.setAttribute('required', 'required');
+        quantityInput.setAttribute('required', 'required');
+        reasonInput.setAttribute('required', 'required');
+        
         itemsContainer.appendChild(itemRow);
 
         // Add event listeners

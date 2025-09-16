@@ -17,9 +17,9 @@
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Edit Order #{{ $productOrder->po_number }}</h1>
-                <p class="text-gray-600">Only pending orders can be edited</p>
+                <p class="text-gray-600">Only draft orders can be edited</p>
             </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pending</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Draft</span>
         </div>
 
         <form method="POST" action="{{ route('branch.product-orders.update', $productOrder) }}" id="product-order-form" class="space-y-8">

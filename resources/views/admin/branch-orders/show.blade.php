@@ -23,7 +23,7 @@
                     </div>
                     <div class="text-right">
                         <div>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $branchOrder->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ($branchOrder->status === 'approved' ? 'bg-blue-100 text-blue-800' : ($branchOrder->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $branchOrder->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : ($branchOrder->status === 'sent' ? 'bg-blue-100 text-blue-800' : ($branchOrder->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
                                 {{ ucfirst($branchOrder->status) }}
                             </span>
                         </div>
@@ -97,7 +97,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Admin Actions</h2>
 
-                @if($branchOrder->status === 'pending')
+                @if($branchOrder->status === 'draft')
                 <form method="POST" action="{{ route('admin.branch-orders.approve', $branchOrder) }}" class="space-y-4">
                     @csrf
                     <div>
@@ -133,7 +133,7 @@
                 @endif
 
                 @if($branchOrder->status !== 'cancelled' && $branchOrder->status !== 'fulfilled')
-                <div id="cancel-form" class="mt-4 {{ $branchOrder->status === 'pending' ? 'hidden' : '' }}">
+                <div id="cancel-form" class="mt-4 {{ $branchOrder->status === 'draft' ? 'hidden' : '' }}">
                     <form method="POST" action="{{ route('admin.branch-orders.cancel', $branchOrder) }}" class="space-y-3">
                         @csrf
                         <label class="form-label">Cancellation Reason</label>

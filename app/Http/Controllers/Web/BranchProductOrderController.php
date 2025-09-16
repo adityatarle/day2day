@@ -52,10 +52,10 @@ class BranchProductOrderController extends Controller
                 ->where('order_type', 'branch_request')->count(),
             'pending_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'pending')->count(),
+                ->where('status', 'draft')->count(),
             'approved_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'approved')->count(),
+                ->where('status', 'sent')->count(),
             'this_month_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
                 ->whereMonth('created_at', now()->month)->count(),
@@ -165,7 +165,7 @@ class BranchProductOrderController extends Controller
                 'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
                 'branch_id' => $user->branch_id,
                 'user_id' => $user->id,
-                'status' => 'pending',
+                'status' => 'draft',
                 'order_type' => 'branch_request',
                 'payment_terms' => 'immediate',
                 'transport_cost' => 0,
@@ -228,9 +228,9 @@ class BranchProductOrderController extends Controller
             abort(403, 'Access denied.');
         }
 
-        if ($productOrder->status !== 'pending') {
+        if ($productOrder->status !== 'draft') {
             return redirect()->route('branch.product-orders.show', $productOrder)
-                ->with('error', 'Only pending orders can be edited.');
+                ->with('error', 'Only draft orders can be edited.');
         }
 
         $products = Product::active()->orderBy('name')->get();
@@ -252,9 +252,9 @@ class BranchProductOrderController extends Controller
             abort(403, 'Access denied.');
         }
 
-        if ($productOrder->status !== 'pending') {
+        if ($productOrder->status !== 'draft') {
             return redirect()->route('branch.product-orders.show', $productOrder)
-                ->with('error', 'Only pending orders can be updated.');
+                ->with('error', 'Only draft orders can be updated.');
         }
 
         // Filter out empty items and items with INDEX key
@@ -353,9 +353,9 @@ class BranchProductOrderController extends Controller
             abort(403, 'Access denied.');
         }
 
-        if ($productOrder->status !== 'pending') {
+        if ($productOrder->status !== 'draft') {
             return redirect()->route('branch.product-orders.index')
-                ->with('error', 'Only pending orders can be deleted.');
+                ->with('error', 'Only draft orders can be deleted.');
         }
 
         $productOrder->delete();

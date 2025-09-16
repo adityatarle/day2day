@@ -48,7 +48,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Pending</p>
+                    <p class="text-sm font-medium text-gray-600">Draft</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $stats['pending_orders'] }}</p>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Approved</p>
+                    <p class="text-sm font-medium text-gray-600">Sent</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $stats['approved_orders'] }}</p>
                 </div>
             </div>
@@ -101,8 +101,8 @@
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-input">
                         <option value="">All Status</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Sent</option>
                         <option value="fulfilled" {{ request('status') === 'fulfilled' ? 'selected' : '' }}>Fulfilled</option>
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
@@ -159,8 +159,8 @@
                                 <td>{{ $order->created_at->format('M d, Y') }}</td>
                                 <td>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        {{ $order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                           ($order->status === 'approved' ? 'bg-blue-100 text-blue-800' : 
+                                        {{ $order->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                                           ($order->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
                                            ($order->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
                                         {{ ucfirst($order->status) }}
                                     </span>
@@ -203,7 +203,7 @@
                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                             View
                                         </a>
-                                        @if($order->status === 'pending')
+                                        @if($order->status === 'draft')
                                             <a href="{{ route('branch.product-orders.edit', $order) }}" 
                                                class="text-green-600 hover:text-green-800 text-sm font-medium">
                                                 Edit

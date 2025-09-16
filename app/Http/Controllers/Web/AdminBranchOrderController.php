@@ -62,14 +62,14 @@ class AdminBranchOrderController extends Controller
 
         // Get filter options
         $branches = Branch::orderBy('name')->get();
-        $statuses = ['pending', 'approved', 'processing', 'fulfilled', 'cancelled'];
+        $statuses = ['draft', 'sent', 'confirmed', 'received', 'cancelled'];
         $priorities = ['low', 'medium', 'high', 'urgent'];
 
         // Statistics
         $stats = [
             'total_requests' => PurchaseOrder::where('order_type', 'branch_request')->count(),
-            'pending_requests' => PurchaseOrder::where('order_type', 'branch_request')->where('status', 'pending')->count(),
-            'approved_requests' => PurchaseOrder::where('order_type', 'branch_request')->where('status', 'approved')->count(),
+            'pending_requests' => PurchaseOrder::where('order_type', 'branch_request')->where('status', 'draft')->count(),
+            'approved_requests' => PurchaseOrder::where('order_type', 'branch_request')->where('status', 'sent')->count(),
             'this_month_requests' => PurchaseOrder::where('order_type', 'branch_request')->whereMonth('created_at', now()->month)->count(),
         ];
 

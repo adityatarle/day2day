@@ -136,6 +136,15 @@ class BranchProductOrderController extends Controller
                 4, '0', STR_PAD_LEFT
             );
 
+            // Calculate subtotal before creating the purchase order
+            $subtotal = 0;
+            foreach ($request->items as $item) {
+                $product = Product::find($item['product_id']);
+                $estimatedPrice = $product->purchase_price ?? 0;
+                $totalPrice = $item['quantity'] * $estimatedPrice;
+                $subtotal += $totalPrice;
+            }
+
             // Create product order request
             $productOrder = PurchaseOrder::create([
                 'po_number' => $requestNumber,
@@ -146,6 +155,9 @@ class BranchProductOrderController extends Controller
                 'order_type' => 'branch_request',
                 'payment_terms' => 'immediate',
                 'transport_cost' => 0,
+                'subtotal' => $subtotal,
+                'tax_amount' => 0, // Will be calculated by admin
+                'total_amount' => $subtotal,
                 'notes' => $request->notes,
                 'expected_delivery_date' => $request->expected_delivery_date,
                 'priority' => $request->priority,
@@ -153,12 +165,10 @@ class BranchProductOrderController extends Controller
             ]);
 
             // Create product order items
-            $subtotal = 0;
             foreach ($request->items as $item) {
                 $product = Product::find($item['product_id']);
                 $estimatedPrice = $product->purchase_price ?? 0;
                 $totalPrice = $item['quantity'] * $estimatedPrice;
-                $subtotal += $totalPrice;
 
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $productOrder->id,
@@ -169,13 +179,6 @@ class BranchProductOrderController extends Controller
                     'notes' => $item['reason'],
                 ]);
             }
-
-            // Update totals (estimated)
-            $productOrder->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => 0, // Will be calculated by admin
-                'total_amount' => $subtotal,
-            ]);
         });
 
         return redirect()->route('branch.product-orders.index')
@@ -266,23 +269,33 @@ class BranchProductOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $productOrder) {
-            // Update product order
-            $productOrder->update([
-                'notes' => $request->notes,
-                'expected_delivery_date' => $request->expected_delivery_date,
-                'priority' => $request->priority,
-            ]);
-
-            // Delete existing items
-            $productOrder->purchaseOrderItems()->delete();
-
-            // Create new items
+            // Calculate subtotal before updating
             $subtotal = 0;
             foreach ($request->items as $item) {
                 $product = Product::find($item['product_id']);
                 $estimatedPrice = $product->purchase_price ?? 0;
                 $totalPrice = $item['quantity'] * $estimatedPrice;
                 $subtotal += $totalPrice;
+            }
+
+            // Update product order
+            $productOrder->update([
+                'notes' => $request->notes,
+                'expected_delivery_date' => $request->expected_delivery_date,
+                'priority' => $request->priority,
+                'subtotal' => $subtotal,
+                'tax_amount' => 0,
+                'total_amount' => $subtotal,
+            ]);
+
+            // Delete existing items
+            $productOrder->purchaseOrderItems()->delete();
+
+            // Create new items
+            foreach ($request->items as $item) {
+                $product = Product::find($item['product_id']);
+                $estimatedPrice = $product->purchase_price ?? 0;
+                $totalPrice = $item['quantity'] * $estimatedPrice;
 
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $productOrder->id,
@@ -293,13 +306,6 @@ class BranchProductOrderController extends Controller
                     'notes' => $item['reason'],
                 ]);
             }
-
-            // Update totals
-            $productOrder->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => 0,
-                'total_amount' => $subtotal,
-            ]);
         });
 
         return redirect()->route('branch.product-orders.show', $productOrder)

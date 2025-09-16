@@ -19,7 +19,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Order #{{ $purchaseEntry->po_number }}</h1>
-                        <p class="text-gray-600">Vendor: {{ $purchaseEntry->vendor?->name ?? 'Admin Fulfillment' }}</p>
+                        <p class="text-gray-600">Source: {{ $purchaseEntry->vendor ? 'Admin Purchase' : 'Admin Fulfillment' }}</p>
                     </div>
                     <div class="text-right">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $purchaseEntry->status === 'approved' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">

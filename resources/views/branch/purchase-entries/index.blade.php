@@ -140,7 +140,7 @@
                             <th>Date Ordered</th>
                             <th>Status</th>
                             <th>Items</th>
-                            <th>Vendor</th>
+                            <th>Source</th>
                             <th>Delivery Status</th>
                             <th>Receipt Status</th>
                             <th>Actions</th>
@@ -166,14 +166,7 @@
                                     <span class="text-gray-500 text-sm">items</span>
                                 </td>
                                 <td>
-                                    @if($entry->vendor)
-                                        <div>
-                                            <p class="font-medium text-gray-900">{{ $entry->vendor->name }}</p>
-                                            <p class="text-sm text-gray-500">{{ $entry->vendor->code }}</p>
-                                        </div>
-                                    @else
-                                        <span class="text-gray-500 text-sm">Not assigned</span>
-                                    @endif
+                                    <span class="text-gray-500 text-sm">{{ $entry->vendor ? 'Admin Purchase' : 'Admin Fulfillment' }}</span>
                                 </td>
                                 <td>
                                     @if($entry->fulfilled_at)

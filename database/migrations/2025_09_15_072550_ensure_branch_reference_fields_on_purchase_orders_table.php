@@ -39,7 +39,10 @@ return new class extends Migration
             // Add foreign keys only if columns exist and FKs aren't already present
             if (Schema::hasColumn('purchase_orders', 'branch_request_id')) {
                 try {
-                    $table->foreign('branch_request_id')->references('id')->on('purchase_orders')->onDelete('set null');
+                    // Check if branch_requests table exists before creating foreign key
+                    if (Schema::hasTable('branch_requests')) {
+                        $table->foreign('branch_request_id')->references('id')->on('branch_requests')->onDelete('set null');
+                    }
                 } catch (\Throwable $e) {
                     // ignore if FK already exists
                 }
@@ -65,7 +68,11 @@ return new class extends Migration
 
         Schema::table('purchase_orders', function (Blueprint $table) {
             // Best-effort cleanup; ignore errors if constraints are missing
-            try { $table->dropForeign(['branch_request_id']); } catch (\Throwable $e) {}
+            try { 
+                if (Schema::hasTable('branch_requests')) {
+                    $table->dropForeign(['branch_request_id']); 
+                }
+            } catch (\Throwable $e) {}
             try { $table->dropForeign(['ship_to_branch_id']); } catch (\Throwable $e) {}
 
             if (Schema::hasColumn('purchase_orders', 'delivery_address')) {

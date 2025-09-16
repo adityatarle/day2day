@@ -23,8 +23,8 @@
                     </div>
                     <div class="text-right">
                         <div>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $branchOrder->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : ($branchOrder->status === 'sent' ? 'bg-blue-100 text-blue-800' : ($branchOrder->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
-                                {{ ucfirst($branchOrder->status) }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $branchOrder->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : ($branchOrder->status === 'sent' ? 'bg-blue-100 text-blue-800' : ($branchOrder->status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
+                                {{ $branchOrder->status === 'sent' ? 'Approved' : ($branchOrder->status === 'confirmed' ? 'Fulfilled' : ucfirst($branchOrder->status)) }}
                             </span>
                         </div>
                         @if($branchOrder->priority)
@@ -82,7 +82,7 @@
                 </div>
             </div>
 
-            @if($branchOrder->status === 'approved')
+            @if($branchOrder->status === 'sent')
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-900">Fulfill Order</h2>
@@ -109,7 +109,7 @@
                         <button type="button" onclick="document.getElementById('cancel-form').classList.toggle('hidden')" class="btn btn-danger">Cancel Order</button>
                     </div>
                 </form>
-                @elseif($branchOrder->status === 'approved')
+                @elseif($branchOrder->status === 'sent')
                 <div class="space-y-4">
                     <div class="alert alert-info">
                         <strong>Order approved!</strong> Now you need to purchase materials from vendors before fulfilling this order.
@@ -161,13 +161,13 @@
                         <a href="{{ route('admin.branch-orders.fulfill-form', $branchOrder) }}" class="btn btn-success w-full text-center">Fulfill Order from Stock</a>
                     </div>
                 </div>
-                @elseif($branchOrder->status === 'fulfilled')
+                @elseif($branchOrder->status === 'confirmed')
                 <div class="alert alert-success">Order fulfilled on {{ optional($branchOrder->fulfilled_at)->format('M d, Y H:i') }}</div>
                 @elseif($branchOrder->status === 'cancelled')
                 <div class="alert alert-error">Order was cancelled.</div>
                 @endif
 
-                @if($branchOrder->status !== 'cancelled' && $branchOrder->status !== 'fulfilled')
+                @if($branchOrder->status !== 'cancelled' && $branchOrder->status !== 'confirmed')
                 <div id="cancel-form" class="mt-4 {{ $branchOrder->status === 'draft' ? 'hidden' : '' }}">
                     <form method="POST" action="{{ route('admin.branch-orders.cancel', $branchOrder) }}" class="space-y-3">
                         @csrf

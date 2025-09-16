@@ -62,7 +62,7 @@ class AdminBranchOrderController extends Controller
 
         // Get filter options
         $branches = Branch::orderBy('name')->get();
-        $statuses = ['draft', 'sent', 'confirmed', 'received', 'cancelled'];
+        $statuses = ['draft', 'sent', 'confirmed', 'received', 'cancelled']; // 'sent' = approved, 'confirmed' = fulfilled
         $priorities = ['low', 'medium', 'high', 'urgent'];
 
         // Statistics
@@ -99,7 +99,7 @@ class AdminBranchOrderController extends Controller
 
         DB::transaction(function () use ($request, $branchOrder) {
             $branchOrder->update([
-                'status' => 'approved',
+                'status' => 'sent', // Using 'sent' instead of 'approved' to match current enum
                 'notes' => trim(($branchOrder->notes ?? '') . (filled($request->admin_notes) ? ("\n\nAdmin Notes: " . $request->admin_notes) : '')),
                 'approved_by' => Auth::id(),
                 'approved_at' => now(),
@@ -116,7 +116,7 @@ class AdminBranchOrderController extends Controller
      */
     public function createVendorPurchaseOrder(Request $request, PurchaseOrder $branchOrder)
     {
-        if ($branchOrder->status !== 'approved') {
+        if ($branchOrder->status !== 'sent') { // Using 'sent' instead of 'approved' to match current enum
             return redirect()->back()->with('error', 'Only approved branch orders can be used to create vendor purchase orders.');
         }
 
@@ -179,7 +179,7 @@ class AdminBranchOrderController extends Controller
      */
     public function fulfill(Request $request, PurchaseOrder $branchOrder)
     {
-        if ($branchOrder->status !== 'approved') {
+        if ($branchOrder->status !== 'sent') { // Using 'sent' instead of 'approved' to match current enum
             return redirect()->back()->with('error', 'Only approved orders can be fulfilled.');
         }
 
@@ -194,7 +194,7 @@ class AdminBranchOrderController extends Controller
 
         DB::transaction(function () use ($request, $branchOrder) {
             $branchOrder->update([
-                'status' => 'fulfilled',
+                'status' => 'confirmed', // Using 'confirmed' instead of 'fulfilled' to match current enum
                 'fulfilled_by' => Auth::id(),
                 'fulfilled_at' => now(),
             ]);
@@ -257,7 +257,7 @@ class AdminBranchOrderController extends Controller
      */
     public function showFulfillForm(PurchaseOrder $branchOrder)
     {
-        if ($branchOrder->status !== 'approved') {
+        if ($branchOrder->status !== 'sent') { // Using 'sent' instead of 'approved' to match current enum
             return redirect()->route('admin.branch-orders.show', $branchOrder)
                 ->with('error', 'Only approved orders can be fulfilled.');
         }

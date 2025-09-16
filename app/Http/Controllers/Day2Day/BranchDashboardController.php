@@ -122,11 +122,25 @@ class BranchDashboardController extends Controller
         
         DB::beginTransaction();
         try {
+            // Get or create a system vendor for material receipts
+            $systemVendor = \App\Models\Vendor::firstOrCreate(
+                ['code' => 'SYS002'],
+                [
+                    'name' => 'System - Material Receipts',
+                    'code' => 'SYS002',
+                    'email' => 'system@material-receipts.com',
+                    'phone' => '0000000000',
+                    'address' => 'System Vendor for Material Receipts',
+                    'gst_number' => 'SYSTEM002',
+                    'is_active' => true,
+                ]
+            );
+
             // Create material receipt record (not a purchase order to vendor)
             $materialReceipt = PurchaseOrder::create([
                 'po_number' => $this->generateMaterialReceiptNumber(),
                 'branch_id' => $user->branch_id,
-                'vendor_id' => null, // No direct vendor relationship for sub-branches
+                'vendor_id' => $systemVendor->id, // Use system vendor for material receipts
                 'stock_transfer_id' => $request->stock_transfer_id,
                 'status' => 'received',
                 'order_type' => 'material_receipt',
@@ -614,11 +628,25 @@ class BranchDashboardController extends Controller
                 4, '0', STR_PAD_LEFT
             );
 
+            // Get or create a system vendor for branch requests
+            $systemVendor = \App\Models\Vendor::firstOrCreate(
+                ['code' => 'SYS001'],
+                [
+                    'name' => 'System - Branch Requests',
+                    'code' => 'SYS001',
+                    'email' => 'system@branch-requests.com',
+                    'phone' => '0000000000',
+                    'address' => 'System Vendor for Branch Requests',
+                    'gst_number' => 'SYSTEM001',
+                    'is_active' => true,
+                ]
+            );
+
             // Create purchase request to main branch
             $purchaseRequest = PurchaseOrder::create([
                 'po_number' => $requestNumber,
                 'branch_id' => $user->branch_id,
-                'vendor_id' => null, // No vendor - this is a request to main branch
+                'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
                 'user_id' => $user->id,
                 'status' => 'pending',
                 'order_type' => 'branch_request',

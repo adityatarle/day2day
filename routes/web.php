@@ -262,6 +262,9 @@ Route::middleware('auth')->group(function () {
         // Role Management
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles');
         
+        // Purchase Entries Management
+        Route::get('/admin/purchase-entries', [AdminController::class, 'purchaseEntries'])->name('admin.purchase-entries.index');
+        
         // System Settings
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
         Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');

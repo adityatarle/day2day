@@ -72,10 +72,10 @@ class BranchPurchaseEntryController extends Controller
         $purchaseEntries = $query->latest()->paginate(15);
 
         $stats = [
-            'sent_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
+            'approved_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
                 ->where('status', 'sent')->count(),
-            'confirmed_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
+            'fulfilled_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
                 ->where('status', 'confirmed')->count(),
             'pending_receipt' => PurchaseOrder::where('branch_id', $user->branch_id)

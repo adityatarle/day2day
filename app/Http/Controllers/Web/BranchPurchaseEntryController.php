@@ -29,13 +29,13 @@ class BranchPurchaseEntryController extends Controller
             abort(403, 'Access denied. Branch managers only.');
         }
 
-        // Get purchase orders that are approved/fulfilled but not yet received for this branch
-        // 'sent' = approved by admin, 'confirmed' = fulfilled by admin
+        // Get purchase orders that are approved/fulfilled and can receive materials
+        // Include both not received and partially received orders
         $availablePurchaseOrders = PurchaseOrder::with(['vendor', 'purchaseOrderItems.product'])
             ->where('branch_id', $user->branch_id)
             ->where('order_type', 'branch_request')
-            ->whereIn('status', ['sent', 'confirmed'])
-            ->whereNull('received_at')
+            ->whereIn('status', ['sent', 'confirmed', 'fulfilled'])
+            ->whereIn('receive_status', ['not_received', 'partial'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -56,7 +56,7 @@ class BranchPurchaseEntryController extends Controller
         $query = PurchaseOrder::with(['vendor', 'user'])
             ->where('branch_id', $user->branch_id)
             ->where('order_type', 'branch_request')
-            ->whereIn('status', ['sent', 'confirmed'])
+            ->whereIn('status', ['sent', 'confirmed', 'fulfilled', 'received'])
             ->withCount('purchaseOrderItems');
 
         // Filter by status
@@ -74,14 +74,18 @@ class BranchPurchaseEntryController extends Controller
         $stats = [
             'approved_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'sent')->count(),
+                ->whereIn('status', ['sent', 'confirmed', 'fulfilled'])
+                ->whereIn('receive_status', ['not_received', 'partial'])
+                ->count(),
             'fulfilled_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'confirmed')->count(),
-            'pending_receipt' => PurchaseOrder::where('branch_id', $user->branch_id)
+                ->where('status', 'received')
+                ->where('receive_status', 'complete')
+                ->count(),
+            'partial_receipts' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->whereIn('status', ['sent', 'confirmed'])
-                ->whereNull('received_at')->count(),
+                ->where('receive_status', 'partial')
+                ->count(),
             'this_month_receipts' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
                 ->whereNotNull('received_at')
@@ -120,14 +124,14 @@ class BranchPurchaseEntryController extends Controller
             abort(403, 'Access denied.');
         }
 
-        if ($purchaseEntry->status !== 'fulfilled') {
+        if (!in_array($purchaseEntry->status, ['sent', 'confirmed', 'fulfilled'])) {
             return redirect()->route('branch.purchase-entries.show', $purchaseEntry)
-                ->with('error', 'Only fulfilled orders can have delivery receipts recorded.');
+                ->with('error', 'Only approved/fulfilled orders can have delivery receipts recorded.');
         }
 
-        if ($purchaseEntry->received_at) {
+        if ($purchaseEntry->receive_status === 'complete') {
             return redirect()->route('branch.purchase-entries.show', $purchaseEntry)
-                ->with('error', 'Delivery receipt has already been recorded for this order.');
+                ->with('error', 'This order has been completely received. No further receipts can be recorded.');
         }
 
         $purchaseEntry->load(['branch', 'vendor', 'purchaseOrderItems.product']);
@@ -147,9 +151,9 @@ class BranchPurchaseEntryController extends Controller
             abort(403, 'Access denied.');
         }
 
-        if ($purchaseEntry->status !== 'fulfilled') {
+        if (!in_array($purchaseEntry->status, ['sent', 'confirmed', 'fulfilled'])) {
             return redirect()->route('branch.purchase-entries.show', $purchaseEntry)
-                ->with('error', 'Only fulfilled orders can have delivery receipts recorded.');
+                ->with('error', 'Only approved/fulfilled orders can have delivery receipts recorded.');
         }
 
         $request->validate([
@@ -164,22 +168,32 @@ class BranchPurchaseEntryController extends Controller
             'delivery_notes' => 'nullable|string',
             'delivery_person' => 'nullable|string',
             'delivery_vehicle' => 'nullable|string',
+            'receipt_type' => 'required|in:partial,complete',
         ]);
 
         DB::transaction(function () use ($request, $purchaseEntry, $user) {
+            $receiptType = $request->receipt_type;
+            $isPartialReceipt = $receiptType === 'partial';
+            
             // Update purchase entry with receipt information
-            $purchaseEntry->update([
-                'received_at' => now(),
-                'received_by' => $user->id,
+            $updateData = [
                 'delivery_notes' => $request->delivery_notes,
                 'delivery_person' => $request->delivery_person,
                 'delivery_vehicle' => $request->delivery_vehicle,
-            ]);
+            ];
+            
+            // Only set received_at and received_by for the first receipt
+            if (!$purchaseEntry->received_at) {
+                $updateData['received_at'] = now();
+                $updateData['received_by'] = $user->id;
+            }
+            
+            $purchaseEntry->update($updateData);
 
             // Process each received item
             foreach ($request->received_items as $receivedItem) {
                 $purchaseOrderItem = PurchaseOrderItem::find($receivedItem['item_id']);
-                $actualReceivedQuantity = $receivedItem['actual_received_quantity'];
+                $thisReceiptQuantity = $receivedItem['actual_received_quantity'];
                 $spoiledQuantity = $receivedItem['spoiled_quantity'] ?? 0;
                 $damagedQuantity = $receivedItem['damaged_quantity'] ?? 0;
                 $actualWeight = $receivedItem['actual_weight'] ?? null;
@@ -192,18 +206,24 @@ class BranchPurchaseEntryController extends Controller
                 }
 
                 // Calculate usable quantity (excluding spoiled and damaged)
-                $usableQuantity = $actualReceivedQuantity - $spoiledQuantity - $damagedQuantity;
+                $usableQuantity = $thisReceiptQuantity - $spoiledQuantity - $damagedQuantity;
 
-                // Update the item with receipt details
+                // Get current received quantities
+                $currentReceivedQuantity = $purchaseOrderItem->actual_received_quantity ?? 0;
+                $currentSpoiledQuantity = $purchaseOrderItem->spoiled_quantity ?? 0;
+                $currentDamagedQuantity = $purchaseOrderItem->damaged_quantity ?? 0;
+                $currentUsableQuantity = $purchaseOrderItem->usable_quantity ?? 0;
+
+                // Update the item with cumulative receipt details
                 $purchaseOrderItem->update([
-                    'actual_received_quantity' => $actualReceivedQuantity,
-                    'actual_weight' => $actualWeight,
-                    'expected_weight' => $expectedWeight,
-                    'weight_difference' => $weightDifference,
-                    'spoiled_quantity' => $spoiledQuantity,
-                    'damaged_quantity' => $damagedQuantity,
-                    'usable_quantity' => $usableQuantity,
-                    'quality_notes' => $receivedItem['quality_notes'] ?? '',
+                    'actual_received_quantity' => $currentReceivedQuantity + $thisReceiptQuantity,
+                    'actual_weight' => $actualWeight ?: $purchaseOrderItem->actual_weight,
+                    'expected_weight' => $expectedWeight ?: $purchaseOrderItem->expected_weight,
+                    'weight_difference' => $weightDifference ?: $purchaseOrderItem->weight_difference,
+                    'spoiled_quantity' => $currentSpoiledQuantity + $spoiledQuantity,
+                    'damaged_quantity' => $currentDamagedQuantity + $damagedQuantity,
+                    'usable_quantity' => $currentUsableQuantity + $usableQuantity,
+                    'quality_notes' => $receivedItem['quality_notes'] ?: $purchaseOrderItem->quality_notes,
                 ]);
 
                 // Record stock movements for different quantities
@@ -217,7 +237,7 @@ class BranchPurchaseEntryController extends Controller
                         'quantity' => $usableQuantity,
                         'reference_type' => 'delivery_receipt',
                         'reference_id' => $purchaseEntry->id,
-                        'notes' => "Delivery Receipt - Usable: {$purchaseEntry->po_number}",
+                        'notes' => "Material Receipt - Usable: {$purchaseEntry->po_number} ({$receiptType})",
                     ]);
 
                     // Update the product's current stock in the branch
@@ -235,7 +255,7 @@ class BranchPurchaseEntryController extends Controller
                         'quantity' => $spoiledQuantity,
                         'reference_type' => 'delivery_spoilage',
                         'reference_id' => $purchaseEntry->id,
-                        'notes' => "Delivery Receipt - Spoiled: {$purchaseEntry->po_number}",
+                        'notes' => "Material Receipt - Spoiled: {$purchaseEntry->po_number} ({$receiptType})",
                     ]);
                 }
 
@@ -248,7 +268,7 @@ class BranchPurchaseEntryController extends Controller
                         'quantity' => $damagedQuantity,
                         'reference_type' => 'delivery_damage',
                         'reference_id' => $purchaseEntry->id,
-                        'notes' => "Delivery Receipt - Damaged: {$purchaseEntry->po_number}",
+                        'notes' => "Material Receipt - Damaged: {$purchaseEntry->po_number} ({$receiptType})",
                     ]);
                 }
 
@@ -261,14 +281,27 @@ class BranchPurchaseEntryController extends Controller
                         'quantity' => abs($weightDifference),
                         'reference_type' => 'weight_difference',
                         'reference_id' => $purchaseEntry->id,
-                        'notes' => "Weight Difference: Expected {$expectedWeight}kg, Actual {$actualWeight}kg",
+                        'notes' => "Weight Difference: Expected {$expectedWeight}kg, Actual {$actualWeight}kg ({$receiptType})",
                     ]);
                 }
             }
+            
+            // Update purchase order receive status
+            $purchaseEntry->updateReceiveStatus();
+            
+            // Update purchase order status if complete receipt
+            if (!$isPartialReceipt) {
+                $purchaseEntry->update(['status' => 'received']);
+            }
         });
 
+        $receiptType = $request->receipt_type;
+        $message = $receiptType === 'partial' 
+            ? 'Partial material receipt recorded successfully! You can continue receiving remaining materials later.'
+            : 'Complete material receipt recorded successfully! All materials have been received and inventory updated.';
+            
         return redirect()->route('branch.purchase-entries.show', $purchaseEntry)
-            ->with('success', 'Delivery receipt recorded successfully! Inventory updated with discrepancies tracked.');
+            ->with('success', $message);
     }
 
     /**

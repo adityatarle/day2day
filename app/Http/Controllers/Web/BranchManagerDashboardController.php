@@ -38,7 +38,24 @@ class BranchManagerDashboardController extends Controller
             })->count(),
             'branch_staff' => $branch->users()->count(),
             'pending_purchase_orders' => PurchaseOrder::where('branch_id', $branch->id)
-                ->where('status', 'pending')->count(),
+                ->where('order_type', 'branch_request')
+                ->whereIn('status', ['sent', 'confirmed', 'fulfilled'])
+                ->whereIn('receive_status', ['not_received', 'partial'])
+                ->count(),
+            'approved_orders' => PurchaseOrder::where('branch_id', $branch->id)
+                ->where('order_type', 'branch_request')
+                ->whereIn('status', ['sent', 'confirmed', 'fulfilled'])
+                ->whereIn('receive_status', ['not_received', 'partial'])
+                ->count(),
+            'fulfilled_orders' => PurchaseOrder::where('branch_id', $branch->id)
+                ->where('order_type', 'branch_request')
+                ->where('status', 'received')
+                ->where('receive_status', 'complete')
+                ->count(),
+            'partial_receipts' => PurchaseOrder::where('branch_id', $branch->id)
+                ->where('order_type', 'branch_request')
+                ->where('receive_status', 'partial')
+                ->count(),
             'branch_revenue' => Order::where('branch_id', $branch->id)
                 ->where('status', 'completed')->sum('total_amount'),
             'monthly_revenue' => Order::where('branch_id', $branch->id)
@@ -54,6 +71,15 @@ class BranchManagerDashboardController extends Controller
             ->where('branch_id', $branch->id)
             ->latest()
             ->take(10)
+            ->get();
+
+        // Recent purchase entries for this branch
+        $recent_purchase_entries = PurchaseOrder::with(['vendor', 'purchaseOrderItems.product'])
+            ->where('branch_id', $branch->id)
+            ->where('order_type', 'branch_request')
+            ->whereIn('status', ['sent', 'confirmed', 'fulfilled', 'received'])
+            ->latest()
+            ->take(5)
             ->get();
 
         // Low stock products in this branch
@@ -210,6 +236,7 @@ class BranchManagerDashboardController extends Controller
             'stats',
             'branch',
             'recent_orders',
+            'recent_purchase_entries',
             'low_stock_products',
             'top_products',
             'sales_analytics',

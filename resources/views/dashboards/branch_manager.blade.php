@@ -106,6 +106,73 @@
         </div>
     </div>
 
+    <!-- Purchase Entries Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Pending Purchase Entries -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Pending Receipts</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $stats['pending_purchase_orders'] ?? 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-yellow-600 text-sm font-medium">Awaiting delivery</span>
+            </div>
+        </div>
+
+        <!-- Purchase Entries Ready for Receipt -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Ready for Receipt</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $stats['approved_orders'] ?? 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-truck text-blue-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-blue-600 text-sm font-medium">Can record receipt</span>
+            </div>
+        </div>
+
+        <!-- Completed Receipts -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Completed Receipts</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $stats['fulfilled_orders'] ?? 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-green-600 text-sm font-medium">Fully received</span>
+            </div>
+        </div>
+
+        <!-- Partial Receipts -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Partial Receipts</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $stats['partial_receipts'] ?? 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-orange-600 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4">
+                <span class="text-orange-600 text-sm font-medium">Partially received</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Staff Performance and Recent Orders -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Staff Performance -->
@@ -160,8 +227,49 @@
         </div>
     </div>
 
-    <!-- Top Products and Inventory Alerts -->
+    <!-- Recent Purchase Entries and Top Products -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Recent Purchase Entries -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900">Recent Purchase Entries</h3>
+                <a href="{{ route('branch.purchase-entries.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                    View All
+                </a>
+            </div>
+            <div class="space-y-4">
+                @forelse($recent_purchase_entries as $entry)
+                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-truck text-indigo-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">{{ $entry->po_number }}</p>
+                            <p class="text-sm text-gray-600">{{ $entry->vendor ? 'Admin Purchase' : 'Admin Fulfillment' }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                            {{ $entry->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
+                               ($entry->status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' : 
+                               ($entry->status === 'fulfilled' ? 'bg-purple-100 text-purple-800' : 
+                               'bg-green-100 text-green-800')) }}">
+                            {{ $entry->status === 'sent' ? 'Approved' : 
+                               ($entry->status === 'confirmed' ? 'Confirmed' : 
+                               ($entry->status === 'fulfilled' ? 'Fulfilled' : 'Received')) }}
+                        </span>
+                        <p class="text-sm text-gray-600 mt-1">{{ $entry->created_at->diffForHumans() }}</p>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-4">
+                    <p class="text-gray-500 text-sm">No purchase entries yet</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+
         <!-- Top Branch Products -->
         <div class="bg-white rounded-2xl p-6 shadow-lg">
             <h3 class="text-xl font-bold text-gray-900 mb-6">Top Selling Products</h3>
@@ -180,6 +288,10 @@
                 @endforeach
             </div>
         </div>
+    </div>
+
+    <!-- Inventory Alerts -->
+    <div class="grid grid-cols-1 lg:grid-cols-1 gap-8">
 
         <!-- Branch Inventory Alerts -->
         <div class="bg-white rounded-2xl p-6 shadow-lg">
@@ -296,6 +408,57 @@
                 <div>
                     <h4 class="text-lg font-bold">Reports</h4>
                     <p class="text-orange-100 text-sm">Branch analytics</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Additional Quick Actions Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="{{ route('branch.purchase-entries.index') }}" class="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl p-6 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-truck-loading text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold">Purchase Entries</h4>
+                    <p class="text-indigo-100 text-sm">Track deliveries</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ route('branch.product-orders.index') }}" class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-2xl p-6 text-white hover:from-teal-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-shopping-cart text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold">Product Orders</h4>
+                    <p class="text-teal-100 text-sm">Order from admin</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ route('branch.staff.index') }}" class="bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl p-6 text-white hover:from-pink-600 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold">Staff Management</h4>
+                    <p class="text-pink-100 text-sm">Manage team</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{{ route('branch.purchase-entries.discrepancy-report') }}" class="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-6 text-white hover:from-amber-600 hover:to-amber-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold">Discrepancy Report</h4>
+                    <p class="text-amber-100 text-sm">Track losses</p>
                 </div>
             </div>
         </a>

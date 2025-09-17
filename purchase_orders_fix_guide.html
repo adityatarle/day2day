@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Orders Fix Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .issue {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .solution {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .step {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .warning {
+            background-color: #fffbeb;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        h1, h2, h3 {
+            color: #1f2937;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Purchase Orders Not Showing - Fix Guide</h1>
+    
+    <div class="issue">
+        <h2>🚨 Issue Identified</h2>
+        <p>The "Create Purchase Entry" page is showing "No Purchase Orders Available" because the existing purchase orders in the database don't match the query conditions in the controller.</p>
+        
+        <h3>Root Causes:</h3>
+        <ul>
+            <li><strong>Missing <span class="highlight">order_type</span> field:</strong> The seeder data doesn't include <code>order_type = 'branch_request'</code></li>
+            <li><strong>Wrong status values:</strong> Seeder creates orders with status <code>'sent'</code> and <code>'confirmed'</code>, but controller looks for <code>'approved'</code> and <code>'fulfilled'</code></li>
+            <li><strong>Missing <span class="highlight">received_at</span> field:</strong> Controller filters for <code>whereNull('received_at')</code> but this field isn't set in seeder</li>
+        </ul>
+    </div>
+
+    <div class="solution">
+        <h2>✅ Solution</h2>
+        <p>I've created several files to fix this issue. Choose the method that works best for your environment:</p>
+        
+        <div class="step">
+            <h3>Method 1: SQL Script (Recommended if you have database access)</h3>
+            <p>Run the SQL script I created to fix the existing data:</p>
+            <div class="code">
+                -- Run this SQL script in your database
+                mysql -u your_username -p your_database_name < fix_purchase_orders.sql
+            </div>
+            <p>This will:</p>
+            <ul>
+                <li>Update existing purchase orders with correct <code>order_type</code> and <code>status</code></li>
+                <li>Create additional test purchase orders</li>
+                <li>Add purchase order items for all orders</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Method 2: PHP Script (If PHP is available)</h3>
+            <p>Run the PHP script I created:</p>
+            <div class="code">
+                php fix_purchase_orders.php
+            </div>
+            <p>This will do the same as the SQL script but using Laravel's ORM.</p>
+        </div>
+
+        <div class="step">
+            <h3>Method 3: Debug Script (To understand the issue better)</h3>
+            <p>Run the debug script to see what's wrong:</p>
+            <div class="code">
+                php debug_purchase_entries.php
+            </div>
+            <p>This will show you exactly what data exists and what's missing.</p>
+        </div>
+    </div>
+
+    <div class="warning">
+        <h3>⚠️ Important Notes</h3>
+        <ul>
+            <li>Make sure you have a backup of your database before running any scripts</li>
+            <li>The branch manager user should have <code>branch_id = 1</code> to see the test data</li>
+            <li>After running the fix, refresh the "Create Purchase Entry" page to see the results</li>
+        </ul>
+    </div>
+
+    <h2>🔍 What the Fix Does</h2>
+    <p>The fix addresses these specific issues:</p>
+    
+    <div class="code">
+        <strong>Before (Seeder Data):</strong>
+        - order_type: NULL (missing)
+        - status: 'sent', 'confirmed' 
+        - received_at: NULL (but not explicitly set)
+        
+        <strong>After (Fixed Data):</strong>
+        - order_type: 'branch_request' ✅
+        - status: 'approved', 'fulfilled' ✅  
+        - received_at: NULL (explicitly set) ✅
+    </div>
+
+    <h2>🎯 Expected Result</h2>
+    <p>After running the fix, the "Create Purchase Entry" page should show:</p>
+    <ul>
+        <li><strong>PO001</strong> - Fresh produce order (Approved) - ₹5,000.00</li>
+        <li><strong>PO002</strong> - Mixed vegetables order (Fulfilled) - ₹3,500.00</li>
+        <li><strong>PO003</strong> - Organic vegetables order (Approved) - ₹2,600.00</li>
+    </ul>
+
+    <h2>📁 Files Created</h2>
+    <ul>
+        <li><code>fix_purchase_orders.sql</code> - SQL script to fix the data</li>
+        <li><code>fix_purchase_orders.php</code> - PHP script to fix the data</li>
+        <li><code>debug_purchase_entries.php</code> - Debug script to analyze the issue</li>
+        <li><code>database/seeders/BasicDataSeeder.php</code> - Updated with correct test data</li>
+    </ul>
+
+    <div class="solution">
+        <h2>🚀 Quick Test</h2>
+        <p>To quickly test if the fix worked, you can manually run this query in your database:</p>
+        <div class="code">
+            SELECT po.po_number, po.status, po.order_type, v.name as vendor_name, 
+                   COUNT(poi.id) as items_count, po.total_amount
+            FROM purchase_orders po
+            LEFT JOIN vendors v ON po.vendor_id = v.id  
+            LEFT JOIN purchase_order_items poi ON po.id = poi.purchase_order_id
+            WHERE po.branch_id = 1 
+                AND po.order_type = 'branch_request'
+                AND po.status IN ('approved', 'fulfilled')
+                AND po.received_at IS NULL
+            GROUP BY po.id
+            ORDER BY po.created_at DESC;
+        </div>
+        <p>This should return 3 purchase orders that will show up on the Create Purchase Entry page.</p>
+    </div>
+</body>
+</html>

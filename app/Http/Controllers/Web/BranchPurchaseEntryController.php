@@ -238,6 +238,7 @@ class BranchPurchaseEntryController extends Controller
                         'unit_price' => $purchaseOrderItem->unit_price,
                         'reference_type' => 'delivery_receipt',
                         'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
                         'notes' => "Material Receipt - Usable: {$purchaseEntry->po_number} ({$receiptType})",
                     ]);
 
@@ -257,6 +258,7 @@ class BranchPurchaseEntryController extends Controller
                         'unit_price' => $purchaseOrderItem->unit_price,
                         'reference_type' => 'delivery_spoilage',
                         'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
                         'notes' => "Material Receipt - Spoiled: {$purchaseEntry->po_number} ({$receiptType})",
                     ]);
                 }
@@ -271,6 +273,7 @@ class BranchPurchaseEntryController extends Controller
                         'unit_price' => $purchaseOrderItem->unit_price,
                         'reference_type' => 'delivery_damage',
                         'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
                         'notes' => "Material Receipt - Damaged: {$purchaseEntry->po_number} ({$receiptType})",
                     ]);
                 }
@@ -285,6 +288,7 @@ class BranchPurchaseEntryController extends Controller
                         'unit_price' => $purchaseOrderItem->unit_price,
                         'reference_type' => 'weight_difference',
                         'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
                         'notes' => "Weight Difference: Expected {$expectedWeight}kg, Actual {$actualWeight}kg ({$receiptType})",
                     ]);
                 }

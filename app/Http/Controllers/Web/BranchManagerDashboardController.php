@@ -73,14 +73,29 @@ class BranchManagerDashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Recent purchase entries for this branch
-        $recent_purchase_entries = PurchaseOrder::with(['vendor', 'purchaseOrderItems.product'])
+        // Recent purchase entries for this branch with detailed tracking
+        $recent_purchase_entries = PurchaseOrder::with([
+                'vendor', 
+                'purchaseOrderItems.product',
+                'purchaseEntries' => function($q) {
+                    $q->orderBy('entry_date', 'desc');
+                }
+            ])
             ->where('branch_id', $branch->id)
             ->where('order_type', 'branch_request')
             ->whereIn('status', ['sent', 'confirmed', 'fulfilled', 'received'])
             ->latest()
             ->take(5)
-            ->get();
+            ->get()
+            ->map(function($order) {
+                $order->total_expected = $order->purchaseOrderItems->sum('quantity');
+                $order->total_received = $order->purchaseEntries->sum('total_received_quantity');
+                $order->total_remaining = $order->total_expected - $order->total_received;
+                $order->completion_percentage = $order->total_expected > 0 ? 
+                    ($order->total_received / $order->total_expected) * 100 : 0;
+                $order->receipt_count = $order->purchaseEntries->count();
+                return $order;
+            });
 
         // Low stock products in this branch
         $low_stock_products = Product::with(['branches' => function($query) use ($branch) {

@@ -123,6 +123,14 @@ class PurchaseOrder extends Model
     }
 
     /**
+     * Get the purchase entries for this purchase order.
+     */
+    public function purchaseEntries(): HasMany
+    {
+        return $this->hasMany(PurchaseEntry::class);
+    }
+
+    /**
      * Scope to get purchase orders by status.
      */
     public function scopeByStatus($query, $status)
@@ -422,5 +430,127 @@ class PurchaseOrder extends Model
             'complete' => 'Completely Received',
             default => 'Unknown'
         };
+    }
+
+    /**
+     * Get total received quantity across all entries.
+     */
+    public function getTotalReceivedQuantity(): float
+    {
+        return $this->purchaseEntries->sum('total_received_quantity');
+    }
+
+    /**
+     * Get total spoiled quantity across all entries.
+     */
+    public function getTotalSpoiledQuantity(): float
+    {
+        return $this->purchaseEntries->sum('total_spoiled_quantity');
+    }
+
+    /**
+     * Get total damaged quantity across all entries.
+     */
+    public function getTotalDamagedQuantity(): float
+    {
+        return $this->purchaseEntries->sum('total_damaged_quantity');
+    }
+
+    /**
+     * Get total usable quantity across all entries.
+     */
+    public function getTotalUsableQuantity(): float
+    {
+        return $this->purchaseEntries->sum('total_usable_quantity');
+    }
+
+    /**
+     * Get remaining quantity to be received.
+     */
+    public function getRemainingQuantity(): float
+    {
+        $totalOrdered = $this->purchaseOrderItems->sum('quantity');
+        $totalReceived = $this->getTotalReceivedQuantity();
+        return max(0, $totalOrdered - $totalReceived);
+    }
+
+    /**
+     * Get completion percentage.
+     */
+    public function getCompletionPercentage(): float
+    {
+        $totalOrdered = $this->purchaseOrderItems->sum('quantity');
+        if ($totalOrdered == 0) {
+            return 0;
+        }
+        
+        $totalReceived = $this->getTotalReceivedQuantity();
+        return ($totalReceived / $totalOrdered) * 100;
+    }
+
+    /**
+     * Get loss percentage.
+     */
+    public function getLossPercentage(): float
+    {
+        $totalReceived = $this->getTotalReceivedQuantity();
+        if ($totalReceived == 0) {
+            return 0;
+        }
+        
+        $totalLoss = $this->getTotalSpoiledQuantity() + $this->getTotalDamagedQuantity();
+        return ($totalLoss / $totalReceived) * 100;
+    }
+
+    /**
+     * Check if order has any discrepancies.
+     */
+    public function hasDiscrepancies(): bool
+    {
+        return $this->getTotalSpoiledQuantity() > 0 || $this->getTotalDamagedQuantity() > 0;
+    }
+
+    /**
+     * Get detailed item tracking for this order.
+     */
+    public function getItemTracking(): array
+    {
+        return $this->purchaseOrderItems->map(function ($item) {
+            $totalReceived = $this->purchaseEntries
+                ->flatMap->purchaseEntryItems
+                ->where('product_id', $item->product_id)
+                ->sum('received_quantity');
+            
+            $totalSpoiled = $this->purchaseEntries
+                ->flatMap->purchaseEntryItems
+                ->where('product_id', $item->product_id)
+                ->sum('spoiled_quantity');
+            
+            $totalDamaged = $this->purchaseEntries
+                ->flatMap->purchaseEntryItems
+                ->where('product_id', $item->product_id)
+                ->sum('damaged_quantity');
+            
+            $totalUsable = $this->purchaseEntries
+                ->flatMap->purchaseEntryItems
+                ->where('product_id', $item->product_id)
+                ->sum('usable_quantity');
+            
+            $remaining = $item->quantity - $totalReceived;
+            $completionPercentage = $item->quantity > 0 ? ($totalReceived / $item->quantity) * 100 : 0;
+            
+            return [
+                'item' => $item,
+                'expected_quantity' => $item->quantity,
+                'received_quantity' => $totalReceived,
+                'spoiled_quantity' => $totalSpoiled,
+                'damaged_quantity' => $totalDamaged,
+                'usable_quantity' => $totalUsable,
+                'remaining_quantity' => $remaining,
+                'completion_percentage' => $completionPercentage,
+                'is_complete' => $remaining <= 0,
+                'has_discrepancies' => $totalSpoiled > 0 || $totalDamaged > 0,
+            ];
+        })->toArray();
     }
 }

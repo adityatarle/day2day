@@ -31,6 +31,7 @@ use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchContr
 use App\Http\Controllers\Web\AdminBranchOrderController;
 use App\Http\Controllers\Web\BranchProductOrderController;
 use App\Http\Controllers\Web\BranchPurchaseEntryController;
+use App\Http\Controllers\Web\EnhancedPurchaseEntryController;
 use App\Http\Controllers\Web\OrderWorkflowController;
 
 // Home page - redirects to login if not authenticated
@@ -301,6 +302,23 @@ Route::middleware('auth')->group(function () {
         Route::get('/branch/purchase-entries/{purchaseEntry}/receipt', [BranchPurchaseEntryController::class, 'showReceipt'])->name('branch.purchase-entries.receipt');
         Route::get('/branch/discrepancy-report', [BranchPurchaseEntryController::class, 'discrepancyReport'])->name('branch.purchase-entries.discrepancy-report');
         Route::get('/branch/purchase-entries-debug', [BranchPurchaseEntryController::class, 'debug'])->name('branch.purchase-entries.debug');
+
+        // Enhanced Purchase Entries - Comprehensive tracking with detailed quantities
+        Route::get('/enhanced-purchase-entries', [EnhancedPurchaseEntryController::class, 'index'])->name('enhanced-purchase-entries.index');
+        Route::get('/enhanced-purchase-entries/create', [EnhancedPurchaseEntryController::class, 'create'])->name('enhanced-purchase-entries.create');
+        Route::post('/enhanced-purchase-entries', [EnhancedPurchaseEntryController::class, 'store'])->name('enhanced-purchase-entries.store');
+        Route::get('/enhanced-purchase-entries/{purchaseOrder}', [EnhancedPurchaseEntryController::class, 'show'])->name('enhanced-purchase-entries.show');
+        Route::get('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'showEntry'])->name('enhanced-purchase-entries.entry');
+        Route::get('/enhanced-purchase-entries/report', [EnhancedPurchaseEntryController::class, 'report'])->name('enhanced-purchase-entries.report');
+        
+        // API routes for enhanced purchase entries
+        Route::get('/api/purchase-orders/{purchaseOrder}/items', function($purchaseOrderId) {
+            $purchaseOrder = \App\Models\PurchaseOrder::with('purchaseOrderItems.product')->findOrFail($purchaseOrderId);
+            return response()->json([
+                'success' => true,
+                'items' => $purchaseOrder->purchaseOrderItems
+            ]);
+        })->name('api.purchase-orders.items');
 
         // Branch-specific routes
         Route::get('/branch/inventory', [InventoryController::class, 'branchIndex'])->name('branch.inventory.index');

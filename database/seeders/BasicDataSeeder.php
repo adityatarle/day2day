@@ -526,7 +526,8 @@ class BasicDataSeeder extends Seeder
                 'vendor_id' => 1,
                 'branch_id' => 1,
                 'user_id' => 2, // branch manager
-                'status' => 'sent',
+                'status' => 'approved',
+                'order_type' => 'branch_request',
                 'payment_terms' => '15_days',
                 'subtotal' => 5000.00,
                 'tax_amount' => 0.00,
@@ -535,15 +536,17 @@ class BasicDataSeeder extends Seeder
                 'notes' => 'Fresh produce order',
                 'expected_delivery_date' => now()->addDays(2),
                 'actual_delivery_date' => null,
+                'received_at' => null,
                 'created_at' => now()->subDays(5),
                 'updated_at' => now()->subDays(5),
             ],
             [
                 'po_number' => 'PO002',
                 'vendor_id' => 2,
-                'branch_id' => 2,
+                'branch_id' => 1,
                 'user_id' => 2, // branch manager
-                'status' => 'confirmed',
+                'status' => 'fulfilled',
+                'order_type' => 'branch_request',
                 'payment_terms' => '7_days',
                 'subtotal' => 3500.00,
                 'tax_amount' => 0.00,
@@ -552,12 +555,131 @@ class BasicDataSeeder extends Seeder
                 'notes' => 'Mixed vegetables order',
                 'expected_delivery_date' => now()->addDays(1),
                 'actual_delivery_date' => null,
+                'received_at' => null,
                 'created_at' => now()->subDays(3),
                 'updated_at' => now()->subDays(3),
+            ],
+            [
+                'po_number' => 'PO003',
+                'vendor_id' => 1,
+                'branch_id' => 1,
+                'user_id' => 2, // branch manager
+                'status' => 'approved',
+                'order_type' => 'branch_request',
+                'payment_terms' => '10_days',
+                'subtotal' => 2500.00,
+                'tax_amount' => 0.00,
+                'transport_cost' => 100.00,
+                'total_amount' => 2600.00,
+                'notes' => 'Organic vegetables order',
+                'expected_delivery_date' => now()->addDays(3),
+                'actual_delivery_date' => null,
+                'received_at' => null,
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(2),
             ],
         ];
 
         DB::table('purchase_orders')->insert($purchaseOrders);
+
+        // Create purchase order items
+        $purchaseOrderItems = [
+            // PO001 items
+            [
+                'purchase_order_id' => 1,
+                'product_id' => 1, // Apples
+                'quantity' => 20.0,
+                'unit_price' => 120.00,
+                'total_price' => 2400.00,
+                'fulfilled_quantity' => 20.0,
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(5),
+            ],
+            [
+                'purchase_order_id' => 1,
+                'product_id' => 3, // Spinach
+                'quantity' => 15.0,
+                'unit_price' => 30.00,
+                'total_price' => 450.00,
+                'fulfilled_quantity' => 15.0,
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(5),
+            ],
+            [
+                'purchase_order_id' => 1,
+                'product_id' => 5, // Carrots
+                'quantity' => 25.0,
+                'unit_price' => 35.00,
+                'total_price' => 875.00,
+                'fulfilled_quantity' => 25.0,
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(5),
+            ],
+            // PO002 items
+            [
+                'purchase_order_id' => 2,
+                'product_id' => 2, // Tomatoes
+                'quantity' => 30.0,
+                'unit_price' => 40.00,
+                'total_price' => 1200.00,
+                'fulfilled_quantity' => 30.0,
+                'created_at' => now()->subDays(3),
+                'updated_at' => now()->subDays(3),
+            ],
+            [
+                'purchase_order_id' => 2,
+                'product_id' => 4, // Oranges
+                'quantity' => 20.0,
+                'unit_price' => 80.00,
+                'total_price' => 1600.00,
+                'fulfilled_quantity' => 20.0,
+                'created_at' => now()->subDays(3),
+                'updated_at' => now()->subDays(3),
+            ],
+            [
+                'purchase_order_id' => 2,
+                'product_id' => 1, // Apples
+                'quantity' => 10.0,
+                'unit_price' => 120.00,
+                'total_price' => 1200.00,
+                'fulfilled_quantity' => 10.0,
+                'created_at' => now()->subDays(3),
+                'updated_at' => now()->subDays(3),
+            ],
+            // PO003 items
+            [
+                'purchase_order_id' => 3,
+                'product_id' => 3, // Spinach
+                'quantity' => 20.0,
+                'unit_price' => 30.00,
+                'total_price' => 600.00,
+                'fulfilled_quantity' => 20.0,
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(2),
+            ],
+            [
+                'purchase_order_id' => 3,
+                'product_id' => 5, // Carrots
+                'quantity' => 15.0,
+                'unit_price' => 35.00,
+                'total_price' => 525.00,
+                'fulfilled_quantity' => 15.0,
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(2),
+            ],
+            [
+                'purchase_order_id' => 3,
+                'product_id' => 2, // Tomatoes
+                'quantity' => 25.0,
+                'unit_price' => 40.00,
+                'total_price' => 1000.00,
+                'fulfilled_quantity' => 25.0,
+                'created_at' => now()->subDays(2),
+                'updated_at' => now()->subDays(2),
+            ],
+        ];
+
+        DB::table('purchase_order_items')->insert($purchaseOrderItems);
 
         // Create expense categories
         $expenseCategories = [

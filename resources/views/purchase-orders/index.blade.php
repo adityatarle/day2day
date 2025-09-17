@@ -17,6 +17,12 @@
                 </svg>
                 Dashboard
             </a>
+            <a href="{{ route('purchase-orders.receive-form') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Receive Materials
+            </a>
             <a href="{{ route('purchase-orders.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                 <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -196,6 +202,9 @@
                             Status
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Receive Status
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Items
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -235,6 +244,20 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3">
+                                @if($order->status === 'confirmed' || $order->status === 'received')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $order->getReceiveStatusBadgeClass() }}">
+                                        {{ $order->getReceiveStatusDisplayText() }}
+                                    </span>
+                                    @if($order->receive_status === 'partial')
+                                        <div class="text-xs text-gray-600 mt-1">
+                                            {{ number_format($order->total_received_quantity ?? 0, 2) }}/{{ number_format($order->total_ordered_quantity ?? 0, 2) }}
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
                                 <span class="text-gray-900 font-medium">{{ $order->purchase_order_items_count }}</span>
                                 <span class="text-gray-500 text-sm">items</span>
                             </td>
@@ -263,10 +286,10 @@
                                             Edit
                                         </a>
                                     @endif
-                                    @if($order->isConfirmed())
+                                    @if($order->isConfirmed() && $order->receive_status !== 'complete')
                                         <a href="{{ route('purchase-orders.receive-form', $order) }}" 
                                            class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                                            Receive
+                                            {{ $order->receive_status === 'partial' ? 'Continue Receiving' : 'Receive' }}
                                         </a>
                                     @endif
                                 </div>

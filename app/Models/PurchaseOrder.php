@@ -27,6 +27,7 @@ class PurchaseOrder extends Model
         'branch_request_id',
         'user_id',
         'status',
+        'receive_status',
         'order_type',
         'delivery_address_type',
         'ship_to_branch_id',
@@ -37,6 +38,8 @@ class PurchaseOrder extends Model
         'tax_amount',
         'transport_cost',
         'total_amount',
+        'total_ordered_quantity',
+        'total_received_quantity',
         'notes',
         'terminology_notes',
         'expected_delivery_date',
@@ -60,6 +63,8 @@ class PurchaseOrder extends Model
         'tax_amount' => 'decimal:2',
         'transport_cost' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'total_ordered_quantity' => 'decimal:2',
+        'total_received_quantity' => 'decimal:2',
         'is_received_order' => 'boolean',
         'expected_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
@@ -334,5 +339,88 @@ class PurchaseOrder extends Model
         }
 
         return 'Main Warehouse';
+    }
+
+    /**
+     * Scope to get purchase orders that are pending to receive (confirmed but not yet received).
+     */
+    public function scopePendingToReceive($query)
+    {
+        return $query->where('status', 'confirmed')
+                    ->where('receive_status', '!=', 'complete');
+    }
+
+    /**
+     * Scope to get purchase orders with partial receives.
+     */
+    public function scopePartiallyReceived($query)
+    {
+        return $query->where('receive_status', 'partial');
+    }
+
+    /**
+     * Check if the purchase order is partially received.
+     */
+    public function isPartiallyReceived(): bool
+    {
+        return $this->receive_status === 'partial';
+    }
+
+    /**
+     * Check if the purchase order is completely received.
+     */
+    public function isCompletelyReceived(): bool
+    {
+        return $this->receive_status === 'complete';
+    }
+
+    /**
+     * Calculate and update receive status based on items.
+     */
+    public function updateReceiveStatus(): void
+    {
+        $this->load('purchaseOrderItems');
+        
+        $totalOrdered = $this->purchaseOrderItems->sum('quantity');
+        $totalReceived = $this->purchaseOrderItems->sum('received_quantity');
+        
+        $this->total_ordered_quantity = $totalOrdered;
+        $this->total_received_quantity = $totalReceived;
+        
+        if ($totalReceived == 0) {
+            $this->receive_status = 'not_received';
+        } elseif ($totalReceived >= $totalOrdered) {
+            $this->receive_status = 'complete';
+        } else {
+            $this->receive_status = 'partial';
+        }
+        
+        $this->save();
+    }
+
+    /**
+     * Get receive status badge color.
+     */
+    public function getReceiveStatusBadgeClass(): string
+    {
+        return match($this->receive_status) {
+            'not_received' => 'bg-gray-100 text-gray-800',
+            'partial' => 'bg-orange-100 text-orange-800',
+            'complete' => 'bg-green-100 text-green-800',
+            default => 'bg-gray-100 text-gray-800'
+        };
+    }
+
+    /**
+     * Get receive status display text.
+     */
+    public function getReceiveStatusDisplayText(): string
+    {
+        return match($this->receive_status) {
+            'not_received' => 'Not Received',
+            'partial' => 'Partially Received',
+            'complete' => 'Completely Received',
+            default => 'Unknown'
+        };
     }
 }

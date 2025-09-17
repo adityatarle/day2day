@@ -25,7 +25,7 @@
             <div class="space-y-6">
                 <div>
                     <label class="form-label">Select Purchase Order</label>
-                    <p class="text-sm text-gray-500 mb-4">Choose from purchase orders that are approved/fulfilled but not yet received for your branch</p>
+                    <p class="text-sm text-gray-500 mb-4">Choose from product orders that have been sent to admin and are ready for delivery receipt recording</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -45,8 +45,8 @@
                                     <p class="text-sm text-gray-600">{{ $purchaseOrder->vendor->name }}</p>
                                 </div>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                    {{ $purchaseOrder->status === 'approved' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                                    {{ $purchaseOrder->status === 'approved' ? 'Approved' : 'Fulfilled' }}
+                                    {{ $purchaseOrder->status === 'sent' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800' }}">
+                                    {{ $purchaseOrder->status === 'sent' ? 'Approved by Admin' : 'Fulfilled by Admin' }}
                                 </span>
                             </div>
 
@@ -101,11 +101,22 @@
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No Purchase Orders Available</h3>
                 <p class="mt-1 text-sm text-gray-500">
-                    There are no approved or fulfilled purchase orders that haven't been received yet for your branch.
+                    There are no product orders that have been sent to admin and are ready for delivery receipt recording.
                 </p>
-                <div class="mt-6">
+                <div class="mt-4 text-sm text-gray-600">
+                    <p class="font-medium">To see orders here, make sure:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>You have created product orders in the "Product Orders" section</li>
+                        <li>Admin has approved your orders (status should be "Approved by Admin" or "Fulfilled by Admin")</li>
+                        <li>Orders haven't been received yet (no delivery receipt recorded)</li>
+                    </ul>
+                </div>
+                <div class="mt-6 space-x-4">
                     <a href="{{ route('branch.purchase-entries.index') }}" class="btn btn-primary">
                         View All Purchase Entries
+                    </a>
+                    <a href="{{ route('branch.purchase-entries.debug') }}" class="btn btn-secondary">
+                        Debug Orders
                     </a>
                 </div>
             </div>
@@ -151,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div>
                         <span class="text-sm font-medium text-gray-600">Status:</span>
-                        <p class="text-lg font-semibold text-gray-900">${status === 'approved' ? 'Approved' : 'Fulfilled'}</p>
+                        <p class="text-lg font-semibold text-gray-900">${status === 'sent' ? 'Approved by Admin' : 'Fulfilled by Admin'}</p>
                     </div>
                     <div>
                         <span class="text-sm font-medium text-gray-600">Items:</span>

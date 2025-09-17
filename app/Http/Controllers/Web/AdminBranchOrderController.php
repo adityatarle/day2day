@@ -225,6 +225,7 @@ class AdminBranchOrderController extends Controller
                         'unit_price' => $purchaseOrderItem->unit_price,
                         'reference_type' => 'branch_order',
                         'reference_id' => $branchOrder->id,
+                        'user_id' => Auth::id(),
                         'notes' => "Branch Order Fulfillment: {$branchOrder->po_number}",
                     ]);
 
@@ -244,6 +245,7 @@ class AdminBranchOrderController extends Controller
                         'unit_price' => $purchaseOrderItem->unit_price,
                         'reference_type' => 'branch_order_spoilage',
                         'reference_id' => $branchOrder->id,
+                        'user_id' => Auth::id(),
                         'notes' => "Spoiled materials from Branch Order: {$branchOrder->po_number}",
                     ]);
                 }

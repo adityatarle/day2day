@@ -44,10 +44,20 @@
                                     <h3 class="font-semibold text-gray-900">{{ $purchaseOrder->po_number }}</h3>
                                     <p class="text-sm text-gray-600">{{ $purchaseOrder->vendor->name }}</p>
                                 </div>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                    {{ $purchaseOrder->status === 'sent' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800' }}">
-                                    {{ $purchaseOrder->status === 'sent' ? 'Approved by Admin' : 'Fulfilled by Admin' }}
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                        {{ $purchaseOrder->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
+                                           ($purchaseOrder->status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' : 
+                                           'bg-purple-100 text-purple-800') }}">
+                                        {{ $purchaseOrder->status === 'sent' ? 'Approved' : 
+                                           ($purchaseOrder->status === 'confirmed' ? 'Confirmed' : 'Fulfilled') }}
+                                    </span>
+                                    @if($purchaseOrder->receive_status === 'partial')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                            Partial Receipt
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
 
                             <div class="space-y-2 text-sm text-gray-600">

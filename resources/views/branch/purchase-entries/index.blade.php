@@ -38,7 +38,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Approved Orders</p>
+                    <p class="text-sm font-medium text-gray-600">Ready for Receipt</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $stats['approved_orders'] }}</p>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Fulfilled Orders</p>
+                    <p class="text-sm font-medium text-gray-600">Complete Receipts</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $stats['fulfilled_orders'] }}</p>
                 </div>
             </div>
@@ -70,8 +70,8 @@
                     </div>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Pending Receipt</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $stats['pending_receipt'] }}</p>
+                    <p class="text-sm font-medium text-gray-600">Partial Receipts</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ $stats['partial_receipts'] }}</p>
                 </div>
             </div>
         </div>
@@ -107,8 +107,10 @@
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-input">
                         <option value="">All Status</option>
-                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved (Awaiting Delivery)</option>
-                        <option value="fulfilled" {{ request('status') === 'fulfilled' ? 'selected' : '' }}>Fulfilled (Delivered)</option>
+                        <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Approved (Awaiting Delivery)</option>
+                        <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed (Ready for Receipt)</option>
+                        <option value="fulfilled" {{ request('status') === 'fulfilled' ? 'selected' : '' }}>Fulfilled (Ready for Receipt)</option>
+                        <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Completely Received</option>
                     </select>
                 </div>
 
@@ -163,8 +165,13 @@
                                 <td>{{ $entry->created_at->format('M d, Y') }}</td>
                                 <td>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        {{ $entry->status === 'approved' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                                        {{ $entry->status === 'approved' ? 'Awaiting Delivery' : 'Delivered' }}
+                                        {{ $entry->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
+                                           ($entry->status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' : 
+                                           ($entry->status === 'fulfilled' ? 'bg-purple-100 text-purple-800' : 
+                                           'bg-green-100 text-green-800')) }}">
+                                        {{ $entry->status === 'sent' ? 'Approved' : 
+                                           ($entry->status === 'confirmed' ? 'Confirmed' : 
+                                           ($entry->status === 'fulfilled' ? 'Fulfilled' : 'Received')) }}
                                     </span>
                                 </td>
                                 <td>
@@ -190,10 +197,25 @@
                                             <p class="text-green-600 font-medium">Receipt Recorded</p>
                                             <p class="text-sm text-gray-500">{{ $entry->received_at->format('M d, Y') }}</p>
                                         </div>
-                                    @elseif($entry->status === 'fulfilled')
+                                    @elseif(in_array($entry->status, ['confirmed', 'fulfilled']))
                                         <span class="text-red-600 font-medium">Receipt Pending</span>
                                     @else
                                         <span class="text-gray-500">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($entry->receive_status === 'complete')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Complete
+                                        </span>
+                                    @elseif($entry->receive_status === 'partial')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                            Partial
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            Not Received
+                                        </span>
                                     @endif
                                 </td>
                                 <td>
@@ -202,10 +224,10 @@
                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                             View
                                         </a>
-                                        @if($entry->status === 'fulfilled' && !$entry->received_at)
+                                        @if(in_array($entry->status, ['confirmed', 'fulfilled']) && $entry->receive_status !== 'complete')
                                             <a href="{{ route('branch.purchase-entries.create-receipt', $entry) }}" 
                                                class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                                Record Receipt
+                                                {{ $entry->receive_status === 'partial' ? 'Continue Receipt' : 'Record Receipt' }}
                                             </a>
                                         @elseif($entry->received_at)
                                             <a href="{{ route('branch.purchase-entries.receipt', $entry) }}" 

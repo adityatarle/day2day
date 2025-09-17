@@ -53,15 +53,22 @@ class BranchPurchaseEntryController extends Controller
             abort(403, 'Access denied. Branch managers only.');
         }
 
+        // Fetch Purchase Entries (received materials) - these are PurchaseOrders that have been received
         $query = PurchaseOrder::with(['vendor', 'user'])
             ->where('branch_id', $user->branch_id)
             ->where('order_type', 'branch_request')
-            ->whereIn('status', ['sent', 'confirmed', 'fulfilled', 'received'])
+            ->whereNotNull('received_at') // Only show entries that have been received
             ->withCount('purchaseOrderItems');
 
-        // Filter by status
+        // Filter by receive status instead of order status
         if ($request->has('status') && $request->status !== '') {
-            $query->where('status', $request->status);
+            if ($request->status === 'complete') {
+                $query->where('receive_status', 'complete');
+            } elseif ($request->status === 'partial') {
+                $query->where('receive_status', 'partial');
+            } elseif ($request->status === 'received') {
+                $query->whereNotNull('received_at');
+            }
         }
 
         // Search by order number
@@ -69,7 +76,7 @@ class BranchPurchaseEntryController extends Controller
             $query->where('po_number', 'like', '%' . $request->search . '%');
         }
 
-        $purchaseEntries = $query->latest()->paginate(15);
+        $purchaseEntries = $query->latest('received_at')->paginate(15);
 
         $stats = [
             'approved_orders' => PurchaseOrder::where('branch_id', $user->branch_id)

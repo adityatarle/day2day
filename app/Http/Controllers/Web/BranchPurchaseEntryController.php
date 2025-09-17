@@ -19,6 +19,29 @@ use Illuminate\Support\Facades\Auth;
 class BranchPurchaseEntryController extends Controller
 {
     /**
+     * Show the form for creating a new purchase entry.
+     */
+    public function create(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
+            abort(403, 'Access denied. Branch managers only.');
+        }
+
+        // Get purchase orders that are approved/fulfilled but not yet received for this branch
+        $availablePurchaseOrders = PurchaseOrder::with(['vendor', 'purchaseOrderItems.product'])
+            ->where('branch_id', $user->branch_id)
+            ->where('order_type', 'branch_request')
+            ->whereIn('status', ['approved', 'fulfilled'])
+            ->whereNull('received_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('branch.purchase-entries.create', compact('availablePurchaseOrders'));
+    }
+
+    /**
      * Display purchase entries for the branch.
      */
     public function index(Request $request)

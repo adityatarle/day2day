@@ -294,6 +294,7 @@ Route::middleware('auth')->group(function () {
 
         // Branch Purchase Entries - Track deliveries from admin with discrepancies
         Route::get('/branch/purchase-entries', [BranchPurchaseEntryController::class, 'index'])->name('branch.purchase-entries.index');
+        Route::get('/branch/purchase-entries/create', [BranchPurchaseEntryController::class, 'create'])->name('branch.purchase-entries.create');
         Route::get('/branch/purchase-entries/{purchaseEntry}', [BranchPurchaseEntryController::class, 'show'])->name('branch.purchase-entries.show');
         Route::get('/branch/purchase-entries/{purchaseEntry}/create-receipt', [BranchPurchaseEntryController::class, 'createReceipt'])->name('branch.purchase-entries.create-receipt');
         Route::post('/branch/purchase-entries/{purchaseEntry}/store-receipt', [BranchPurchaseEntryController::class, 'storeReceipt'])->name('branch.purchase-entries.store-receipt');

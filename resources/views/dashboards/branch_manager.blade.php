@@ -229,42 +229,77 @@
 
     <!-- Recent Purchase Entries and Top Products -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Recent Purchase Entries -->
+        <!-- Recent Purchase Entries with Detailed Tracking -->
         <div class="bg-white rounded-2xl p-6 shadow-lg">
             <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900">Recent Purchase Entries</h3>
-                <a href="{{ route('branch.purchase-entries.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                <h3 class="text-xl font-bold text-gray-900">Purchase Order Tracking</h3>
+                <a href="{{ route('enhanced-purchase-entries.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
                     View All
                 </a>
             </div>
             <div class="space-y-4">
                 @forelse($recent_purchase_entries as $entry)
-                <div class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-truck text-indigo-600 text-sm"></i>
+                <div class="p-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-truck text-indigo-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ $entry->po_number }}</p>
+                                <p class="text-sm text-gray-600">{{ $entry->vendor ? $entry->vendor->name : 'Admin' }}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="font-semibold text-gray-900">{{ $entry->po_number }}</p>
-                            <p class="text-sm text-gray-600">{{ $entry->vendor ? 'Admin Purchase' : 'Admin Fulfillment' }}</p>
+                        <div class="text-right">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {{ $entry->completion_percentage >= 100 ? 'bg-green-100 text-green-800' : 
+                                   ($entry->completion_percentage > 0 ? 'bg-orange-100 text-orange-800' : 
+                                   'bg-gray-100 text-gray-800') }}">
+                                {{ $entry->completion_percentage >= 100 ? 'Complete' : 
+                                   ($entry->completion_percentage > 0 ? 'Partial' : 'Pending') }}
+                            </span>
+                            <p class="text-sm text-gray-600 mt-1">{{ $entry->created_at->diffForHumans() }}</p>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            {{ $entry->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
-                               ($entry->status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' : 
-                               ($entry->status === 'fulfilled' ? 'bg-purple-100 text-purple-800' : 
-                               'bg-green-100 text-green-800')) }}">
-                            {{ $entry->status === 'sent' ? 'Approved' : 
-                               ($entry->status === 'confirmed' ? 'Confirmed' : 
-                               ($entry->status === 'fulfilled' ? 'Fulfilled' : 'Received')) }}
-                        </span>
-                        <p class="text-sm text-gray-600 mt-1">{{ $entry->created_at->diffForHumans() }}</p>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mb-2">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span>{{ number_format($entry->completion_percentage, 1) }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
+                                 style="width: {{ min(100, $entry->completion_percentage) }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quantity Details -->
+                    <div class="grid grid-cols-3 gap-4 text-sm">
+                        <div class="text-center">
+                            <p class="text-gray-600">Expected</p>
+                            <p class="font-semibold text-gray-900">{{ number_format($entry->total_expected, 0) }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-gray-600">Received</p>
+                            <p class="font-semibold text-green-600">{{ number_format($entry->total_received, 0) }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-gray-600">Remaining</p>
+                            <p class="font-semibold {{ $entry->total_remaining > 0 ? 'text-orange-600' : 'text-green-600' }}">
+                                {{ number_format($entry->total_remaining, 0) }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Receipt Count -->
+                    <div class="mt-2 text-center">
+                        <span class="text-xs text-gray-500">{{ $entry->receipt_count }} receipt{{ $entry->receipt_count !== 1 ? 's' : '' }}</span>
                     </div>
                 </div>
                 @empty
                 <div class="text-center py-4">
-                    <p class="text-gray-500 text-sm">No purchase entries yet</p>
+                    <p class="text-gray-500 text-sm">No purchase orders yet</p>
                 </div>
                 @endforelse
             </div>
@@ -415,14 +450,14 @@
 
     <!-- Additional Quick Actions Row -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <a href="{{ route('branch.purchase-entries.index') }}" class="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl p-6 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <a href="{{ route('enhanced-purchase-entries.index') }}" class="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl p-6 text-white hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl">
             <div class="flex items-center space-x-4">
                 <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
                     <i class="fas fa-truck-loading text-xl"></i>
                 </div>
                 <div>
                     <h4 class="text-lg font-bold">Purchase Entries</h4>
-                    <p class="text-indigo-100 text-sm">Track deliveries</p>
+                    <p class="text-indigo-100 text-sm">Track deliveries & quantities</p>
                 </div>
             </div>
         </a>

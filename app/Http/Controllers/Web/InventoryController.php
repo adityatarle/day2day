@@ -227,6 +227,7 @@ class InventoryController extends Controller
                 'branch_id' => $request->branch_id,
                 'type' => 'loss',
                 'quantity' => -$request->quantity_lost, // Negative for loss
+                'unit_price' => $product->purchase_price ?? 0,
                 'reference_type' => 'loss_tracking',
                 'reference_id' => null, // Will be updated after loss tracking is created
                 'user_id' => auth()->id(),

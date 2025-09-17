@@ -41,13 +41,13 @@
                                 Edit
                             </a>
                         @endif
-                        @if($purchaseOrder->isConfirmed())
+                        @if($purchaseOrder->isConfirmed() && $purchaseOrder->receive_status !== 'complete')
                             <a href="{{ route('purchase-orders.receive-form', $purchaseOrder) }}" 
                                class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
                                 <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                 </svg>
-                                Receive Materials
+                                {{ $purchaseOrder->receive_status === 'partial' ? 'Continue Receiving' : 'Receive Materials' }}
                             </a>
                         @endif
                     </div>
@@ -63,6 +63,11 @@
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium status-{{ $purchaseOrder->status }}">
                     {{ ucfirst($purchaseOrder->status) }}
                 </span>
+                @if($purchaseOrder->status === 'confirmed' || $purchaseOrder->status === 'received')
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $purchaseOrder->getReceiveStatusBadgeClass() }}">
+                        {{ $purchaseOrder->getReceiveStatusDisplayText() }}
+                    </span>
+                @endif
                 <div class="text-sm text-gray-600">
                     Created {{ $purchaseOrder->created_at->format('M d, Y') }} by {{ $purchaseOrder->user->name }}
                 </div>
@@ -236,8 +241,9 @@
                         <th>Product</th>
                         <th>Category</th>
                         <th>Quantity Ordered</th>
-                        @if($purchaseOrder->isReceived())
+                        @if($purchaseOrder->isConfirmed() || $purchaseOrder->isReceived())
                             <th>Quantity Received</th>
+                            <th>Status</th>
                         @endif
                         <th>Unit Price</th>
                         <th>Total Price</th>
@@ -256,12 +262,26 @@
                                 </span>
                             </td>
                             <td class="font-medium">{{ number_format($item->quantity, 2) }} {{ $item->product->unit }}</td>
-                            @if($purchaseOrder->isReceived())
+                            @if($purchaseOrder->isConfirmed() || $purchaseOrder->isReceived())
                                 <td class="font-medium {{ $item->received_quantity == $item->quantity ? 'text-green-600' : 'text-orange-600' }}">
                                     {{ number_format($item->received_quantity ?? 0, 2) }} {{ $item->product->unit }}
                                     @if($item->received_quantity != $item->quantity)
                                         <span class="text-xs text-gray-500 block">
                                             ({{ number_format(abs($item->quantity - ($item->received_quantity ?? 0)), 2) }} {{ $item->received_quantity < $item->quantity ? 'short' : 'excess' }})
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @php
+                                        $receivedPercentage = $item->quantity > 0 ? ($item->received_quantity / $item->quantity) * 100 : 0;
+                                    @endphp
+                                    @if($receivedPercentage == 0)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Not Received</span>
+                                    @elseif($receivedPercentage >= 100)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Complete</span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                            {{ number_format($receivedPercentage, 0) }}% Received
                                         </span>
                                     @endif
                                 </td>
@@ -273,7 +293,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="border-t-2 border-gray-300">
-                        <td colspan="{{ $purchaseOrder->isReceived() ? '5' : '4' }}" class="text-right font-semibold">Total:</td>
+                        <td colspan="{{ ($purchaseOrder->isConfirmed() || $purchaseOrder->isReceived()) ? '6' : '4' }}" class="text-right font-semibold">Total:</td>
                         <td class="font-bold text-green-600">₹{{ number_format($purchaseOrder->subtotal, 2) }}</td>
                     </tr>
                 </tfoot>

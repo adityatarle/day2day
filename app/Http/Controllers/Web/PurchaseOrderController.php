@@ -426,6 +426,7 @@ class PurchaseOrderController extends Controller
     /**
      * Mark purchase order as received (convert to "Received Order") and update inventory.
      * This represents the transition from Purchase Order to Received Order in Tally terminology.
+     * Supports partial receives - accumulates received quantities over multiple receives.
      */
     public function receive(Request $request, PurchaseOrder $purchaseOrder)
     {
@@ -452,42 +453,78 @@ class PurchaseOrderController extends Controller
                 }
             }
 
-            // Update purchase order status
-            $purchaseOrder->markAsReceived();
+            $hasReceivedItems = false;
+            $allItemsReceived = true;
 
             // Update inventory for each received item
             foreach ($request->received_items as $receivedItem) {
                 $purchaseOrderItem = PurchaseOrderItem::find($receivedItem['item_id']);
-                $receivedQuantity = $receivedItem['received_quantity'];
+                $newReceivedQuantity = $receivedItem['received_quantity'];
+                
+                // Get previously received quantity
+                $previouslyReceived = $purchaseOrderItem->received_quantity ?? 0;
+                $totalReceivedQuantity = $previouslyReceived + $newReceivedQuantity;
 
-                if ($receivedQuantity > 0) {
+                if ($newReceivedQuantity > 0) {
+                    $hasReceivedItems = true;
+                    
                     // Add stock to inventory (Received Order - materials received from vendor)
                     StockMovement::create([
                         'product_id' => $purchaseOrderItem->product_id,
                         'branch_id' => $targetBranchId,
                         'type' => 'purchase',
-                        'quantity' => $receivedQuantity,
+                        'quantity' => $newReceivedQuantity,
                         'unit_price' => $purchaseOrderItem->unit_price ?? 0,
                         'reference_type' => 'purchase_order',
                         'reference_id' => $purchaseOrder->id,
                         'user_id' => auth()->id(),
                         'movement_date' => now(),
-                        'notes' => "Received Order from PO: {$purchaseOrder->po_number}",
+                        'notes' => "Partial Receipt - PO: {$purchaseOrder->po_number}",
                     ]);
 
                     // Update the product's current stock in the branch
                     $product = $purchaseOrderItem->product;
                     $currentStock = $product->getCurrentStock($targetBranchId);
-                    $product->updateBranchStock($targetBranchId, $currentStock + $receivedQuantity);
+                    $product->updateBranchStock($targetBranchId, $currentStock + $newReceivedQuantity);
                 }
 
-                // Update received quantity in purchase order item
-                $purchaseOrderItem->update(['received_quantity' => $receivedQuantity]);
+                // Update total received quantity in purchase order item (accumulate)
+                $purchaseOrderItem->update(['received_quantity' => $totalReceivedQuantity]);
+                
+                // Check if this item is fully received
+                if ($totalReceivedQuantity < $purchaseOrderItem->quantity) {
+                    $allItemsReceived = false;
+                }
+            }
+
+            // Update purchase order receive status
+            if ($hasReceivedItems) {
+                if (!$purchaseOrder->received_at) {
+                    $purchaseOrder->update([
+                        'received_at' => now(),
+                        'received_by' => auth()->id(),
+                    ]);
+                }
+                
+                // Update receive status and totals
+                $purchaseOrder->updateReceiveStatus();
+                
+                // If all items are fully received, mark as complete
+                if ($allItemsReceived) {
+                    $purchaseOrder->markAsReceived();
+                }
             }
         });
 
+        $message = 'Materials received successfully! ';
+        if ($purchaseOrder->receive_status === 'partial') {
+            $message .= 'Purchase Order partially received. You can receive remaining items later.';
+        } else {
+            $message .= 'Purchase Order completely received and inventory updated.';
+        }
+
         return redirect()->route('purchase-orders.show', $purchaseOrder)
-            ->with('success', 'Materials received successfully! Purchase Order converted to Received Order and inventory updated.');
+            ->with('success', $message);
     }
 
     /**
@@ -509,16 +546,37 @@ class PurchaseOrderController extends Controller
     /**
      * Show receive form for purchase order.
      */
-    public function showReceiveForm(PurchaseOrder $purchaseOrder)
+    public function showReceiveForm(Request $request, PurchaseOrder $purchaseOrder = null)
     {
-        if (!$purchaseOrder->isConfirmed()) {
-            return redirect()->route('purchase-orders.show', $purchaseOrder)
-                ->with('error', 'Only confirmed purchase orders can be received.');
+        $user = Auth::user();
+        
+        // Get pending purchase orders for dropdown
+        $pendingOrdersQuery = PurchaseOrder::with(['vendor', 'branch'])
+            ->pendingToReceive()
+            ->orderBy('expected_delivery_date', 'asc');
+        
+        // Branch filtering for branch managers
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $pendingOrdersQuery->where('branch_id', $user->branch_id);
+        }
+        
+        $pendingOrders = $pendingOrdersQuery->get();
+        
+        // If PO is selected from dropdown or passed directly
+        if ($request->has('po_id')) {
+            $purchaseOrder = PurchaseOrder::find($request->po_id);
+        }
+        
+        if ($purchaseOrder) {
+            if (!$purchaseOrder->isConfirmed()) {
+                return redirect()->route('purchase-orders.index')
+                    ->with('error', 'Only confirmed purchase orders can be received.');
+            }
+            
+            $purchaseOrder->load(['vendor', 'branch', 'purchaseOrderItems.product']);
         }
 
-        $purchaseOrder->load(['vendor', 'branch', 'purchaseOrderItems.product']);
-
-        return view('purchase-orders.receive', compact('purchaseOrder'));
+        return view('purchase-orders.receive', compact('purchaseOrder', 'pendingOrders'));
     }
 
     /**

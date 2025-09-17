@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Purchase Entries</h1>
-            <p class="text-gray-600">Track deliveries received from admin and record any discrepancies</p>
+            <p class="text-gray-600">View and manage materials received from admin with delivery receipts and discrepancies</p>
         </div>
         <div class="flex gap-3 mt-4 sm:mt-0">
             <a href="{{ route('branch.purchase-entries.create') }}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
@@ -98,19 +98,18 @@
         <form method="GET" action="{{ route('branch.purchase-entries.index') }}" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label for="search" class="form-label">Search Order Number</label>
+                    <label for="search" class="form-label">Search Entry Number</label>
                     <input type="text" name="search" id="search" value="{{ request('search') }}" 
                            class="form-input" placeholder="e.g., BR-2024-001">
                 </div>
 
                 <div>
-                    <label for="status" class="form-label">Status</label>
+                    <label for="status" class="form-label">Receive Status</label>
                     <select name="status" id="status" class="form-input">
                         <option value="">All Status</option>
-                        <option value="sent" {{ request('status') === 'sent' ? 'selected' : '' }}>Approved (Awaiting Delivery)</option>
-                        <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed (Ready for Receipt)</option>
-                        <option value="fulfilled" {{ request('status') === 'fulfilled' ? 'selected' : '' }}>Fulfilled (Ready for Receipt)</option>
-                        <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Completely Received</option>
+                        <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>All Received</option>
+                        <option value="complete" {{ request('status') === 'complete' ? 'selected' : '' }}>Complete</option>
+                        <option value="partial" {{ request('status') === 'partial' ? 'selected' : '' }}>Partial</option>
                     </select>
                 </div>
 
@@ -144,12 +143,12 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Order Number</th>
-                            <th>Date Ordered</th>
-                            <th>Status</th>
+                            <th>Entry Number</th>
+                            <th>Date Received</th>
+                            <th>Receive Status</th>
                             <th>Items</th>
-                            <th>Source</th>
-                            <th>Delivery Status</th>
+                            <th>Vendor</th>
+                            <th>Total Amount</th>
                             <th>Receipt Status</th>
                             <th>Actions</th>
                         </tr>
@@ -162,47 +161,7 @@
                                         {{ $entry->po_number }}
                                     </a>
                                 </td>
-                                <td>{{ $entry->created_at->format('M d, Y') }}</td>
-                                <td>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        {{ $entry->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
-                                           ($entry->status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' : 
-                                           ($entry->status === 'fulfilled' ? 'bg-purple-100 text-purple-800' : 
-                                           'bg-green-100 text-green-800')) }}">
-                                        {{ $entry->status === 'sent' ? 'Approved' : 
-                                           ($entry->status === 'confirmed' ? 'Confirmed' : 
-                                           ($entry->status === 'fulfilled' ? 'Fulfilled' : 'Received')) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="text-gray-900 font-medium">{{ $entry->purchase_order_items_count }}</span>
-                                    <span class="text-gray-500 text-sm">items</span>
-                                </td>
-                                <td>
-                                    <span class="text-gray-500 text-sm">{{ $entry->vendor ? 'Admin Purchase' : 'Admin Fulfillment' }}</span>
-                                </td>
-                                <td>
-                                    @if($entry->fulfilled_at)
-                                        <div>
-                                            <p class="text-green-600 font-medium">Delivered</p>
-                                            <p class="text-sm text-gray-500">{{ $entry->fulfilled_at->format('M d, Y') }}</p>
-                                        </div>
-                                    @else
-                                        <span class="text-orange-600 font-medium">Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($entry->received_at)
-                                        <div>
-                                            <p class="text-green-600 font-medium">Receipt Recorded</p>
-                                            <p class="text-sm text-gray-500">{{ $entry->received_at->format('M d, Y') }}</p>
-                                        </div>
-                                    @elseif(in_array($entry->status, ['confirmed', 'fulfilled']))
-                                        <span class="text-red-600 font-medium">Receipt Pending</span>
-                                    @else
-                                        <span class="text-gray-500">-</span>
-                                    @endif
-                                </td>
+                                <td>{{ $entry->received_at ? $entry->received_at->format('M d, Y') : '-' }}</td>
                                 <td>
                                     @if($entry->receive_status === 'complete')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -216,6 +175,26 @@
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                             Not Received
                                         </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="text-gray-900 font-medium">{{ $entry->purchase_order_items_count }}</span>
+                                    <span class="text-gray-500 text-sm">items</span>
+                                </td>
+                                <td>
+                                    <span class="text-gray-900 font-medium">{{ $entry->vendor ? $entry->vendor->name : 'Admin' }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-gray-900 font-medium">₹{{ number_format($entry->total_amount, 2) }}</span>
+                                </td>
+                                <td>
+                                    @if($entry->received_at)
+                                        <div>
+                                            <p class="text-green-600 font-medium">Receipt Recorded</p>
+                                            <p class="text-sm text-gray-500">{{ $entry->received_at->format('M d, Y') }}</p>
+                                        </div>
+                                    @else
+                                        <span class="text-red-600 font-medium">Receipt Pending</span>
                                     @endif
                                 </td>
                                 <td>
@@ -259,7 +238,7 @@
                     @if(request()->hasAny(['search', 'status']))
                         No purchase entries match your current filters.
                     @else
-                        No approved or fulfilled orders found. Orders will appear here once admin approves your product orders.
+                        No received materials found. Purchase entries will appear here once you record delivery receipts for approved orders.
                     @endif
                 </p>
                 @if(request()->hasAny(['search', 'status']))

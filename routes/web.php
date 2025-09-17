@@ -300,6 +300,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/branch/purchase-entries/{purchaseEntry}/store-receipt', [BranchPurchaseEntryController::class, 'storeReceipt'])->name('branch.purchase-entries.store-receipt');
         Route::get('/branch/purchase-entries/{purchaseEntry}/receipt', [BranchPurchaseEntryController::class, 'showReceipt'])->name('branch.purchase-entries.receipt');
         Route::get('/branch/discrepancy-report', [BranchPurchaseEntryController::class, 'discrepancyReport'])->name('branch.purchase-entries.discrepancy-report');
+        Route::get('/branch/purchase-entries-debug', [BranchPurchaseEntryController::class, 'debug'])->name('branch.purchase-entries.debug');
 
         // Branch-specific routes
         Route::get('/branch/inventory', [InventoryController::class, 'branchIndex'])->name('branch.inventory.index');

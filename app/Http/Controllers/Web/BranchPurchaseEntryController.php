@@ -30,10 +30,11 @@ class BranchPurchaseEntryController extends Controller
         }
 
         // Get purchase orders that are approved/fulfilled but not yet received for this branch
+        // 'sent' = approved by admin, 'confirmed' = fulfilled by admin
         $availablePurchaseOrders = PurchaseOrder::with(['vendor', 'purchaseOrderItems.product'])
             ->where('branch_id', $user->branch_id)
             ->where('order_type', 'branch_request')
-            ->whereIn('status', ['approved', 'fulfilled'])
+            ->whereIn('status', ['sent', 'confirmed'])
             ->whereNull('received_at')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -55,7 +56,7 @@ class BranchPurchaseEntryController extends Controller
         $query = PurchaseOrder::with(['vendor', 'user'])
             ->where('branch_id', $user->branch_id)
             ->where('order_type', 'branch_request')
-            ->whereIn('status', ['approved', 'fulfilled'])
+            ->whereIn('status', ['sent', 'confirmed'])
             ->withCount('purchaseOrderItems');
 
         // Filter by status
@@ -71,15 +72,15 @@ class BranchPurchaseEntryController extends Controller
         $purchaseEntries = $query->latest()->paginate(15);
 
         $stats = [
-            'approved_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
+            'sent_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'approved')->count(),
-            'fulfilled_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
+                ->where('status', 'sent')->count(),
+            'confirmed_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'fulfilled')->count(),
+                ->where('status', 'confirmed')->count(),
             'pending_receipt' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
-                ->where('status', 'approved')
+                ->whereIn('status', ['sent', 'confirmed'])
                 ->whereNull('received_at')->count(),
             'this_month_receipts' => PurchaseOrder::where('branch_id', $user->branch_id)
                 ->where('order_type', 'branch_request')
@@ -353,5 +354,35 @@ class BranchPurchaseEntryController extends Controller
             ($overallStats['total_loss'] / $overallStats['total_received']) * 100 : 0;
 
         return view('branch.purchase-entries.discrepancy-report', compact('entries', 'overallStats'));
+    }
+
+    /**
+     * Debug page to show all purchase orders and their statuses.
+     */
+    public function debug(Request $request)
+    {
+        $user = Auth::user();
+        
+        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
+            abort(403, 'Access denied. Branch managers only.');
+        }
+
+        // Get all purchase orders for this branch
+        $allPurchaseOrders = PurchaseOrder::with(['vendor', 'purchaseOrderItems'])
+            ->where('branch_id', $user->branch_id)
+            ->where('order_type', 'branch_request')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get available orders (same query as create method)
+        $availableOrders = PurchaseOrder::with(['vendor', 'purchaseOrderItems'])
+            ->where('branch_id', $user->branch_id)
+            ->where('order_type', 'branch_request')
+            ->whereIn('status', ['sent', 'confirmed'])
+            ->whereNull('received_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('branch.purchase-entries.debug', compact('allPurchaseOrders', 'availableOrders'));
     }
 }

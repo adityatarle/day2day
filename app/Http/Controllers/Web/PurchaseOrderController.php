@@ -9,6 +9,7 @@ use App\Models\Vendor;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\PoNumberSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -186,8 +187,8 @@ class PurchaseOrderController extends Controller
             $purchaseOrder = DB::transaction(function () use ($request) {
                 \Log::info('Purchase Order Transaction Started');
                 
-                // Generate PO number
-                $poNumber = 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT);
+                // Generate PO number using atomic sequence generation
+                $poNumber = PoNumberSequence::getNextPoNumber('purchase_order', now()->year);
                 \Log::info('Generated PO Number: ' . $poNumber);
 
                 // Pre-calculate totals to satisfy NOT NULL DB constraints on insert

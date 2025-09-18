@@ -30,23 +30,43 @@ class PoNumberSequence extends Model
         };
 
         return DB::transaction(function () use ($prefix, $orderType, $year) {
-            // Use raw SQL with INSERT ... ON DUPLICATE KEY UPDATE to handle race conditions
-            $result = DB::select("
-                INSERT INTO po_number_sequences (prefix, order_type, year, current_sequence, created_at, updated_at)
-                VALUES (?, ?, ?, 1, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE 
-                    current_sequence = current_sequence + 1,
-                    updated_at = NOW()
-            ", [$prefix, $orderType, $year]);
+            // 1) Ensure a sequence row exists and is initialized to the current max from purchase_orders
+            //    This handles environments where purchase_orders already contains numbers before the
+            //    sequence table was introduced.
+            $prefixLength = strlen($prefix);
 
-            // Get the current sequence value
-            $sequence = DB::table('po_number_sequences')
+            // Seed or bump the baseline using an upsert that takes the greatest value
+            $existingMax = DB::table('purchase_orders')
+                ->where('po_number', 'like', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(po_number, ' . ($prefixLength + 1) . ') AS UNSIGNED)) as max_seq')
+                ->value('max_seq') ?? 0;
+
+            // Create the sequence row if missing, or bump it up if it lags behind existing data
+            DB::statement(
+                'INSERT INTO po_number_sequences (prefix, order_type, year, current_sequence, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE current_sequence = GREATEST(current_sequence, VALUES(current_sequence)), updated_at = NOW()',
+                [$prefix, $orderType, $year, (int) $existingMax]
+            );
+
+            // 2) Lock the sequence row and increment atomically
+            $sequenceRow = DB::table('po_number_sequences')
                 ->where('prefix', $prefix)
                 ->where('order_type', $orderType)
                 ->where('year', $year)
+                ->lockForUpdate()
                 ->first();
 
-            return $prefix . str_pad($sequence->current_sequence, 4, '0', STR_PAD_LEFT);
+            $nextSequence = ((int) ($sequenceRow->current_sequence ?? 0)) + 1;
+
+            DB::table('po_number_sequences')
+                ->where('id', $sequenceRow->id)
+                ->update([
+                    'current_sequence' => $nextSequence,
+                    'updated_at' => now(),
+                ]);
+
+            return $prefix . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
         });
     }
 }

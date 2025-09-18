@@ -177,9 +177,6 @@
                                     <span class="text-gray-500 text-sm">items</span>
                                 </td>
                                 <td>
-                                    <span class="text-gray-500 text-sm">{{ ucfirst($order->status) }}</span>
-                                </td>
-                                <td>
                                     @if($order->expected_delivery_date)
                                         <span class="text-gray-900">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
                                         @if($order->expected_delivery_date->isPast() && $order->status !== 'fulfilled')

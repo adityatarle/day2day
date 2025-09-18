@@ -224,14 +224,18 @@ class PurchaseEntry extends Model
         // Recalculate parent order aggregates after any save/delete
         static::saved(function (self $entry) {
             if ($entry->purchase_order_id) {
-                optional($entry->purchaseOrder)->recalculateReceiptAggregates();
+                // Force fresh load to ensure we have the latest data
+                $order = PurchaseOrder::find($entry->purchase_order_id);
+                if ($order) {
+                    $order->recalculateReceiptAggregates();
+                }
             }
         });
 
         static::deleted(function (self $entry) {
             if ($entry->purchase_order_id) {
                 // Reload from DB to avoid stale relations
-                $order = $entry->purchaseOrder()->first();
+                $order = PurchaseOrder::find($entry->purchase_order_id);
                 if ($order) {
                     $order->recalculateReceiptAggregates();
                 }

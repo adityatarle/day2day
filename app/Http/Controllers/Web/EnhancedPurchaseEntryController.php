@@ -245,7 +245,6 @@ class EnhancedPurchaseEntryController extends Controller
             'delivery_person' => 'nullable|string|max:255',
             'delivery_vehicle' => 'nullable|string|max:255',
             'delivery_notes' => 'nullable|string',
-            'is_partial_receipt' => 'boolean',
             'items' => 'required|array',
             'items.*.item_id' => 'required|exists:purchase_order_items,id',
             'items.*.received_quantity' => 'required|numeric|min:0',
@@ -286,7 +285,43 @@ class EnhancedPurchaseEntryController extends Controller
         }
 
         DB::transaction(function () use ($request, $purchaseOrder, $user) {
-            // Create purchase entry
+            // Load purchase order items to check quantities
+            $purchaseOrder->load('purchaseOrderItems');
+            
+            // Calculate if this is a partial receipt by checking all items
+            $isPartialReceipt = false;
+            $allItemsData = [];
+            
+            // First pass: calculate total received across all entries including this one
+            foreach ($purchaseOrder->purchaseOrderItems as $orderItem) {
+                $previouslyReceived = (float) PurchaseEntryItem::where('purchase_order_item_id', $orderItem->id)
+                    ->sum('received_quantity');
+                    
+                $currentReceiving = 0;
+                foreach ($request->items as $itemData) {
+                    if ($itemData['item_id'] == $orderItem->id) {
+                        $currentReceiving = (float) $itemData['received_quantity'];
+                        break;
+                    }
+                }
+                
+                $totalReceived = $previouslyReceived + $currentReceiving;
+                $ordered = (float) $orderItem->quantity;
+                
+                // If any item has less than ordered quantity, it's partial
+                if ($totalReceived < $ordered - 0.00001) {
+                    $isPartialReceipt = true;
+                }
+                
+                $allItemsData[$orderItem->id] = [
+                    'ordered' => $ordered,
+                    'previously_received' => $previouslyReceived,
+                    'current_receiving' => $currentReceiving,
+                    'total_received' => $totalReceived
+                ];
+            }
+            
+            // Create purchase entry with automatically determined partial status
             $purchaseEntry = PurchaseEntry::create([
                 'entry_number' => PurchaseEntry::generateEntryNumber(),
                 'purchase_order_id' => $purchaseOrder->id,
@@ -298,7 +333,7 @@ class EnhancedPurchaseEntryController extends Controller
                 'delivery_person' => $request->delivery_person,
                 'delivery_vehicle' => $request->delivery_vehicle,
                 'delivery_notes' => $request->delivery_notes,
-                'is_partial_receipt' => $request->boolean('is_partial_receipt'),
+                'is_partial_receipt' => $isPartialReceipt,
                 'entry_status' => 'received',
             ]);
 

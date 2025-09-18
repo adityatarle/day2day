@@ -89,6 +89,33 @@
     <form method="POST" action="{{ route('purchase-orders.receive', $purchaseOrder) }}" class="space-y-8">
         @csrf
 
+        <!-- Delivery Information -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Delivery Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="delivery_date" class="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
+                    <input type="date" name="delivery_date" id="delivery_date" class="form-input w-full" 
+                           value="{{ old('delivery_date', date('Y-m-d')) }}">
+                </div>
+                <div>
+                    <label for="delivery_person" class="block text-sm font-medium text-gray-700 mb-2">Delivery Person</label>
+                    <input type="text" name="delivery_person" id="delivery_person" class="form-input w-full" 
+                           value="{{ old('delivery_person') }}" placeholder="Name of delivery person">
+                </div>
+                <div>
+                    <label for="delivery_vehicle" class="block text-sm font-medium text-gray-700 mb-2">Delivery Vehicle</label>
+                    <input type="text" name="delivery_vehicle" id="delivery_vehicle" class="form-input w-full" 
+                           value="{{ old('delivery_vehicle') }}" placeholder="Vehicle number or details">
+                </div>
+                <div>
+                    <label for="delivery_notes" class="block text-sm font-medium text-gray-700 mb-2">Delivery Notes</label>
+                    <textarea name="delivery_notes" id="delivery_notes" rows="2" class="form-textarea w-full" 
+                              placeholder="Any notes about the delivery">{{ old('delivery_notes') }}</textarea>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-6">Received Items</h2>
             <p class="text-gray-600 mb-6">Enter the actual quantities received for each item. The system will automatically update inventory.</p>

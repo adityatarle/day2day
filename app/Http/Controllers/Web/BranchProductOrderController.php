@@ -211,9 +211,49 @@ class BranchProductOrderController extends Controller
             abort(403, 'Access denied.');
         }
 
-        $productOrder->load(['branch', 'user', 'vendor', 'purchaseOrderItems.product']);
+        // Load detailed relations for item tracking and entries
+        $productOrder->load([
+            'branch', 
+            'user', 
+            'vendor', 
+            'purchaseOrderItems.product',
+            'purchaseEntries' => function($q) { $q->orderBy('entry_date', 'desc'); },
+            'purchaseEntries.purchaseEntryItems.product',
+            'purchaseEntries.user'
+        ]);
 
-        return view('branch.product-orders.show', compact('productOrder'));
+        // Compute per-item tracking for ordered/received/remaining
+        $itemTracking = $productOrder->purchaseOrderItems->map(function ($item) use ($productOrder) {
+            $totalReceived = $productOrder->purchaseEntries
+                ->flatMap->purchaseEntryItems
+                ->where('product_id', $item->product_id)
+                ->sum('received_quantity');
+
+            $remaining = ($item->quantity ?? 0) - $totalReceived;
+
+            return [
+                'item' => $item,
+                'ordered_quantity' => (float) ($item->quantity ?? 0),
+                'received_quantity' => (float) $totalReceived,
+                'remaining_quantity' => max(0, (float) $remaining),
+                'unit_price' => (float) ($item->unit_price ?? 0),
+                'total_price' => (float) ($item->total_price ?? 0),
+            ];
+        });
+
+        // Financials (keep existing fields and provide computed helpers)
+        $financials = [
+            'subtotal' => (float) $productOrder->subtotal,
+            'discount' => 0.0, // placeholder if discounting is added later
+            'tax_cgst' => 0.0,
+            'tax_sgst' => 0.0,
+            'tax_igst' => 0.0,
+            'transport' => (float) $productOrder->transport_cost,
+            'tax_total' => (float) $productOrder->tax_amount,
+            'grand_total' => (float) $productOrder->total_amount,
+        ];
+
+        return view('branch.product-orders.show', compact('productOrder', 'itemTracking', 'financials'));
     }
 
     /**

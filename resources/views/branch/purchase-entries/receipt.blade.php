@@ -26,6 +26,22 @@
             </div>
         </div>
 
+        <!-- Financial Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-xs text-gray-500">Subtotal</div>
+                <div class="text-sm font-medium text-gray-900">₹{{ number_format($purchaseEntry->subtotal ?? ($purchaseEntry->total_amount - ($purchaseEntry->tax_amount ?? 0) - ($purchaseEntry->transport_cost ?? 0)), 2) }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-xs text-gray-500">Taxes</div>
+                <div class="text-sm font-medium text-gray-900">₹{{ number_format($purchaseEntry->tax_amount ?? 0, 2) }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-xs text-gray-500">Grand Total</div>
+                <div class="text-sm font-semibold text-gray-900">₹{{ number_format($purchaseEntry->total_amount ?? 0, 2) }}</div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-gray-50 rounded-lg p-4">
                 <div class="text-xs text-gray-500">Delivery Person</div>
@@ -88,6 +104,11 @@
                 <div class="text-xs text-yellow-700">Loss %</div>
                 <div class="text-xl font-bold text-yellow-900">{{ number_format($discrepancySummary['loss_percentage'], 2) }}%</div>
             </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+            <a href="{{ route('purchase-orders.pdf', $purchaseEntry) }}" target="_blank" class="btn btn-secondary">Download PDF</a>
+            <button onclick="window.print()" class="ml-2 btn btn-primary">Print</button>
         </div>
     </div>
 </div>

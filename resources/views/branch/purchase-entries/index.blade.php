@@ -143,13 +143,12 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Entry Number</th>
-                            <th>Date Received</th>
+                            <th>PO Number</th>
+                            <th>Vendor</th>
+                            <th>Date</th>
                             <th>Receive Status</th>
                             <th>Items</th>
-                            <th>Vendor</th>
                             <th>Total Amount</th>
-                            <th>Receipt Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -157,11 +156,10 @@
                         @foreach($purchaseEntries as $entry)
                             <tr class="hover:bg-gray-50">
                                 <td>
-                                    <a href="{{ route('branch.purchase-entries.show', $entry) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                        {{ $entry->po_number }}
-                                    </a>
+                                    <a href="{{ route('branch.purchase-entries.show', $entry) }}" class="text-blue-600 hover:text-blue-800 font-semibold">{{ $entry->po_number }}</a>
                                 </td>
-                                <td>{{ $entry->received_at ? $entry->received_at->format('M d, Y') : '-' }}</td>
+                                <td><span class="text-gray-900 font-medium">{{ $entry->vendor ? $entry->vendor->name : 'Admin' }}</span></td>
+                                <td>{{ $entry->received_at ? $entry->received_at->format('M d, Y') : ($entry->created_at?->format('M d, Y') ?? '-') }}</td>
                                 <td>
                                     @if($entry->receive_status === 'complete')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -182,37 +180,17 @@
                                     <span class="text-gray-500 text-sm">items</span>
                                 </td>
                                 <td>
-                                    <span class="text-gray-900 font-medium">{{ $entry->vendor ? $entry->vendor->name : 'Admin' }}</span>
-                                </td>
-                                <td>
                                     <span class="text-gray-900 font-medium">₹{{ number_format($entry->total_amount, 2) }}</span>
                                 </td>
                                 <td>
-                                    @if($entry->received_at)
-                                        <div>
-                                            <p class="text-green-600 font-medium">Receipt Recorded</p>
-                                            <p class="text-sm text-gray-500">{{ $entry->received_at->format('M d, Y') }}</p>
-                                        </div>
-                                    @else
-                                        <span class="text-red-600 font-medium">Receipt Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('branch.purchase-entries.show', $entry) }}" 
-                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                            View
-                                        </a>
+                                    <div class="flex gap-3">
+                                        <a href="{{ route('branch.purchase-entries.show', $entry) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View</a>
                                         @if(in_array($entry->status, ['confirmed', 'fulfilled']) && $entry->receive_status !== 'complete')
-                                            <a href="{{ route('branch.purchase-entries.create-receipt', $entry) }}" 
-                                               class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                                {{ $entry->receive_status === 'partial' ? 'Continue Receipt' : 'Record Receipt' }}
-                                            </a>
-                                        @elseif($entry->received_at)
-                                            <a href="{{ route('branch.purchase-entries.receipt', $entry) }}" 
-                                               class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                                                View Receipt
-                                            </a>
+                                            <a href="{{ route('branch.purchase-entries.create-receipt', $entry) }}" class="text-green-600 hover:text-green-800 text-sm font-medium">{{ $entry->receive_status === 'partial' ? 'Continue Receipt' : 'Record Receipt' }}</a>
+                                        @endif
+                                        @if($entry->received_at)
+                                            <a href="{{ route('branch.purchase-entries.receipt', $entry) }}" class="text-purple-600 hover:text-purple-800 text-sm font-medium">View Receipt</a>
+                                            <a href="{{ route('purchase-orders.pdf', $entry) }}" target="_blank" class="text-gray-700 hover:text-gray-900 text-sm font-medium">PDF</a>
                                         @endif
                                     </div>
                                 </td>

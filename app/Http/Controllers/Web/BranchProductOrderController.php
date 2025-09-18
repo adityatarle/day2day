@@ -222,14 +222,19 @@ class BranchProductOrderController extends Controller
             'purchaseEntries.user'
         ]);
 
-        // Compute per-item tracking for ordered/received/remaining
+        // Ensure latest aggregates before display
+        $productOrder->recalculateReceiptAggregates();
+
+        // Compute per-item tracking for ordered/received/remaining using normalized totals
         $itemTracking = $productOrder->purchaseOrderItems->map(function ($item) use ($productOrder) {
-            $totalReceived = $productOrder->purchaseEntries
+            $receivedFromEntries = $productOrder->purchaseEntries
                 ->flatMap->purchaseEntryItems
                 ->where('product_id', $item->product_id)
                 ->sum('received_quantity');
+            $direct = (float) ($item->received_quantity ?? 0);
+            $totalReceived = max($direct, (float) $receivedFromEntries);
 
-            $remaining = ($item->quantity ?? 0) - $totalReceived;
+            $remaining = ((float) ($item->quantity ?? 0)) - $totalReceived;
 
             return [
                 'item' => $item,

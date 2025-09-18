@@ -77,4 +77,18 @@ class PurchaseOrderItem extends Model
         $this->total_price = $this->calculateTotalPrice();
         $this->save();
     }
+
+    protected static function booted(): void
+    {
+        // When a PO item is saved/deleted, recalc parent PO aggregates
+        $recalc = function (self $item) {
+            $order = $item->purchaseOrder()->first();
+            if ($order) {
+                $order->recalculateReceiptAggregates();
+            }
+        };
+
+        static::saved($recalc);
+        static::deleted($recalc);
+    }
 }

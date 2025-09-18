@@ -430,7 +430,7 @@ class PurchaseOrderController extends Controller
      */
     public function receive(Request $request, PurchaseOrder $purchaseOrder)
     {
-        if (!$purchaseOrder->isConfirmed()) {
+        if (!$purchaseOrder->isConfirmed() && !$purchaseOrder->isFulfilled() && !$purchaseOrder->isSent()) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'Only confirmed purchase orders can be received.');
         }
@@ -506,13 +506,11 @@ class PurchaseOrderController extends Controller
                     ]);
                 }
                 
-                // Update receive status and totals
-                $purchaseOrder->updateReceiveStatus();
+                // Update receive status and totals using normalized aggregates
+                $purchaseOrder->recalculateReceiptAggregates();
                 
                 // If all items are fully received, mark as complete
-                if ($allItemsReceived) {
-                    $purchaseOrder->markAsReceived();
-                }
+                // recalculateReceiptAggregates already auto-marks as received when complete
             }
         });
 

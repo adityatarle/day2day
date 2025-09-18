@@ -88,8 +88,14 @@ class BranchManagerDashboardController extends Controller
             ->take(5)
             ->get()
             ->map(function($order) {
+                // Ensure aggregates up-to-date
+                $order->recalculateReceiptAggregates();
                 $order->total_expected = $order->purchaseOrderItems->sum('quantity');
-                $order->total_received = $order->purchaseEntries->sum('total_received_quantity');
+                $order->total_received = (float) $order->purchaseOrderItems->sum(function ($item) {
+                    $direct = (float) ($item->received_quantity ?? 0);
+                    $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+                    return max($direct, $fromEntries);
+                });
                 $order->total_remaining = $order->total_expected - $order->total_received;
                 $order->completion_percentage = $order->total_expected > 0 ? 
                     ($order->total_received / $order->total_expected) * 100 : 0;

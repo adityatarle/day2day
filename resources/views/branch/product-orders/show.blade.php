@@ -47,6 +47,9 @@
                     <div class="bg-gray-50 rounded-lg p-4">
                         <div class="text-xs text-gray-500">Status</div>
                         <div class="text-sm font-medium text-gray-900">{{ ucfirst($productOrder->status) }}</div>
+                        <div class="mt-1 text-xs">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded {{ $productOrder->getReceiveStatusBadgeClass() }}">{{ $productOrder->getReceiveStatusDisplayText() }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -127,6 +130,19 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-2">Actions</h2>
                 <button type="button" onclick="document.getElementById('receiveModal').classList.remove('hidden')" class="btn btn-success w-full">Receive Remaining Items</button>
+            </div>
+            @endif
+            @if($productOrder->purchaseEntries->count() > 0)
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-3">Receipt Entries</h2>
+                <ul class="space-y-2 text-sm">
+                    @foreach($productOrder->purchaseEntries as $entry)
+                    <li class="flex justify-between">
+                        <a href="{{ route('enhanced-purchase-entries.entry', $entry) }}" class="text-blue-600 hover:text-blue-800">{{ $entry->entry_number }}</a>
+                        <span class="text-gray-600">{{ $entry->entry_date->format('M d, Y') }}</span>
+                    </li>
+                    @endforeach
+                </ul>
             </div>
             @endif
         </div>

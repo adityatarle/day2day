@@ -84,11 +84,6 @@
                     <label for="delivery_notes" class="form-label">Delivery Notes</label>
                     <textarea name="delivery_notes" id="delivery_notes" rows="2" class="form-input" placeholder="Any additional notes about the delivery">{{ old('delivery_notes') }}</textarea>
                 </div>
-                
-                <div class="flex items-center">
-                    <input type="checkbox" name="is_partial_receipt" id="is_partial_receipt" value="1" class="form-checkbox" {{ old('is_partial_receipt') ? 'checked' : '' }}>
-                    <label for="is_partial_receipt" class="ml-2 text-sm text-gray-700">This is a partial receipt</label>
-                </div>
             </div>
         </div>
 

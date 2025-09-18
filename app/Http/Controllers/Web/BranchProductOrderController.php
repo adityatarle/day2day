@@ -10,6 +10,7 @@ use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
  * BranchProductOrderController
@@ -130,12 +131,6 @@ class BranchProductOrderController extends Controller
         }
 
         DB::transaction(function () use ($request, $user) {
-            // Generate request number
-            $requestNumber = 'BR-' . date('Y') . '-' . str_pad(
-                PurchaseOrder::where('order_type', 'branch_request')->count() + 1, 
-                4, '0', STR_PAD_LEFT
-            );
-
             // Calculate subtotal before creating the purchase order
             $subtotal = 0;
             foreach ($request->items as $item) {
@@ -159,24 +154,49 @@ class BranchProductOrderController extends Controller
                 ]
             );
 
-            // Create product order request
-            $productOrder = PurchaseOrder::create([
-                'po_number' => $requestNumber,
-                'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
-                'branch_id' => $user->branch_id,
-                'user_id' => $user->id,
-                'status' => 'draft',
-                'order_type' => 'branch_request',
-                'payment_terms' => 'immediate',
-                'transport_cost' => 0,
-                'subtotal' => $subtotal,
-                'tax_amount' => 0, // Will be calculated by admin
-                'total_amount' => $subtotal,
-                'notes' => $request->notes,
-                'expected_delivery_date' => $request->expected_delivery_date,
-                'priority' => $request->priority,
-                'terminology_notes' => 'Branch Product Order - sent to admin for vendor assignment and fulfillment',
-            ]);
+            // Generate a unique request number with retry on rare race conditions
+            $productOrder = null;
+            $maxRetries = 5;
+            for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+                $year = now()->year;
+                $prefix = 'BR-' . $year . '-';
+
+                $nextSeq = DB::table('purchase_orders')
+                    ->where('order_type', 'branch_request')
+                    ->whereYear('created_at', $year)
+                    ->where('po_number', 'like', $prefix . '%')
+                    ->lockForUpdate()
+                    ->selectRaw("COALESCE(MAX(CAST(SUBSTRING_INDEX(po_number, '-', -1) AS UNSIGNED)), 0) AS max_seq")
+                    ->value('max_seq') + 1;
+
+                $requestNumber = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+
+                try {
+                    $productOrder = PurchaseOrder::create([
+                        'po_number' => $requestNumber,
+                        'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
+                        'branch_id' => $user->branch_id,
+                        'user_id' => $user->id,
+                        'status' => 'draft',
+                        'order_type' => 'branch_request',
+                        'payment_terms' => 'immediate',
+                        'transport_cost' => 0,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => 0, // Will be calculated by admin
+                        'total_amount' => $subtotal,
+                        'notes' => $request->notes,
+                        'expected_delivery_date' => $request->expected_delivery_date,
+                        'priority' => $request->priority,
+                        'terminology_notes' => 'Branch Product Order - sent to admin for vendor assignment and fulfillment',
+                    ]);
+                    break;
+                } catch (UniqueConstraintViolationException $e) {
+                    if ($attempt === $maxRetries) {
+                        throw $e;
+                    }
+                    // Retry with a fresh sequence value
+                }
+            }
 
             // Create product order items
             foreach ($request->items as $item) {
@@ -193,7 +213,7 @@ class BranchProductOrderController extends Controller
                     'notes' => $item['reason'],
                 ]);
             }
-        });
+        }, 1);
 
         return redirect()->route('branch.product-orders.index')
             ->with('success', 'Product order sent to admin successfully!');

@@ -140,9 +140,10 @@ class PurchaseEntryItem extends Model
     {
         // Recalculate parent order aggregates when entry items change
         $recalc = function (self $item) {
-            $entry = $item->purchaseEntry()->first();
-            if ($entry) {
-                $order = $entry->purchaseOrder()->first();
+            // Force fresh load to ensure we have the latest data
+            $entry = PurchaseEntry::find($item->purchase_entry_id);
+            if ($entry && $entry->purchase_order_id) {
+                $order = PurchaseOrder::find($entry->purchase_order_id);
                 if ($order) {
                     $order->recalculateReceiptAggregates();
                 }

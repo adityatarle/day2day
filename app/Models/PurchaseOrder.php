@@ -557,6 +557,8 @@ class PurchaseOrder extends Model
      */
     public function recalculateReceiptAggregates(): void
     {
+        \Log::info("Recalculating aggregates for PO: {$this->po_number} (ID: {$this->id})");
+        
         $this->loadMissing([
             'purchaseOrderItems',
             'purchaseEntries.purchaseEntryItems',
@@ -567,6 +569,8 @@ class PurchaseOrder extends Model
             ->flatMap(function ($entry) {
                 return $entry->purchaseEntryItems;
             });
+
+        \Log::info("Found {$entryItems->count()} entry items for PO {$this->po_number}");
 
         $aggregatedByPoItemId = $entryItems
             ->groupBy('purchase_order_item_id')
@@ -580,6 +584,8 @@ class PurchaseOrder extends Model
                     'actual_weight' => (float) $group->sum(function ($i) { return (float) ($i->actual_weight ?? 0); }),
                 ];
             });
+
+        \Log::info("Aggregated data by PO item ID", $aggregatedByPoItemId->toArray());
 
         // Synchronize each order item with aggregated entry data
         foreach ($this->purchaseOrderItems as $orderItem) {
@@ -657,9 +663,14 @@ class PurchaseOrder extends Model
             }
         }
 
+        \Log::info("Updating PO {$this->po_number} with values:", $updates);
+
         $this->fill($updates);
         if ($this->isDirty()) {
             $this->saveQuietly();
+            \Log::info("PO {$this->po_number} saved successfully");
+        } else {
+            \Log::info("PO {$this->po_number} had no changes to save");
         }
     }
 }

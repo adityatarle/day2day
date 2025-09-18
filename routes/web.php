@@ -295,6 +295,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/branch/product-orders/{productOrder}/edit', [BranchProductOrderController::class, 'edit'])->name('branch.product-orders.edit');
         Route::put('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'update'])->name('branch.product-orders.update');
         Route::delete('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'destroy'])->name('branch.product-orders.destroy');
+        Route::post('/branch/product-orders/{productOrder}/sync-aggregates', [BranchProductOrderController::class, 'syncAggregates'])->name('branch.product-orders.sync-aggregates');
 
         // Branch Purchase Entries - Track deliveries from admin with discrepancies
         Route::get('/branch/purchase-entries', [BranchPurchaseEntryController::class, 'index'])->name('branch.purchase-entries.index');

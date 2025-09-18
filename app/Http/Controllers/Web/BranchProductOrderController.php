@@ -246,6 +246,9 @@ class BranchProductOrderController extends Controller
 
         // Ensure latest aggregates before display
         $productOrder->recalculateReceiptAggregates();
+        
+        // Refresh the model to ensure we have the latest data
+        $productOrder->refresh();
 
         // Compute per-item tracking for ordered/received/remaining using normalized totals
         $itemTracking = $productOrder->purchaseOrderItems->map(function ($item) use ($productOrder) {
@@ -429,5 +432,24 @@ class BranchProductOrderController extends Controller
 
         return redirect()->route('branch.product-orders.index')
             ->with('success', 'Product order deleted successfully.');
+    }
+
+    /**
+     * Force synchronization of purchase order aggregates (diagnostic endpoint).
+     */
+    public function syncAggregates(PurchaseOrder $productOrder)
+    {
+        $user = Auth::user();
+        
+        // Verify access
+        if (!$user->hasRole('branch_manager') || $productOrder->branch_id !== $user->branch_id) {
+            abort(403, 'Access denied.');
+        }
+
+        // Force recalculation
+        $productOrder->recalculateReceiptAggregates();
+
+        return redirect()->route('branch.product-orders.show', $productOrder)
+            ->with('success', 'Purchase order synchronization completed successfully!');
     }
 }

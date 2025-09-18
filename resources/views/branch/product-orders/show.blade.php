@@ -120,6 +120,12 @@
                 <div class="mt-4 flex gap-2">
                     <a href="{{ route('purchase-orders.pdf', $productOrder) }}" target="_blank" class="btn btn-secondary w-full text-center">Download PDF</a>
                 </div>
+                @if(config('app.debug'))
+                <form method="POST" action="{{ route('branch.product-orders.sync-aggregates', $productOrder) }}" class="mt-2">
+                    @csrf
+                    <button type="submit" class="btn btn-warning w-full text-center">Force Sync</button>
+                </form>
+                @endif
             </div>
 
             <!-- Receive Remaining Items Action -->

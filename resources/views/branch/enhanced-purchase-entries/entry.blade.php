@@ -17,6 +17,22 @@
                 </svg>
                 Back to Order
             </a>
+            <a href="{{ route('enhanced-purchase-entries.entry.edit', $purchaseEntry) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M7.5 21H3v-4.5L16.732 2.768a2.5 2.5 0 113.536 3.536L6.536 20.036A2 2 0 015 20.5V21z" />
+                </svg>
+                Edit Entry
+            </a>
+            <form method="POST" action="{{ route('enhanced-purchase-entries.entry.destroy', $purchaseEntry) }}" onsubmit="return confirm('Delete this entry? This will roll back received quantities.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    <svg class="h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m4-3h2a1 1 0 011 1v2H8V5a1 1 0 011-1z" />
+                    </svg>
+                    Delete Entry
+                </button>
+            </form>
         </div>
     </div>
 
@@ -99,7 +115,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Order Number:</span>
-                    <span class="font-medium">{{ $purchaseEntry->purchaseOrder->po_number }}</span>
+                    <a href="{{ route('enhanced-purchase-entries.show', $purchaseEntry->purchaseOrder) }}" class="font-medium text-blue-600 hover:text-blue-800">{{ $purchaseEntry->purchaseOrder->po_number }}</a>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">Entry Date:</span>

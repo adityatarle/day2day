@@ -313,6 +313,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/enhanced-purchase-entries/{purchaseOrder}', [EnhancedPurchaseEntryController::class, 'show'])->name('enhanced-purchase-entries.show');
         Route::get('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'showEntry'])->name('enhanced-purchase-entries.entry');
         Route::get('/enhanced-purchase-entries/report', [EnhancedPurchaseEntryController::class, 'report'])->name('enhanced-purchase-entries.report');
+        Route::get('/enhanced-purchase-entries/entry/{purchaseEntry}/edit', [EnhancedPurchaseEntryController::class, 'editEntry'])->name('enhanced-purchase-entries.entry.edit');
+        Route::put('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'updateEntry'])->name('enhanced-purchase-entries.entry.update');
+        Route::delete('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'destroyEntry'])->name('enhanced-purchase-entries.entry.destroy');
         
         // API routes for enhanced purchase entries
         Route::get('/api/purchase-orders/{purchaseOrder}/items', function($purchaseOrderId) {

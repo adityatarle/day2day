@@ -30,37 +30,23 @@ class PoNumberSequence extends Model
         };
 
         return DB::transaction(function () use ($prefix, $orderType, $year) {
-            // Use raw SQL with FOR UPDATE to ensure atomic increment
+            // Use raw SQL with INSERT ... ON DUPLICATE KEY UPDATE to handle race conditions
+            $result = DB::select("
+                INSERT INTO po_number_sequences (prefix, order_type, year, current_sequence, created_at, updated_at)
+                VALUES (?, ?, ?, 1, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE 
+                    current_sequence = current_sequence + 1,
+                    updated_at = NOW()
+            ", [$prefix, $orderType, $year]);
+
+            // Get the current sequence value
             $sequence = DB::table('po_number_sequences')
                 ->where('prefix', $prefix)
                 ->where('order_type', $orderType)
                 ->where('year', $year)
-                ->lockForUpdate()
                 ->first();
 
-            if (!$sequence) {
-                // Create new sequence record if it doesn't exist
-                DB::table('po_number_sequences')->insert([
-                    'prefix' => $prefix,
-                    'order_type' => $orderType,
-                    'year' => $year,
-                    'current_sequence' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $nextSequence = 1;
-            } else {
-                // Increment the sequence atomically
-                $nextSequence = $sequence->current_sequence + 1;
-                DB::table('po_number_sequences')
-                    ->where('id', $sequence->id)
-                    ->update([
-                        'current_sequence' => $nextSequence,
-                        'updated_at' => now(),
-                    ]);
-            }
-
-            return $prefix . str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
+            return $prefix . str_pad($sequence->current_sequence, 4, '0', STR_PAD_LEFT);
         });
     }
 }

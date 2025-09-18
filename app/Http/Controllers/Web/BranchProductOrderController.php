@@ -7,6 +7,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Product;
 use App\Models\Branch;
+use App\Models\PoNumberSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -154,49 +155,26 @@ class BranchProductOrderController extends Controller
                 ]
             );
 
-            // Generate a unique request number with retry on rare race conditions
-            $productOrder = null;
-            $maxRetries = 5;
-            for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-                $year = now()->year;
-                $prefix = 'BR-' . $year . '-';
+            // Generate a unique request number using atomic sequence generation
+            $requestNumber = PoNumberSequence::getNextPoNumber('branch_request', now()->year);
 
-                $nextSeq = DB::table('purchase_orders')
-                    ->where('order_type', 'branch_request')
-                    ->whereYear('created_at', $year)
-                    ->where('po_number', 'like', $prefix . '%')
-                    ->lockForUpdate()
-                    ->selectRaw("COALESCE(MAX(CAST(SUBSTRING_INDEX(po_number, '-', -1) AS UNSIGNED)), 0) AS max_seq")
-                    ->value('max_seq') + 1;
-
-                $requestNumber = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
-
-                try {
-                    $productOrder = PurchaseOrder::create([
-                        'po_number' => $requestNumber,
-                        'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
-                        'branch_id' => $user->branch_id,
-                        'user_id' => $user->id,
-                        'status' => 'draft',
-                        'order_type' => 'branch_request',
-                        'payment_terms' => 'immediate',
-                        'transport_cost' => 0,
-                        'subtotal' => $subtotal,
-                        'tax_amount' => 0, // Will be calculated by admin
-                        'total_amount' => $subtotal,
-                        'notes' => $request->notes,
-                        'expected_delivery_date' => $request->expected_delivery_date,
-                        'priority' => $request->priority,
-                        'terminology_notes' => 'Branch Product Order - sent to admin for vendor assignment and fulfillment',
-                    ]);
-                    break;
-                } catch (UniqueConstraintViolationException $e) {
-                    if ($attempt === $maxRetries) {
-                        throw $e;
-                    }
-                    // Retry with a fresh sequence value
-                }
-            }
+            $productOrder = PurchaseOrder::create([
+                'po_number' => $requestNumber,
+                'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
+                'branch_id' => $user->branch_id,
+                'user_id' => $user->id,
+                'status' => 'draft',
+                'order_type' => 'branch_request',
+                'payment_terms' => 'immediate',
+                'transport_cost' => 0,
+                'subtotal' => $subtotal,
+                'tax_amount' => 0, // Will be calculated by admin
+                'total_amount' => $subtotal,
+                'notes' => $request->notes,
+                'expected_delivery_date' => $request->expected_delivery_date,
+                'priority' => $request->priority,
+                'terminology_notes' => 'Branch Product Order - sent to admin for vendor assignment and fulfillment',
+            ]);
 
             // Create product order items
             foreach ($request->items as $item) {

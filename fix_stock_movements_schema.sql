@@ -25,8 +25,8 @@ AFTER reference_id;
 -- First, we need to modify the existing enum
 ALTER TABLE stock_movements 
 MODIFY COLUMN type ENUM(
-    'purchase', 'sale', 'adjustment', 'loss', 'return', 
-    'transfer_in', 'transfer_out', 'wastage', 'complimentary'
+    'purchase', 'sale', 'adjustment', 'adjustment_positive', 'adjustment_negative', 
+    'loss', 'return', 'transfer_in', 'transfer_out', 'wastage', 'complimentary'
 ) NOT NULL;
 
 -- Add indexes for better performance

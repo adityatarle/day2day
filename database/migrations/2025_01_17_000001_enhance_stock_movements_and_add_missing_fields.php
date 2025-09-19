@@ -35,8 +35,8 @@ return new class extends Migration
         
         Schema::table('stock_movements', function (Blueprint $table) {
             $table->enum('type', [
-                'purchase', 'sale', 'adjustment', 'loss', 'return', 
-                'transfer_in', 'transfer_out', 'wastage', 'complimentary'
+                'purchase', 'sale', 'adjustment', 'adjustment_positive', 'adjustment_negative', 
+                'loss', 'return', 'transfer_in', 'transfer_out', 'wastage', 'complimentary'
             ])->after('batch_id');
         });
 

@@ -141,4 +141,28 @@ class User extends Authenticatable
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Get the local purchases created by this user as a manager.
+     */
+    public function localPurchases(): HasMany
+    {
+        return $this->hasMany(LocalPurchase::class, 'manager_id');
+    }
+
+    /**
+     * Get the local purchases approved by this user.
+     */
+    public function approvedLocalPurchases(): HasMany
+    {
+        return $this->hasMany(LocalPurchase::class, 'approved_by');
+    }
+
+    /**
+     * Get the local purchase notifications for this user.
+     */
+    public function localPurchaseNotifications(): HasMany
+    {
+        return $this->hasMany(LocalPurchaseNotification::class);
+    }
 }

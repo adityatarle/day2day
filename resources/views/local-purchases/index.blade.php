@@ -3,210 +3,258 @@
 @section('title', 'Local Purchases')
 
 @section('content')
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Local Purchases</h1>
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Local Purchases</h1>
+            <p class="text-gray-600 mt-1">Manage local purchases and vendor transactions</p>
+        </div>
         @if(auth()->user()->isBranchManager())
-        <a href="{{ route('branch.local-purchases.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus-circle me-2"></i>Create Local Purchase
+        <a href="{{ route('branch.local-purchases.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+            <i class="fas fa-plus-circle mr-2"></i>Create Local Purchase
         </a>
         @endif
     </div>
 
     <!-- Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form action="{{ request()->url() }}" method="GET" class="row g-3">
-                @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-                <div class="col-md-3">
-                    <label class="form-label">Branch</label>
-                    <select name="branch_id" class="form-select">
-                        <option value="">All Branches</option>
-                        @foreach($branches as $branch)
-                        <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
-                            {{ $branch->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form action="{{ request()->url() }}" method="GET" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+            <div>
+                <label class="form-label">Branch</label>
+                <select name="branch_id" class="form-input">
+                    <option value="">All Branches</option>
+                    @foreach($branches as $branch)
+                    <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
+                        {{ $branch->name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
 
-                <div class="col-md-2">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Status</option>
-                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                    </select>
-                </div>
+            <div>
+                <label class="form-label">Status</label>
+                <select name="status" class="form-input">
+                    <option value="">All Status</option>
+                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                </select>
+            </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">Vendor</label>
-                    <select name="vendor_id" class="form-select">
-                        <option value="">All Vendors</option>
-                        @foreach($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
-                            {{ $vendor->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div>
+            <div>
+                <label class="form-label">Vendor</label>
+                <select name="vendor_id" class="form-input">
+                    <option value="">All Vendors</option>
+                    @foreach($vendors as $vendor)
+                    <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
+                        {{ $vendor->name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">Date From</label>
-                    <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
-                </div>
+            <div>
+                <label class="form-label">Date From</label>
+                <input type="date" name="date_from" class="form-input" value="{{ request('date_from') }}">
+            </div>
 
-                <div class="col-md-2">
-                    <label class="form-label">Date To</label>
-                    <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
-                </div>
+            <div>
+                <label class="form-label">Date To</label>
+                <input type="date" name="date_to" class="form-input" value="{{ request('date_to') }}">
+            </div>
 
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="submit" class="btn btn-secondary w-100">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="flex items-end">
+                <button type="submit" class="btn-primary w-full">
+                    <i class="fas fa-filter mr-2"></i>Filter
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Export Buttons -->
-    <div class="mb-3">
-        <a href="{{ request()->fullUrlWithQuery(['format' => 'csv']) }}" class="btn btn-sm btn-outline-success">
-            <i class="fas fa-file-csv me-1"></i>Export CSV
+    <div class="mb-4 flex gap-2">
+        <a href="{{ request()->fullUrlWithQuery(['format' => 'csv']) }}" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+            <i class="fas fa-file-csv mr-2"></i>Export CSV
         </a>
-        <a href="{{ request()->fullUrlWithQuery(['format' => 'pdf']) }}" class="btn btn-sm btn-outline-danger">
-            <i class="fas fa-file-pdf me-1"></i>Export PDF
+        <a href="{{ request()->fullUrlWithQuery(['format' => 'pdf']) }}" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+            <i class="fas fa-file-pdf mr-2"></i>Export PDF
         </a>
     </div>
 
     <!-- Local Purchases Table -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Purchase #</th>
-                            <th>Date</th>
-                            <th>Branch</th>
-                            <th>Manager</th>
-                            <th>Vendor</th>
-                            <th>Items</th>
-                            <th>Total Amount</th>
-                            <th>Payment</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($localPurchases as $purchase)
-                        <tr>
-                            <td>
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase #</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse($localPurchases as $purchase)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{{ route(auth()->user()->isBranchManager() ? 'branch.local-purchases.show' : 'admin.local-purchases.show', $purchase) }}" 
+                               class="text-blue-600 hover:text-blue-900 font-medium">
+                                {{ $purchase->purchase_number }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ $purchase->purchase_date->format('d M Y') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ $purchase->branch->name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ $purchase->manager->name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ $purchase->vendor_display_name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                {{ $purchase->items->count() }} items
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            ₹{{ number_format($purchase->total_amount, 2) }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                {{ ucfirst($purchase->payment_method) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @switch($purchase->status)
+                                @case('draft')
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                    @break
+                                @case('pending')
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                    @break
+                                @case('approved')
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Approved</span>
+                                    @break
+                                @case('rejected')
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Rejected</span>
+                                    @break
+                                @case('completed')
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Completed</span>
+                                    @break
+                            @endswitch
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
                                 <a href="{{ route(auth()->user()->isBranchManager() ? 'branch.local-purchases.show' : 'admin.local-purchases.show', $purchase) }}" 
-                                   class="text-decoration-none">
-                                    {{ $purchase->purchase_number }}
+                                   class="text-blue-600 hover:text-blue-900" title="View">
+                                    <i class="fas fa-eye"></i>
                                 </a>
-                            </td>
-                            <td>{{ $purchase->purchase_date->format('d M Y') }}</td>
-                            <td>{{ $purchase->branch->name }}</td>
-                            <td>{{ $purchase->manager->name }}</td>
-                            <td>{{ $purchase->vendor_display_name }}</td>
-                            <td>
-                                <span class="badge bg-secondary">{{ $purchase->items->count() }} items</span>
-                            </td>
-                            <td class="fw-bold">₹{{ number_format($purchase->total_amount, 2) }}</td>
-                            <td>
-                                <span class="badge bg-info text-dark">{{ ucfirst($purchase->payment_method) }}</span>
-                            </td>
-                            <td>
-                                @switch($purchase->status)
-                                    @case('draft')
-                                        <span class="badge bg-secondary">Draft</span>
-                                        @break
-                                    @case('pending')
-                                        <span class="badge bg-warning text-dark">Pending</span>
-                                        @break
-                                    @case('approved')
-                                        <span class="badge bg-success">Approved</span>
-                                        @break
-                                    @case('rejected')
-                                        <span class="badge bg-danger">Rejected</span>
-                                        @break
-                                    @case('completed')
-                                        <span class="badge bg-primary">Completed</span>
-                                        @break
-                                @endswitch
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ route(auth()->user()->isBranchManager() ? 'branch.local-purchases.show' : 'admin.local-purchases.show', $purchase) }}" 
-                                       class="btn btn-sm btn-outline-primary" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    
-                                    @if($purchase->isPending() && $purchase->manager_id === auth()->id())
-                                    <a href="{{ route('branch.local-purchases.edit', $purchase) }}" 
-                                       class="btn btn-sm btn-outline-secondary" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    @endif
+                                
+                                @if($purchase->isPending() && $purchase->manager_id === auth()->id())
+                                <a href="{{ route('branch.local-purchases.edit', $purchase) }}" 
+                                   class="text-green-600 hover:text-green-900" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                @endif
 
-                                    @if($purchase->isPending() && (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()))
-                                    <button type="button" class="btn btn-sm btn-outline-success" 
-                                            onclick="approvePurchase({{ $purchase->id }})" title="Approve">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                            onclick="showRejectModal({{ $purchase->id }})" title="Reject">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    @endif
+                                @if($purchase->isPending() && (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()))
+                                <button type="button" class="text-green-600 hover:text-green-900" 
+                                        onclick="approvePurchase({{ $purchase->id }})" title="Approve">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button type="button" class="text-red-600 hover:text-red-900" 
+                                        onclick="showRejectModal({{ $purchase->id }})" title="Reject">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="10" class="px-6 py-12 text-center">
+                            <div class="text-gray-500">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900">No local purchases found</h3>
+                                <p class="mt-1 text-sm text-gray-500">Get started by creating a new local purchase.</p>
+                                @if(auth()->user()->isBranchManager())
+                                <div class="mt-6">
+                                    <a href="{{ route('branch.local-purchases.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                        Create Local Purchase
+                                    </a>
                                 </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="10" class="text-center py-4">No local purchases found</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div class="mt-3">
-                {{ $localPurchases->links() }}
-            </div>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
+
+    <!-- Pagination -->
+    @if($localPurchases->hasPages())
+        <div class="mt-8">
+            {{ $localPurchases->links() }}
+        </div>
+    @endif
 </div>
 
 <!-- Reject Modal -->
 @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-<div class="modal fade" id="rejectModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
+<div id="rejectModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <form id="rejectForm" method="POST">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Reject Local Purchase</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
-                        <textarea name="rejection_reason" class="form-control" rows="3" required
-                                  placeholder="Please provide a reason for rejection..."></textarea>
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                Reject Local Purchase
+                            </h3>
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700">
+                                    Rejection Reason <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="rejection_reason" rows="3" class="mt-1 form-input" required
+                                          placeholder="Please provide a reason for rejection..."></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Reject Purchase</button>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Reject Purchase
+                    </button>
+                    <button type="button" onclick="closeRejectModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
                 </div>
             </form>
         </div>
@@ -232,10 +280,20 @@ function approvePurchase(purchaseId) {
 }
 
 function showRejectModal(purchaseId) {
-    const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    document.getElementById('rejectModal').classList.remove('hidden');
     document.getElementById('rejectForm').action = `/admin/local-purchases/${purchaseId}/reject`;
-    modal.show();
 }
+
+function closeRejectModal() {
+    document.getElementById('rejectModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('rejectModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeRejectModal();
+    }
+});
 </script>
 @endif
 @endsection

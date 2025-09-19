@@ -3,36 +3,41 @@
 @section('title', 'Create Local Purchase')
 
 @section('content')
-<div class="container-fluid px-4">
-    <div class="mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Create Local Purchase</h1>
-        <p class="text-muted">Create a new local purchase for your branch</p>
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+        <div class="flex items-center text-sm text-gray-600">
+            <a href="{{ route('branch.local-purchases.index') }}" class="hover:text-gray-900">Local Purchases</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-900">Create New</span>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mt-2">Create Local Purchase</h1>
+        <p class="text-gray-600">Create a new local purchase for your branch</p>
     </div>
 
     <form action="{{ route('branch.local-purchases.store') }}" method="POST" enctype="multipart/form-data" id="localPurchaseForm">
         @csrf
         
-        <div class="row">
-            <div class="col-lg-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
                 <!-- Basic Information -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Purchase Information</h5>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-lg">
+                        <h2 class="text-lg font-semibold">Purchase Information</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Purchase Date <span class="text-danger">*</span></label>
-                                <input type="date" name="purchase_date" class="form-control @error('purchase_date') is-invalid @enderror" 
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="form-label">Purchase Date <span class="text-red-500">*</span></label>
+                                <input type="date" name="purchase_date" class="form-input @error('purchase_date') border-red-500 @enderror" 
                                        value="{{ old('purchase_date', date('Y-m-d')) }}" required>
                                 @error('purchase_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 
-                            <div class="col-md-6">
+                            <div>
                                 <label class="form-label">Link to Purchase Order (Optional)</label>
-                                <select name="purchase_order_id" class="form-select" onchange="loadPurchaseOrderItems(this.value)">
+                                <select name="purchase_order_id" class="form-input" onchange="loadPurchaseOrderItems(this.value)">
                                     <option value="">-- Select Purchase Order --</option>
                                     @foreach($pendingOrders as $order)
                                     <option value="{{ $order->id }}" {{ old('purchase_order_id', $selectedOrder?->id) == $order->id ? 'selected' : '' }}>
@@ -40,32 +45,30 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <small class="text-muted">Link this purchase to fulfill a pending order</small>
+                                <p class="text-sm text-gray-500 mt-1">Link this purchase to fulfill a pending order</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Vendor Information -->
-                <div class="card mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">Vendor Information</h5>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-t-lg">
+                        <h2 class="text-lg font-semibold">Vendor Information</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="form-check mb-3">
-                                    <input type="checkbox" class="form-check-input" id="useExistingVendor" checked
-                                           onchange="toggleVendorFields()">
-                                    <label class="form-check-label" for="useExistingVendor">
-                                        Use existing vendor
-                                    </label>
-                                </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                                           id="useExistingVendor" checked onchange="toggleVendorFields()">
+                                    <span class="ml-2 text-sm text-gray-700">Use existing vendor</span>
+                                </label>
                             </div>
 
-                            <div class="col-md-12" id="existingVendorField">
+                            <div id="existingVendorField">
                                 <label class="form-label">Select Vendor</label>
-                                <select name="vendor_id" class="form-select @error('vendor_id') is-invalid @enderror">
+                                <select name="vendor_id" class="form-input @error('vendor_id') border-red-500 @enderror">
                                     <option value="">-- Select Vendor --</option>
                                     @foreach($vendors as $vendor)
                                     <option value="{{ $vendor->id }}" {{ old('vendor_id') == $vendor->id ? 'selected' : '' }}>
@@ -74,80 +77,82 @@
                                     @endforeach
                                 </select>
                                 @error('vendor_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 
-                            <div class="col-md-6" id="newVendorNameField" style="display: none;">
-                                <label class="form-label">Vendor Name <span class="text-danger">*</span></label>
-                                <input type="text" name="vendor_name" class="form-control @error('vendor_name') is-invalid @enderror" 
-                                       value="{{ old('vendor_name') }}" placeholder="Enter vendor name">
-                                @error('vendor_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="newVendorFields" style="display: none;">
+                                <div>
+                                    <label class="form-label">Vendor Name <span class="text-red-500">*</span></label>
+                                    <input type="text" name="vendor_name" class="form-input @error('vendor_name') border-red-500 @enderror" 
+                                           value="{{ old('vendor_name') }}" placeholder="Enter vendor name">
+                                    @error('vendor_name')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
 
-                            <div class="col-md-6" id="newVendorPhoneField" style="display: none;">
-                                <label class="form-label">Vendor Phone</label>
-                                <input type="text" name="vendor_phone" class="form-control @error('vendor_phone') is-invalid @enderror" 
-                                       value="{{ old('vendor_phone') }}" placeholder="Enter vendor phone">
-                                @error('vendor_phone')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <div>
+                                    <label class="form-label">Vendor Phone</label>
+                                    <input type="text" name="vendor_phone" class="form-input @error('vendor_phone') border-red-500 @enderror" 
+                                           value="{{ old('vendor_phone') }}" placeholder="Enter vendor phone">
+                                    @error('vendor_phone')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Purchase Items -->
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Purchase Items</h5>
-                        <button type="button" class="btn btn-sm btn-light" onclick="addItemRow()">
-                            <i class="fas fa-plus"></i> Add Item
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-center">
+                        <h2 class="text-lg font-semibold">Purchase Items</h2>
+                        <button type="button" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded transition-colors" onclick="addItemRow()">
+                            <i class="fas fa-plus mr-1"></i> Add Item
                         </button>
                     </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-sm">
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
                                 <thead>
-                                    <tr>
-                                        <th style="width: 30%">Product</th>
-                                        <th style="width: 15%">Quantity</th>
-                                        <th style="width: 10%">Unit</th>
-                                        <th style="width: 15%">Unit Price</th>
-                                        <th style="width: 10%">Tax %</th>
-                                        <th style="width: 10%">Discount %</th>
-                                        <th style="width: 15%">Total</th>
-                                        <th style="width: 5%"></th>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Product</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Quantity</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Unit</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Unit Price</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Tax %</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Discount %</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2">Total</th>
+                                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-2"></th>
                                     </tr>
                                 </thead>
-                                <tbody id="itemsTableBody">
+                                <tbody id="itemsTableBody" class="divide-y divide-gray-200">
                                     <!-- Items will be added here dynamically -->
                                 </tbody>
-                                <tfoot>
+                                <tfoot class="border-t-2 border-gray-300">
                                     <tr>
-                                        <td colspan="6" class="text-end fw-bold">Subtotal:</td>
-                                        <td colspan="2">
-                                            <span id="subtotalDisplay">₹0.00</span>
+                                        <td colspan="6" class="text-right font-medium text-gray-700 py-2">Subtotal:</td>
+                                        <td colspan="2" class="py-2">
+                                            <span id="subtotalDisplay" class="font-medium">₹0.00</span>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="6" class="text-end fw-bold">Tax:</td>
-                                        <td colspan="2">
-                                            <span id="taxDisplay">₹0.00</span>
+                                        <td colspan="6" class="text-right font-medium text-gray-700 py-2">Tax:</td>
+                                        <td colspan="2" class="py-2">
+                                            <span id="taxDisplay" class="font-medium">₹0.00</span>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="6" class="text-end fw-bold">Discount:</td>
-                                        <td colspan="2">
-                                            <span id="discountDisplay">₹0.00</span>
+                                        <td colspan="6" class="text-right font-medium text-gray-700 py-2">Discount:</td>
+                                        <td colspan="2" class="py-2">
+                                            <span id="discountDisplay" class="font-medium">₹0.00</span>
                                         </td>
                                     </tr>
-                                    <tr class="table-active">
-                                        <td colspan="6" class="text-end fw-bold fs-5">Total:</td>
-                                        <td colspan="2">
-                                            <span id="totalDisplay" class="fw-bold fs-5">₹0.00</span>
+                                    <tr class="bg-gray-50">
+                                        <td colspan="6" class="text-right font-bold text-gray-900 text-lg py-3">Total:</td>
+                                        <td colspan="2" class="py-3">
+                                            <span id="totalDisplay" class="font-bold text-lg text-gray-900">₹0.00</span>
                                         </td>
                                     </tr>
                                 </tfoot>
@@ -157,16 +162,16 @@
                 </div>
             </div>
 
-            <div class="col-lg-4">
+            <div class="lg:col-span-1 space-y-6">
                 <!-- Payment Information -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Payment Information</h5>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-4 rounded-t-lg">
+                        <h2 class="text-lg font-semibold">Payment Information</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">Payment Method <span class="text-danger">*</span></label>
-                            <select name="payment_method" class="form-select @error('payment_method') is-invalid @enderror" required>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="form-label">Payment Method <span class="text-red-500">*</span></label>
+                            <select name="payment_method" class="form-input @error('payment_method') border-red-500 @enderror" required>
                                 <option value="">-- Select Payment Method --</option>
                                 <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
                                 <option value="upi" {{ old('payment_method') == 'upi' ? 'selected' : '' }}>UPI</option>
@@ -176,57 +181,57 @@
                                 <option value="other" {{ old('payment_method') == 'other' ? 'selected' : '' }}>Other</option>
                             </select>
                             @error('payment_method')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <div>
                             <label class="form-label">Payment Reference</label>
-                            <input type="text" name="payment_reference" class="form-control @error('payment_reference') is-invalid @enderror" 
+                            <input type="text" name="payment_reference" class="form-input @error('payment_reference') border-red-500 @enderror" 
                                    value="{{ old('payment_reference') }}" placeholder="Transaction ID, Cheque No, etc.">
                             @error('payment_reference')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Receipt Upload -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Receipt/Invoice</h5>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">Receipt/Invoice</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
+                    <div class="p-6">
+                        <div>
                             <label class="form-label">Upload Receipt</label>
-                            <input type="file" name="receipt" class="form-control @error('receipt') is-invalid @enderror" 
+                            <input type="file" name="receipt" class="form-input @error('receipt') border-red-500 @enderror" 
                                    accept=".jpg,.jpeg,.png,.pdf">
-                            <small class="text-muted">Accepted formats: JPG, PNG, PDF (Max 5MB)</small>
+                            <p class="text-sm text-gray-500 mt-1">Accepted formats: JPG, PNG, PDF (Max 5MB)</p>
                             @error('receipt')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Notes -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Additional Notes</h5>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">Additional Notes</h2>
                     </div>
-                    <div class="card-body">
-                        <textarea name="notes" class="form-control" rows="3" 
+                    <div class="p-6">
+                        <textarea name="notes" class="form-input" rows="3" 
                                   placeholder="Any additional information...">{{ old('notes') }}</textarea>
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Create Purchase
+                <div class="space-y-3">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-save mr-2"></i>Create Purchase
                     </button>
-                    <a href="{{ route('branch.local-purchases.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-times me-2"></i>Cancel
+                    <a href="{{ route('branch.local-purchases.index') }}" class="block w-full text-center bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancel
                     </a>
                 </div>
             </div>
@@ -253,8 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleVendorFields() {
     const useExisting = document.getElementById('useExistingVendor').checked;
     document.getElementById('existingVendorField').style.display = useExisting ? 'block' : 'none';
-    document.getElementById('newVendorNameField').style.display = useExisting ? 'none' : 'block';
-    document.getElementById('newVendorPhoneField').style.display = useExisting ? 'none' : 'block';
+    document.getElementById('newVendorFields').style.display = useExisting ? 'none' : 'grid';
     
     // Clear values
     if (useExisting) {
@@ -270,6 +274,7 @@ function addItemRow(productId = null, quantity = 1, unit = 'kg', unitPrice = 0, 
     const tbody = document.getElementById('itemsTableBody');
     const row = document.createElement('tr');
     row.id = `item-row-${itemCount}`;
+    row.className = 'hover:bg-gray-50';
     
     let productOptions = '<option value="">-- Select Product --</option>';
     products.forEach(product => {
@@ -278,17 +283,17 @@ function addItemRow(productId = null, quantity = 1, unit = 'kg', unitPrice = 0, 
     });
     
     row.innerHTML = `
-        <td>
-            <select name="items[${itemCount}][product_id]" class="form-select form-select-sm" required onchange="updateItemTotal(${itemCount})">
+        <td class="py-3">
+            <select name="items[${itemCount}][product_id]" class="form-input text-sm" required onchange="updateItemTotal(${itemCount})">
                 ${productOptions}
             </select>
         </td>
-        <td>
-            <input type="number" name="items[${itemCount}][quantity]" class="form-control form-control-sm" 
+        <td class="py-3">
+            <input type="number" name="items[${itemCount}][quantity]" class="form-input text-sm" 
                    value="${quantity}" min="0.001" step="0.001" required onchange="updateItemTotal(${itemCount})">
         </td>
-        <td>
-            <select name="items[${itemCount}][unit]" class="form-select form-select-sm" required>
+        <td class="py-3">
+            <select name="items[${itemCount}][unit]" class="form-input text-sm" required>
                 <option value="kg" ${unit === 'kg' ? 'selected' : ''}>kg</option>
                 <option value="g" ${unit === 'g' ? 'selected' : ''}>g</option>
                 <option value="l" ${unit === 'l' ? 'selected' : ''}>l</option>
@@ -299,23 +304,23 @@ function addItemRow(productId = null, quantity = 1, unit = 'kg', unitPrice = 0, 
                 <option value="pack" ${unit === 'pack' ? 'selected' : ''}>pack</option>
             </select>
         </td>
-        <td>
-            <input type="number" name="items[${itemCount}][unit_price]" class="form-control form-control-sm" 
+        <td class="py-3">
+            <input type="number" name="items[${itemCount}][unit_price]" class="form-input text-sm" 
                    value="${unitPrice}" min="0" step="0.01" required onchange="updateItemTotal(${itemCount})">
         </td>
-        <td>
-            <input type="number" name="items[${itemCount}][tax_rate]" class="form-control form-control-sm" 
+        <td class="py-3">
+            <input type="number" name="items[${itemCount}][tax_rate]" class="form-input text-sm" 
                    value="${taxRate}" min="0" max="100" step="0.01" onchange="updateItemTotal(${itemCount})">
         </td>
-        <td>
-            <input type="number" name="items[${itemCount}][discount_rate]" class="form-control form-control-sm" 
+        <td class="py-3">
+            <input type="number" name="items[${itemCount}][discount_rate]" class="form-input text-sm" 
                    value="${discountRate}" min="0" max="100" step="0.01" onchange="updateItemTotal(${itemCount})">
         </td>
-        <td>
-            <span id="item-total-${itemCount}" class="fw-bold">₹0.00</span>
+        <td class="py-3">
+            <span id="item-total-${itemCount}" class="font-semibold text-gray-900">₹0.00</span>
         </td>
-        <td>
-            <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow(${itemCount})">
+        <td class="py-3">
+            <button type="button" class="text-red-600 hover:text-red-800 transition-colors" onclick="removeItemRow(${itemCount})">
                 <i class="fas fa-trash"></i>
             </button>
         </td>

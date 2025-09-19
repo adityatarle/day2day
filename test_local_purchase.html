@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Local Purchase Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .error { color: red; margin-top: 5px; }
+        .success { color: green; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Local Purchase Form</h1>
+    
+    <form id="testForm">
+        <div class="form-group">
+            <label for="vendor_name">Vendor Name:</label>
+            <input type="text" id="vendor_name" name="vendor_name" value="Test Vendor" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="purchase_date">Purchase Date:</label>
+            <input type="date" id="purchase_date" name="purchase_date" value="2025-01-19" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="payment_method">Payment Method:</label>
+            <select id="payment_method" name="payment_method" required>
+                <option value="">-- Select Payment Method --</option>
+                <option value="cash" selected>Cash</option>
+                <option value="upi">UPI</option>
+                <option value="credit">Credit</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="product_id">Product ID:</label>
+            <input type="number" id="product_id" name="items[1][product_id]" value="1" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="items[1][quantity]" value="10" step="0.001" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="unit">Unit:</label>
+            <select id="unit" name="items[1][unit]" required>
+                <option value="kg" selected>kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="unit_price">Unit Price:</label>
+            <input type="number" id="unit_price" name="items[1][unit_price]" value="100" step="0.01" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="tax_rate">Tax Rate (%):</label>
+            <input type="number" id="tax_rate" name="items[1][tax_rate]" value="0" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <label for="discount_rate">Discount Rate (%):</label>
+            <input type="number" id="discount_rate" name="items[1][discount_rate]" value="0" step="0.01">
+        </div>
+        
+        <button type="submit">Test Form Submission</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            
+            // Convert FormData to object
+            for (let [key, value] of formData.entries()) {
+                if (key.includes('[') && key.includes(']')) {
+                    // Handle array notation
+                    const parts = key.split('[');
+                    const mainKey = parts[0];
+                    const subKey = parts[1].replace(']', '');
+                    
+                    if (!data[mainKey]) {
+                        data[mainKey] = {};
+                    }
+                    data[mainKey][subKey] = value;
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            console.log('Form data:', data);
+            
+            // Test validation
+            if (!data.vendor_name) {
+                showError('Vendor name is required');
+                return;
+            }
+            
+            if (!data.purchase_date) {
+                showError('Purchase date is required');
+                return;
+            }
+            
+            if (!data.payment_method) {
+                showError('Payment method is required');
+                return;
+            }
+            
+            if (!data.items || !data.items[1] || !data.items[1].product_id) {
+                showError('Product is required');
+                return;
+            }
+            
+            if (!data.items[1].quantity || parseFloat(data.items[1].quantity) <= 0) {
+                showError('Quantity must be greater than 0');
+                return;
+            }
+            
+            if (!data.items[1].unit_price || parseFloat(data.items[1].unit_price) <= 0) {
+                showError('Unit price must be greater than 0');
+                return;
+            }
+            
+            showSuccess('Form validation passed! Data would be submitted to: /branch/local-purchases');
+        });
+        
+        function showError(message) {
+            document.getElementById('result').innerHTML = '<div class="error">Error: ' + message + '</div>';
+        }
+        
+        function showSuccess(message) {
+            document.getElementById('result').innerHTML = '<div class="success">Success: ' + message + '</div>';
+        }
+    </script>
+</body>
+</html>

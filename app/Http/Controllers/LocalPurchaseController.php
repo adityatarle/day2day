@@ -110,6 +110,12 @@ class LocalPurchaseController extends Controller
             abort(403, 'Only branch managers can create local purchases');
         }
 
+        Log::info('Local purchase form submitted', [
+            'user_id' => $user->id,
+            'branch_id' => $user->branch_id,
+            'request_data' => $request->all()
+        ]);
+
         $validated = $request->validate([
             'vendor_id' => 'nullable|exists:vendors,id',
             'vendor_name' => 'required_without:vendor_id|string|max:255',
@@ -129,6 +135,8 @@ class LocalPurchaseController extends Controller
             'items.*.discount_rate' => 'nullable|numeric|min:0|max:100',
             'items.*.notes' => 'nullable|string',
         ]);
+
+        Log::info('Validation passed', ['validated_data' => $validated]);
 
         try {
             DB::beginTransaction();
@@ -185,15 +193,19 @@ class LocalPurchaseController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to create local purchase: ' . $e->getMessage());
+            Log::error('Failed to create local purchase: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
             
             // Delete uploaded file if exists
-            if ($receiptPath && Storage::disk('public')->exists($receiptPath)) {
+            if (isset($receiptPath) && $receiptPath && Storage::disk('public')->exists($receiptPath)) {
                 Storage::disk('public')->delete($receiptPath);
             }
 
             return back()->withInput()
-                ->with('error', 'Failed to create local purchase. Please try again.');
+                ->with('error', 'Failed to create local purchase: ' . $e->getMessage());
         }
     }
 

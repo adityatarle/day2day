@@ -162,16 +162,8 @@ class LocalPurchaseItem extends Model
                 'status' => $newReceived >= $poItem->quantity ? 'received' : 'partial',
             ]);
 
-            // Check if all items are received
-            $allReceived = $purchaseOrder->items()
-                ->where('status', '!=', 'received')
-                ->count() === 0;
-
-            if ($allReceived) {
-                $purchaseOrder->update(['status' => 'completed']);
-            } elseif ($purchaseOrder->items()->where('status', 'partial')->exists()) {
-                $purchaseOrder->update(['status' => 'partial']);
-            }
+            // Trigger aggregate recalculation for the purchase order
+            $purchaseOrder->recalculateReceiptAggregates();
         }
     }
 

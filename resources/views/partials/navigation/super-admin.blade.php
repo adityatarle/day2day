@@ -80,6 +80,13 @@
         <span class="font-medium">Purchase Entries</span>
     </a>
 
+    <a href="{{ route('admin.local-purchases.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.local-purchases.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-shopping-basket"></i>
+        </div>
+        <span class="font-medium">Local Purchases</span>
+    </a>
+
     <!-- Analytics & Reports -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Analytics & Reports</p>

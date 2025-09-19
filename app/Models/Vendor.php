@@ -86,4 +86,12 @@ class Vendor extends Model
                     ->wherePivot('is_primary_supplier', true)
                     ->exists();
     }
+
+    /**
+     * Get the local purchases from this vendor.
+     */
+    public function localPurchases(): HasMany
+    {
+        return $this->hasMany(LocalPurchase::class);
+    }
 }

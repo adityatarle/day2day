@@ -33,6 +33,7 @@ use App\Http\Controllers\Web\BranchProductOrderController;
 use App\Http\Controllers\Web\BranchPurchaseEntryController;
 use App\Http\Controllers\Web\EnhancedPurchaseEntryController;
 use App\Http\Controllers\Web\OrderWorkflowController;
+use App\Http\Controllers\LocalPurchaseController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -270,6 +271,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');
         Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles.index');
+        
+        // Local Purchases management for admin
+        Route::get('/admin/local-purchases', [LocalPurchaseController::class, 'index'])->name('admin.local-purchases.index');
+        Route::get('/admin/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'show'])->name('admin.local-purchases.show');
+        Route::post('/admin/local-purchases/{localPurchase}/approve', [LocalPurchaseController::class, 'approve'])->name('admin.local-purchases.approve');
+        Route::post('/admin/local-purchases/{localPurchase}/reject', [LocalPurchaseController::class, 'reject'])->name('admin.local-purchases.reject');
+        Route::get('/admin/local-purchases-export', [LocalPurchaseController::class, 'export'])->name('admin.local-purchases.export');
     });
 
     // Branch Manager specific routes
@@ -306,6 +314,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/branch/purchase-entries/{purchaseEntry}/receipt', [BranchPurchaseEntryController::class, 'showReceipt'])->name('branch.purchase-entries.receipt');
         Route::get('/branch/discrepancy-report', [BranchPurchaseEntryController::class, 'discrepancyReport'])->name('branch.purchase-entries.discrepancy-report');
         Route::get('/branch/purchase-entries-debug', [BranchPurchaseEntryController::class, 'debug'])->name('branch.purchase-entries.debug');
+
+        // Local Purchases - Branch managers can purchase locally
+        Route::get('/branch/local-purchases', [LocalPurchaseController::class, 'index'])->name('branch.local-purchases.index');
+        Route::get('/branch/local-purchases/create', [LocalPurchaseController::class, 'create'])->name('branch.local-purchases.create');
+        Route::post('/branch/local-purchases', [LocalPurchaseController::class, 'store'])->name('branch.local-purchases.store');
+        Route::get('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'show'])->name('branch.local-purchases.show');
+        Route::get('/branch/local-purchases/{localPurchase}/edit', [LocalPurchaseController::class, 'edit'])->name('branch.local-purchases.edit');
+        Route::put('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'update'])->name('branch.local-purchases.update');
+        Route::delete('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'destroy'])->name('branch.local-purchases.destroy');
+        Route::get('/branch/local-purchases-export', [LocalPurchaseController::class, 'export'])->name('branch.local-purchases.export');
 
         // Enhanced Purchase Entries - Comprehensive tracking with detailed quantities
         Route::get('/enhanced-purchase-entries', [EnhancedPurchaseEntryController::class, 'index'])->name('enhanced-purchase-entries.index');

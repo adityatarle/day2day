@@ -395,4 +395,12 @@ class Product extends Model
 
         return $pricing;
     }
+
+    /**
+     * Get the local purchase items for this product.
+     */
+    public function localPurchaseItems(): HasMany
+    {
+        return $this->hasMany(LocalPurchaseItem::class);
+    }
 }

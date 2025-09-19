@@ -189,4 +189,12 @@ class Branch extends Model
     {
         return $this->posSessions()->where('status', 'active')->count();
     }
+
+    /**
+     * Get the local purchases for this branch.
+     */
+    public function localPurchases(): HasMany
+    {
+        return $this->hasMany(LocalPurchase::class);
+    }
 }

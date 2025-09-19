@@ -277,6 +277,24 @@ class AdminBranchOrderController extends Controller
      */
     public function cancel(Request $request, PurchaseOrder $branchOrder)
     {
+        // Check if order can be cancelled
+        if (!$branchOrder->canBeCancelled()) {
+            $errorMessage = 'Cannot cancel this order. ';
+            
+            if ($branchOrder->isCompleted()) {
+                $errorMessage .= 'The order has already been completed.';
+            } elseif ($branchOrder->hasReceivedItems()) {
+                $errorMessage .= 'Items have already been received. Please use the Return/Adjustment process if necessary.';
+            } elseif ($branchOrder->isReceived()) {
+                $errorMessage .= 'The order has already been marked as received.';
+            } elseif (in_array($branchOrder->receive_status, ['partial', 'complete'])) {
+                $errorMessage .= 'The order has been partially or completely received.';
+            }
+            
+            return redirect()->route('admin.branch-orders.show', $branchOrder)
+                ->with('error', $errorMessage);
+        }
+
         $request->validate([
             'cancellation_reason' => 'required|string',
         ]);

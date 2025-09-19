@@ -106,7 +106,9 @@
                     </div>
                     <div class="flex gap-3">
                         <button type="submit" class="btn btn-primary">Approve Order</button>
+                        @if($branchOrder->canBeCancelled())
                         <button type="button" onclick="document.getElementById('cancel-form').classList.toggle('hidden')" class="btn btn-danger">Cancel Order</button>
+                        @endif
                     </div>
                 </form>
                 @elseif($branchOrder->status === 'sent')
@@ -167,7 +169,7 @@
                 <div class="alert alert-error">Order was cancelled.</div>
                 @endif
 
-                @if($branchOrder->status !== 'cancelled' && $branchOrder->status !== 'confirmed')
+                @if($branchOrder->canBeCancelled())
                 <div id="cancel-form" class="mt-4 {{ $branchOrder->status === 'draft' ? 'hidden' : '' }}">
                     <form method="POST" action="{{ route('admin.branch-orders.cancel', $branchOrder) }}" class="space-y-3">
                         @csrf

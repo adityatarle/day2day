@@ -572,9 +572,21 @@ class PurchaseOrderController extends Controller
      */
     public function cancel(PurchaseOrder $purchaseOrder)
     {
-        if ($purchaseOrder->isReceived()) {
+        if (!$purchaseOrder->canBeCancelled()) {
+            $errorMessage = 'Cannot cancel this order. ';
+            
+            if ($purchaseOrder->isCompleted()) {
+                $errorMessage .= 'The order has already been completed.';
+            } elseif ($purchaseOrder->hasReceivedItems()) {
+                $errorMessage .= 'Items have already been received. Please use the Return/Adjustment process if necessary.';
+            } elseif ($purchaseOrder->isReceived()) {
+                $errorMessage .= 'The order has already been marked as received.';
+            } elseif (in_array($purchaseOrder->receive_status, ['partial', 'complete'])) {
+                $errorMessage .= 'The order has been partially or completely received.';
+            }
+            
             return redirect()->route('purchase-orders.show', $purchaseOrder)
-                ->with('error', 'Cannot cancel a received purchase order.');
+                ->with('error', $errorMessage);
         }
 
         $purchaseOrder->update(['status' => 'cancelled']);

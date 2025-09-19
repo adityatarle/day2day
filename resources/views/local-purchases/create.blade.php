@@ -273,6 +273,9 @@ let itemCount = 0;
 document.addEventListener('DOMContentLoaded', function() {
     addItemRow();
     
+    // Initialize vendor field requirements
+    toggleVendorFields();
+    
     // Load purchase order items if selected
     const purchaseOrderId = document.querySelector('[name="purchase_order_id"]').value;
     if (purchaseOrderId && '{{ $selectedOrder }}') {
@@ -289,8 +292,12 @@ function toggleVendorFields() {
     if (useExisting) {
         document.querySelector('[name="vendor_name"]').value = '';
         document.querySelector('[name="vendor_phone"]').value = '';
+        // Make sure vendor_name is not required when using existing vendor
+        document.querySelector('[name="vendor_name"]').removeAttribute('required');
     } else {
         document.querySelector('[name="vendor_id"]').value = '';
+        // Make vendor_name required when using new vendor
+        document.querySelector('[name="vendor_name"]').setAttribute('required', 'required');
     }
 }
 
@@ -475,6 +482,8 @@ document.getElementById('localPurchaseForm').addEventListener('submit', function
             alert('Please select a vendor');
             return false;
         }
+        // Clear vendor_name when using existing vendor to avoid validation issues
+        document.querySelector('[name="vendor_name"]').value = '';
     } else {
         const vendorName = document.querySelector('[name="vendor_name"]').value;
         if (!vendorName) {

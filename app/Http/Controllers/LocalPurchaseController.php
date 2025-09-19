@@ -118,7 +118,7 @@ class LocalPurchaseController extends Controller
 
         $validated = $request->validate([
             'vendor_id' => 'nullable|exists:vendors,id',
-            'vendor_name' => 'required_without:vendor_id|string|max:255',
+            'vendor_name' => 'required_without:vendor_id|nullable|string|max:255',
             'vendor_phone' => 'nullable|string|max:20',
             'purchase_date' => 'required|date',
             'payment_method' => ['required', Rule::in(['cash', 'upi', 'credit', 'bank_transfer', 'card', 'other'])],
@@ -264,7 +264,7 @@ class LocalPurchaseController extends Controller
 
         $validated = $request->validate([
             'vendor_id' => 'nullable|exists:vendors,id',
-            'vendor_name' => 'required_without:vendor_id|string|max:255',
+            'vendor_name' => 'required_without:vendor_id|nullable|string|max:255',
             'vendor_phone' => 'nullable|string|max:20',
             'purchase_date' => 'required|date',
             'payment_method' => ['required', Rule::in(['cash', 'upi', 'credit', 'bank_transfer', 'card', 'other'])],

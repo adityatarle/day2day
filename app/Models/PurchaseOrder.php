@@ -196,6 +196,50 @@ class PurchaseOrder extends Model
     }
 
     /**
+     * Check if purchase order is completed.
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    /**
+     * Check if any items have been received.
+     */
+    public function hasReceivedItems(): bool
+    {
+        // Check if any purchase order item has received quantity > 0
+        return $this->purchaseOrderItems()
+            ->where(function($query) {
+                $query->where('received_quantity', '>', 0)
+                      ->orWhere('actual_received_quantity', '>', 0);
+            })
+            ->exists();
+    }
+
+    /**
+     * Check if order can be cancelled.
+     */
+    public function canBeCancelled(): bool
+    {
+        // Cannot cancel if:
+        // 1. Order is already cancelled
+        // 2. Order is completed
+        // 3. Order has status 'received'
+        // 4. Any items have been received
+        if ($this->isCancelled() || $this->isCompleted() || $this->isReceived() || $this->hasReceivedItems()) {
+            return false;
+        }
+
+        // Cannot cancel if receive_status is 'partial' or 'complete'
+        if (in_array($this->receive_status, ['partial', 'complete'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check if purchase order is approved.
      */
     public function isApproved(): bool
@@ -256,6 +300,7 @@ class PurchaseOrder extends Model
             'confirmed' => 'Purchase Order Confirmed',
             'fulfilled' => 'Order Fulfilled',
             'received' => 'Received Order (Materials Received)',
+            'completed' => 'Completed Order',
             'cancelled' => 'Cancelled Purchase Order',
             default => ucfirst($this->status)
         };
@@ -273,6 +318,7 @@ class PurchaseOrder extends Model
             'confirmed' => 'bg-yellow-100 text-yellow-800',
             'fulfilled' => 'bg-purple-100 text-purple-800',
             'received' => 'bg-green-100 text-green-800',
+            'completed' => 'bg-green-600 text-white',
             'cancelled' => 'bg-red-100 text-red-800',
             default => 'bg-gray-100 text-gray-800'
         };
@@ -654,9 +700,9 @@ class PurchaseOrder extends Model
             'receive_status' => $newReceiveStatus,
         ];
 
-        // Auto-mark as received when completed
-        if ($newReceiveStatus === 'complete' && $this->status !== 'received') {
-            $updates['status'] = 'received';
+        // Auto-mark as completed when all items are received
+        if ($newReceiveStatus === 'complete' && !in_array($this->status, ['completed', 'cancelled'])) {
+            $updates['status'] = 'completed';
             if (!$this->received_at) {
                 $updates['received_at'] = now();
                 // Keep received_by unchanged unless set elsewhere

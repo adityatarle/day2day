@@ -95,7 +95,7 @@
                     </form>
                 @endif
                 
-                @if(!$purchaseOrder->isReceived() && !$purchaseOrder->isCancelled())
+                @if($purchaseOrder->canBeCancelled())
                     <form method="POST" action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" class="inline">
                         @csrf
                         <button type="submit" onclick="return confirm('Are you sure you want to cancel this purchase order?')" 

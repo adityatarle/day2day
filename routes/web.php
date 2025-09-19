@@ -324,6 +324,31 @@ Route::middleware('auth')->group(function () {
         Route::put('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'update'])->name('branch.local-purchases.update');
         Route::delete('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'destroy'])->name('branch.local-purchases.destroy');
         Route::get('/branch/local-purchases-export', [LocalPurchaseController::class, 'export'])->name('branch.local-purchases.export');
+        
+        // Debug route for local purchases
+        Route::get('/branch/local-purchases-debug', function() {
+            $user = auth()->user();
+            $products = \App\Models\Product::active()
+                ->whereHas('branches', function ($query) use ($user) {
+                    $query->where('branch_id', $user->branch_id);
+                })
+                ->get();
+            $vendors = \App\Models\Vendor::active()->get();
+            $pendingOrders = \App\Models\PurchaseOrder::where('branch_id', $user->branch_id)
+                ->whereIn('status', ['pending', 'partial'])
+                ->with('items.product')
+                ->get();
+            
+            return response()->json([
+                'user' => $user,
+                'products_count' => $products->count(),
+                'vendors_count' => $vendors->count(),
+                'pending_orders_count' => $pendingOrders->count(),
+                'products' => $products->take(5),
+                'vendors' => $vendors->take(5),
+                'pending_orders' => $pendingOrders->take(5),
+            ]);
+        })->name('branch.local-purchases.debug');
 
         // Enhanced Purchase Entries - Comprehensive tracking with detailed quantities
         Route::get('/enhanced-purchase-entries', [EnhancedPurchaseEntryController::class, 'index'])->name('enhanced-purchase-entries.index');

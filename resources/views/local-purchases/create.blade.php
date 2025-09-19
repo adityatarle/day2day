@@ -14,6 +14,31 @@
         <p class="text-gray-600">Create a new local purchase for your branch</p>
     </div>
 
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+        <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <strong>Please fix the following errors:</strong>
+            <ul class="mt-2 list-disc list-inside">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('branch.local-purchases.store') }}" method="POST" enctype="multipart/form-data" id="localPurchaseForm">
         @csrf
         
@@ -410,10 +435,34 @@ function loadPurchaseOrderItems(purchaseOrderId) {
 
 // Form validation
 document.getElementById('localPurchaseForm').addEventListener('submit', function(e) {
+    console.log('Form submission started');
+    
+    // Check if there are any items
     const itemRows = document.querySelectorAll('[id^="item-row-"]');
+    console.log('Item rows found:', itemRows.length);
+    
     if (itemRows.length === 0) {
         e.preventDefault();
         alert('Please add at least one item to the purchase');
+        return false;
+    }
+    
+    // Validate each item row
+    let hasValidItems = false;
+    itemRows.forEach((row, index) => {
+        const rowId = row.id.replace('item-row-', '');
+        const productId = row.querySelector(`[name="items[${rowId}][product_id]"]`).value;
+        const quantity = parseFloat(row.querySelector(`[name="items[${rowId}][quantity]"]`).value) || 0;
+        const unitPrice = parseFloat(row.querySelector(`[name="items[${rowId}][unit_price]"]`).value) || 0;
+        
+        if (productId && quantity > 0 && unitPrice > 0) {
+            hasValidItems = true;
+        }
+    });
+    
+    if (!hasValidItems) {
+        e.preventDefault();
+        alert('Please add at least one valid item with product, quantity, and unit price');
         return false;
     }
     
@@ -434,6 +483,20 @@ document.getElementById('localPurchaseForm').addEventListener('submit', function
             return false;
         }
     }
+    
+    console.log('Form validation passed, submitting...');
+    
+    // Show loading state
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Creating Purchase...';
+    submitBtn.disabled = true;
+    
+    // Re-enable button after 5 seconds as fallback
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 5000);
 });
 </script>
 @endsection

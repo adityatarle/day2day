@@ -339,7 +339,7 @@
     <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-1000 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white flex flex-col">
         <!-- Logo Section -->
         <div class="p-6 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
@@ -354,12 +354,12 @@
         </div>
         
         <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto pb-24">
+        <div class="flex-1 min-h-0 overflow-y-auto">
             @include('partials.navigation.super-admin')
         </div>
         
         <!-- User Profile -->
-        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/20 bg-black/30">
+        <div class="mt-auto p-6 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
                     <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'SA', 0, 2)) }}</span>

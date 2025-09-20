@@ -6,13 +6,6 @@
         </div>
         <span class="font-medium">Super Admin Dashboard</span>
     </a>
-    
-    <a href="{{ route('admin.dashboard') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.dashboard') ? 'active text-white' : '' }}">
-        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-tachometer-alt"></i>
-        </div>
-        <span class="font-medium">Admin Dashboard</span>
-    </a>
 
     <!-- System Management -->
     <div class="pt-4 pb-2">
@@ -123,12 +116,5 @@
             <i class="fas fa-cogs"></i>
         </div>
         <span class="font-medium">System Settings</span>
-    </a>
-    
-    <a href="{{ route('admin.security') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.security') ? 'active text-white' : '' }}">
-        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-shield-virus"></i>
-        </div>
-        <span class="font-medium">Security</span>
     </a>
 </nav>

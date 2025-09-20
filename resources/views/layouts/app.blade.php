@@ -355,7 +355,13 @@
         
         <!-- Navigation -->
         <div class="flex-1 min-h-0 overflow-y-auto">
-            @include('partials.navigation.super-admin')
+            @if(auth()->check() && auth()->user()->hasRole('branch_manager'))
+                @include('partials.navigation.branch-manager')
+            @elseif(auth()->check() && auth()->user()->hasRole('cashier'))
+                @include('partials.navigation.cashier')
+            @else
+                @include('partials.navigation.super-admin')
+            @endif
         </div>
         
         <!-- User Profile -->

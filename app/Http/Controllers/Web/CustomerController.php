@@ -14,7 +14,18 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = Customer::withCount('orders');
+
+        // Branch managers should only see customers who have orders in their branch
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $branchId = $user->branch_id;
+            $query->whereHas('orders', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            })->withCount(['orders' => function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            }]);
+        }
 
         // Search by name, email, or phone
         if ($request->has('search')) {
@@ -106,7 +117,20 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        $customer->load(['orders' => function ($query) {
+        $user = auth()->user();
+
+        // Route protection: branch managers can only view customers with orders in their branch
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $belongsToBranch = $customer->orders()->where('branch_id', $user->branch_id)->exists();
+            if (!$belongsToBranch) {
+                abort(403, 'Unauthorized');
+            }
+        }
+
+        $customer->load(['orders' => function ($query) use ($user) {
+            if ($user->hasRole('branch_manager') && $user->branch_id) {
+                $query->where('branch_id', $user->branch_id);
+            }
             $query->latest()->take(10);
         }]);
 
@@ -121,6 +145,14 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer)
     {
+        $user = auth()->user();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $belongsToBranch = $customer->orders()->where('branch_id', $user->branch_id)->exists();
+            if (!$belongsToBranch) {
+                abort(403, 'Unauthorized');
+            }
+        }
+
         return view('customers.edit', compact('customer'));
     }
 
@@ -129,6 +161,14 @@ class CustomerController extends Controller
      */
     public function update(Request $request, Customer $customer)
     {
+        $user = auth()->user();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $belongsToBranch = $customer->orders()->where('branch_id', $user->branch_id)->exists();
+            if (!$belongsToBranch) {
+                abort(403, 'Unauthorized');
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20|unique:customers,phone,' . $customer->id,
@@ -156,6 +196,14 @@ class CustomerController extends Controller
      */
     public function destroy(Customer $customer)
     {
+        $user = auth()->user();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $belongsToBranch = $customer->orders()->where('branch_id', $user->branch_id)->exists();
+            if (!$belongsToBranch) {
+                abort(403, 'Unauthorized');
+            }
+        }
+
         // Check if customer has any orders
         if ($customer->orders()->count() > 0) {
             return redirect()->route('customers.index')
@@ -173,10 +221,20 @@ class CustomerController extends Controller
      */
     public function purchaseHistory(Customer $customer)
     {
-        $orders = $customer->orders()
-            ->with(['products', 'branch'])
-            ->latest()
-            ->paginate(20);
+        $user = auth()->user();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $belongsToBranch = $customer->orders()->where('branch_id', $user->branch_id)->exists();
+            if (!$belongsToBranch) {
+                abort(403, 'Unauthorized');
+            }
+        }
+
+        $ordersQuery = $customer->orders()->with(['products', 'branch'])->latest();
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $ordersQuery->where('branch_id', $user->branch_id);
+        }
+
+        $orders = $ordersQuery->paginate(20);
 
         return view('customers.purchase-history', compact('customer', 'orders'));
     }

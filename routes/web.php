@@ -80,15 +80,19 @@ Route::middleware('auth')->group(function () {
         ->name('api.cashier.pos_data')
         ->middleware('role:cashier');
     
-    // Product management
-    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    // Product management - Admin only (create, edit, delete)
+    Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    });
+    
+    // Product viewing - Admin and Branch Manager (view only)
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/products/category/{category}', [ProductController::class, 'byCategory'])->name('products.byCategory');
     });
     

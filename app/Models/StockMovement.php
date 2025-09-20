@@ -126,7 +126,7 @@ class StockMovement extends Model
      */
     public function isIncoming(): bool
     {
-        return in_array($this->type, ['purchase', 'return', 'adjustment', 'adjustment_positive', 'transfer_in']);
+        return in_array($this->type, ['purchase', 'return', 'adjustment', 'adjustment_positive', 'transfer_in', 'local_purchase']);
     }
 
     /**
@@ -144,6 +144,7 @@ class StockMovement extends Model
     {
         return match($this->type) {
             'purchase' => 'Purchase',
+            'local_purchase' => 'Local Purchase',
             'sale' => 'Sale',
             'adjustment' => 'Adjustment',
             'adjustment_positive' => 'Positive Adjustment',

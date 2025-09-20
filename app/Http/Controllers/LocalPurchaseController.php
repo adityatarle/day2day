@@ -63,6 +63,24 @@ class LocalPurchaseController extends Controller
             ? \App\Models\Branch::active()->get() 
             : collect();
 
+        // Add statistics for admin view
+        $stats = [];
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            $stats = [
+                'pending' => LocalPurchase::where('status', 'pending')->count(),
+                'approved_today' => LocalPurchase::where('status', 'approved')
+                    ->whereDate('approved_at', today())->count(),
+                'rejected_today' => LocalPurchase::where('status', 'rejected')
+                    ->whereDate('approved_at', today())->count(),
+                'total_value' => LocalPurchase::where('status', 'pending')->sum('total_amount'),
+            ];
+        }
+
+        // Use admin view for admin users
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return view('admin.local-purchases.index', compact('localPurchases', 'vendors', 'branches', 'stats'));
+        }
+
         return view('local-purchases.index', compact('localPurchases', 'vendors', 'branches'));
     }
 
@@ -222,6 +240,11 @@ class LocalPurchaseController extends Controller
         }
 
         $localPurchase->load(['branch', 'manager', 'vendor', 'items.product', 'approvedBy', 'expense', 'purchaseOrder']);
+
+        // Use admin view for admin users
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
+            return view('admin.local-purchases.show', compact('localPurchase'));
+        }
 
         return view('local-purchases.show', compact('localPurchase'));
     }

@@ -12,12 +12,21 @@
                 <p class="text-gray-600 mt-1">Manage your product catalog, pricing, and inventory across all branches.</p>
             </div>
             <div class="flex items-center space-x-3">
+                @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
                 <a href="{{ route('products.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     Add New Product
                 </a>
+                @else
+                <div class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    Branch View (Read Only)
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -244,6 +253,7 @@
                                 </svg>
                                 View
                             </a>
+                            @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
                             <a href="{{ route('products.edit', $product) }}" 
                                class="text-green-600 hover:text-green-800 text-sm font-medium flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,6 +261,7 @@
                                 </svg>
                                 Edit
                             </a>
+                            @endif
                         </div>
                         <div class="flex items-center">
                             @if($product->is_active)
@@ -273,6 +284,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                     </svg>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                    @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
                     <p class="text-gray-500 mb-6">Get started by adding your first product to the catalog.</p>
                     <a href="{{ route('products.create') }}" class="btn-primary">
                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,6 +292,15 @@
                         </svg>
                         Add Your First Product
                     </a>
+                    @else
+                    <p class="text-gray-500 mb-6">No products are available in the system yet. Please contact admin to add products.</p>
+                    <div class="bg-green-100 text-green-800 px-4 py-2 rounded-lg inline-flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                        Branch Manager View
+                    </div>
+                    @endif
                 </div>
             </div>
         @endforelse

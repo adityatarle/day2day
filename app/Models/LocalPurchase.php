@@ -340,7 +340,8 @@ class LocalPurchase extends Model
             'card' => 'card',
             'bank_transfer', 'bank' => 'bank',
             // 'credit' or 'other' will be treated as bank for accounting entry
-            'credit', 'other', default => 'bank',
+            'credit', 'other' => 'bank',
+            default => 'bank',
         };
     }
 }

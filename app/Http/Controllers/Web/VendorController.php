@@ -17,6 +17,11 @@ class VendorController extends Controller
      */
     public function index(Request $request)
     {
+        // Route protection: only admins should access. If mistakenly reachable, enforce here too.
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
+
         $query = Vendor::withCount('purchaseOrders')
             ->withSum('purchaseOrders', 'total_amount');
 
@@ -134,6 +139,10 @@ class VendorController extends Controller
      */
     public function show(Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
+
         $vendor->load([
             'purchaseOrders' => function ($query) {
                 $query->latest()->take(10);
@@ -183,6 +192,9 @@ class VendorController extends Controller
      */
     public function edit(Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         $vendor->load('products');
         $allProducts = Product::active()->orderBy('name')->get();
         
@@ -194,6 +206,9 @@ class VendorController extends Controller
      */
     public function update(Request $request, Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:vendors,code,' . $vendor->id,
@@ -244,6 +259,9 @@ class VendorController extends Controller
      */
     public function destroy(Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         // Check if vendor has any purchase orders
         if ($vendor->purchaseOrders()->count() > 0) {
             return redirect()->route('vendors.index')
@@ -261,6 +279,9 @@ class VendorController extends Controller
      */
     public function analytics(Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         // Monthly purchase data for chart
         $monthlyData = $vendor->purchaseOrders()
             ->selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, SUM(total_amount) as total, COUNT(*) as count')
@@ -310,6 +331,9 @@ class VendorController extends Controller
      */
     public function creditManagement(Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         $creditTransactions = $vendor->creditTransactions()
             ->with('user')
             ->latest()
@@ -325,6 +349,9 @@ class VendorController extends Controller
      */
     public function addCreditTransaction(Request $request, Vendor $vendor)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         $request->validate([
             'type' => 'required|in:credit_received,credit_paid',
             'amount' => 'required|numeric|min:0.01',
@@ -348,6 +375,9 @@ class VendorController extends Controller
      */
     public function purchaseOrders(Request $request)
     {
+        if (!auth()->user()->hasRole('admin') && !auth()->user()->hasRole('super_admin')) {
+            abort(403, 'Unauthorized');
+        }
         $query = PurchaseOrder::with(['vendor', 'items.product', 'branch'])
             ->latest();
 

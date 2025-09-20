@@ -18,6 +18,13 @@ class InventoryController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+
+        // Branch managers and cashiers should only see their own branch inventory
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            return $this->branchIndex();
+        }
+
         $products = Product::with(['branches'])
             ->whereHas('branches', function ($query) {
                 $query->where('current_stock', '>', 0);
@@ -384,11 +391,31 @@ class InventoryController extends Controller
      */
     public function lowStockAlerts()
     {
-        $lowStockProducts = Product::with(['branches'])
-            ->whereHas('branches', function ($query) {
-                $query->where('current_stock', '<=', \DB::raw('stock_threshold'));
-            })
-            ->get();
+        $user = auth()->user();
+
+        // Filter by branch for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branch = $user->branch;
+            if (!$branch) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'No branch assigned to your account.');
+            }
+
+            $lowStockProducts = Product::with(['branches' => function ($q) use ($branch) {
+                    $q->where('branches.id', $branch->id);
+                }])
+                ->whereHas('branches', function ($query) use ($branch) {
+                    $query->where('branches.id', $branch->id)
+                          ->where('current_stock', '<=', \DB::raw('stock_threshold'));
+                })
+                ->get();
+        } else {
+            $lowStockProducts = Product::with(['branches'])
+                ->whereHas('branches', function ($query) {
+                    $query->where('current_stock', '<=', \DB::raw('stock_threshold'));
+                })
+                ->get();
+        }
 
         return view('inventory.low-stock-alerts', compact('lowStockProducts'));
     }

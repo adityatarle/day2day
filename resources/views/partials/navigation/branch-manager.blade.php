@@ -23,10 +23,6 @@
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Inventory</p>
     </div>
     <div class="space-y-1">
-        <a href="{{ route('inventory.index') }}" class="nav-link flex items-center p-2.5 rounded-lg text-gray-300 ml-12 {{ request()->routeIs('inventory.index') ? 'active text-white' : '' }}">
-            <i class="fas fa-clipboard-list mr-3"></i>
-            <span class="text-sm">Overview</span>
-        </a>
         <a href="{{ route('inventory.addStockForm') }}" class="nav-link flex items-center p-2.5 rounded-lg text-gray-300 ml-12 {{ request()->routeIs('inventory.addStockForm') ? 'active text-white' : '' }}">
             <i class="fas fa-circle-arrow-down mr-3"></i>
             <span class="text-sm">Add Stock (Inward)</span>

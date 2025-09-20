@@ -197,7 +197,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
         Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
         Route::get('/reports/customers', [ReportController::class, 'customers'])->name('reports.customers');
-        Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
         Route::get('/reports/vendors', [ReportController::class, 'vendors'])->name('reports.vendors');
         Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
         Route::get('/reports/profit-loss', [ReportController::class, 'profitLoss'])->name('reports.profitLoss');
@@ -460,8 +459,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/api/branches/{branch}/performance', [BranchManagementController::class, 'getPerformanceData'])->name('api.branches.performance');
     });
 
-    // Branch Inventory Management (Super Admin and Branch Manager)
-    Route::middleware('role:super_admin,branch_manager')->group(function () {
+    // Branch Inventory Management (Super Admin and Admin only)
+    Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/branches/{branch}/inventory', [BranchManagementController::class, 'inventory'])->name('branches.inventory');
         Route::post('/branches/{branch}/inventory/{product}', [BranchManagementController::class, 'updateInventoryItem'])->name('branches.inventory.update');
     });

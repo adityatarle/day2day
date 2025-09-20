@@ -299,11 +299,11 @@ class LocalPurchase extends Model
             'description' => $this->getExpenseDescription(),
             'amount' => $this->total_amount,
             'expense_date' => $this->purchase_date,
-            'payment_method' => $this->payment_method,
+            'payment_method' => $this->mapExpensePaymentMethod($this->payment_method),
             'reference_number' => $this->purchase_number,
             'status' => $this->isApproved() ? 'approved' : 'pending',
             'expense_type' => 'operational',
-            'allocation_method' => 'branch',
+            'allocation_method' => 'none',
             'notes' => $this->notes,
         ]);
 
@@ -325,5 +325,22 @@ class LocalPurchase extends Model
         }
 
         return 'Purchase of: ' . $itemDescriptions;
+    }
+
+    /**
+     * Map local purchase payment method to valid Expense enum values.
+     */
+    private function mapExpensePaymentMethod(?string $method): string
+    {
+        $method = strtolower((string) $method);
+
+        return match ($method) {
+            'cash' => 'cash',
+            'upi' => 'upi',
+            'card' => 'card',
+            'bank_transfer', 'bank' => 'bank',
+            // 'credit' or 'other' will be treated as bank for accounting entry
+            'credit', 'other', default => 'bank',
+        };
     }
 }

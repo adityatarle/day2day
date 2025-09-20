@@ -453,12 +453,10 @@ class LocalPurchaseController extends Controller
             // Create notification
             $this->createNotifications($localPurchase, 'approved');
 
-            // Mark as completed
-            $localPurchase->markAsCompleted();
-
             DB::commit();
 
-            return back()->with('success', 'Local purchase approved successfully');
+            return redirect()->route('admin.local-purchases.index')
+                ->with('success', 'Local purchase approved successfully');
 
         } catch (\Exception $e) {
             DB::rollBack();

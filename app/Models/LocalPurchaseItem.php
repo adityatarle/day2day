@@ -104,7 +104,7 @@ class LocalPurchaseItem extends Model
             'branch_id' => $localPurchase->branch_id,
             'type' => 'local_purchase',
             'quantity' => $this->quantity,
-            'unit_cost' => $this->unit_price,
+            'unit_price' => $this->unit_price,
             'reference_type' => LocalPurchase::class,
             'reference_id' => $localPurchase->id,
             'notes' => 'Local purchase: ' . $localPurchase->purchase_number,

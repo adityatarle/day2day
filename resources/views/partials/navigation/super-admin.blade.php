@@ -35,7 +35,7 @@
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-shopping-cart"></i>
         </div>
-        <span class="font-medium">Product Orders</span>
+        <span class="font-medium">Orders</span>
     </a>
     
     <a href="{{ route('orders.workflow.dashboard') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('orders.workflow.*') ? 'active text-white' : '' }}">
@@ -79,6 +79,18 @@
         <span class="font-medium">Purchase Entries</span>
     </a>
 
+    <!-- Customer Management -->
+    <div class="pt-4 pb-2">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Customer Management</p>
+    </div>
+    
+    <a href="{{ route('customers.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('customers.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-users"></i>
+        </div>
+        <span class="font-medium">Customers</span>
+    </a>
+
     <!-- Vendors & Partners -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Vendors & Partners</p>
@@ -110,9 +122,9 @@
         <span class="font-medium">Outlets</span>
     </a>
 
-    <!-- Users & Roles -->
+    <!-- System Management -->
     <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Users & Roles</p>
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">System Management</p>
     </div>
     
     <a href="{{ route('admin.users.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.users.*') ? 'active text-white' : '' }}">
@@ -134,11 +146,18 @@
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">POS System</p>
     </div>
     
-    <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') && !request()->routeIs('pos.sessions.*') ? 'active text-white' : '' }}">
+    <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') && !request()->routeIs('pos.sessions.*') && !request()->routeIs('billing.quickSale') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-cash-register"></i>
         </div>
-        <span class="font-medium">POS</span>
+        <span class="font-medium">POS System</span>
+    </a>
+    
+    <a href="{{ route('billing.quickSale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('billing.quickSale') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-bolt"></i>
+        </div>
+        <span class="font-medium">Quick Sale</span>
     </a>
     
     <a href="{{ route('pos.sessions.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.sessions.*') ? 'active text-white' : '' }}">

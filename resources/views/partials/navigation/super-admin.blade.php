@@ -61,6 +61,7 @@
         <span class="font-medium">Purchase Orders</span>
     </a>
 
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
     <!-- Orders from Branches -->
     <a href="{{ route('admin.branch-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.branch-orders.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -82,6 +83,7 @@
             <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $pendingCount }}</span>
         @endif
     </a>
+    @endif
 
     <!-- Reports -->
     <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.reports.index') ? 'admin.reports.index' : 'reports.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.reports.*') || request()->routeIs('reports.*') ? 'active text-white' : '' }}">
@@ -91,6 +93,7 @@
         <span class="font-medium">Reports</span>
     </a>
 
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
     <!-- Outlets (Admin Branches Index) -->
     <a href="{{ route('admin.branches.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.branches.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -98,6 +101,7 @@
         </div>
         <span class="font-medium">Outlets</span>
     </a>
+    @endif
 
     <!-- POS System -->
     <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.pos.index') ? 'admin.pos.index' : 'pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.pos.*') || (request()->routeIs('pos.*') && !request()->routeIs('pos.sessions.*')) ? 'active text-white' : '' }}">
@@ -115,6 +119,7 @@
         <span class="font-medium">Quick Sale</span>
     </a>
 
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
     <!-- Optional: Additional Management -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Management</p>
@@ -147,4 +152,5 @@
         </div>
         <span class="font-medium">Security</span>
     </a>
+    @endif
 </nav>

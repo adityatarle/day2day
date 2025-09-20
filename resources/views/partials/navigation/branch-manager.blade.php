@@ -107,6 +107,17 @@
         <span class="font-medium">POS</span>
     </a>
 
+    <!-- Staff Management -->
+    <div class="pt-4 pb-2">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Staff Management</p>
+    </div>
+    <a href="{{ route('branch.staff.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.staff.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-users"></i>
+        </div>
+        <span class="font-medium">Manage Staff</span>
+    </a>
+
     <!-- Reports (Optional) -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Reports & Analytics</p>

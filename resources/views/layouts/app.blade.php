@@ -19,10 +19,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* Sidebar Styles */
+        /* Super Admin Theme - Gold & Blue */
         .sidebar {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
         }
         
         .nav-link {
@@ -31,13 +31,13 @@
         }
         
         .nav-link:hover {
-            background: rgba(59, 130, 246, 0.1);
+            background: rgba(251, 191, 36, 0.15);
             transform: translateX(8px);
         }
         
         .nav-link.active {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
         }
         
         .nav-icon {
@@ -55,27 +55,41 @@
         
         /* Logo Animation */
         .logo-icon {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
             animation: logoFloat 6s ease-in-out infinite;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
         }
         
         @keyframes logoFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
         }
         
         /* Main Content */
         .main-content {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             min-height: 100vh;
         }
         
         .top-nav {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(15px);
+            border-bottom: 2px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Super Admin specific styles */
+        .super-admin-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.2);
+        }
+        
+        .super-admin-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         
         /* Card Styles */
@@ -303,21 +317,6 @@
             .main-content {
                 margin-left: 0;
             }
-            
-            .mobile-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1000;
-                display: none;
-            }
-            
-            .mobile-overlay.active {
-                display: block;
-            }
         }
     </style>
     @if(auth()->check() && auth()->user()->isBranchManager())
@@ -337,163 +336,52 @@
 </head>
 <body class="bg-gray-50">
     <!-- Mobile Overlay -->
-    <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-1000 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-72 text-white flex flex-col">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white">
         <!-- Logo Section -->
-        <div class="p-6 text-center border-b border-white/10 flex-shrink-0">
+        <div class="p-6 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
-                <i class="fas fa-leaf text-2xl text-white"></i>
+                <i class="fas fa-crown text-2xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-bold text-white">Day2Day Fresh</h1>
-            <p class="text-sm text-gray-300">Management System</p>
+            <h1 class="text-2xl font-bold text-white">FoodCo</h1>
+            <p class="text-sm text-amber-100">Super Admin Panel</p>
+            <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs super-admin-badge">
+                <i class="fas fa-shield-alt mr-1"></i>
+                System Administrator
+            </div>
         </div>
         
         <!-- Navigation -->
-        @php $user = auth()->user(); @endphp
-        <div class="flex-1 overflow-y-auto">
-        @if($user && $user->isBranchManager())
-            @include('partials.navigation.branch-manager')
-        @elseif($user && $user->isCashier())
-            @include('partials.navigation.cashier')
-        @elseif($user && $user->isSuperAdmin())
+        <div class="flex-1 overflow-y-auto pb-24">
             @include('partials.navigation.super-admin')
-        @else
-        <nav class="p-6 space-y-2">
-            <a href="{{ route('dashboard') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('dashboard') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-tachometer-alt"></i>
-                </div>
-                <span class="font-medium">Dashboard</span>
-            </a>
-            
-            <a href="{{ route('products.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('products.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-box"></i>
-                </div>
-                <span class="font-medium">Products</span>
-            </a>
-            
-            <a href="{{ route('orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('orders.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <span class="font-medium">Orders</span>
-            </a>
-            
-            <a href="{{ route('inventory.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('inventory.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-warehouse"></i>
-                </div>
-                <span class="font-medium">Inventory</span>
-            </a>
-            
-            <a href="{{ route('customers.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('customers.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-users"></i>
-                </div>
-                <span class="font-medium">Customers</span>
-            </a>
-            
-            <a href="{{ route('vendors.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('vendors.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-building"></i>
-                </div>
-                <span class="font-medium">Vendors</span>
-            </a>
-            
-            <a href="{{ route('purchase-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('purchase-orders.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
-                <span class="font-medium">Purchase Orders</span>
-            </a>
-
-            @if($user && $user->isAdmin())
-            <a href="{{ route('admin.branch-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.branch-orders.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-store"></i>
-                </div>
-                <span class="font-medium">Orders from Branches</span>
-            </a>
-            
-            <a href="{{ route('admin.local-purchases.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.local-purchases.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-shopping-basket"></i>
-                </div>
-                <span class="font-medium">Local Purchase Requests</span>
-                @php
-                    $pendingCount = \App\Models\LocalPurchase::where('status', 'pending')->count();
-                @endphp
-                @if($pendingCount > 0)
-                    <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $pendingCount }}</span>
-                @endif
-            </a>
-            @endif
-            
-            <a href="{{ route('reports.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('reports.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <span class="font-medium">Reports</span>
-            </a>
-
-            @if($user && ($user->isAdmin() || $user->isBranchManager()))
-            <a href="{{ route('outlets.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('outlets.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-store"></i>
-                </div>
-                <span class="font-medium">Outlets</span>
-            </a>
-            @endif
-
-            @if($user && ($user->isAdmin() || $user->isBranchManager() || $user->isCashier()))
-            <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-cash-register"></i>
-                </div>
-                <span class="font-medium">POS System</span>
-            </a>
-            @endif
-            
-            <a href="{{ route('billing.quickSale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('billing.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-plus-circle"></i>
-                </div>
-                <span class="font-medium">Quick Sale</span>
-            </a>
-        </nav>
-        @endif
         </div>
         
         <!-- User Profile -->
-        <div class="flex-shrink-0 p-6 border-t border-white/10 bg-black/20">
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'SA', 0, 2)) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                    @php
-                        $roleLabel = 'User';
-                        if (auth()->check()) {
-                            $u = auth()->user();
-                            if ($u->isSuperAdmin()) { $roleLabel = 'Super Admin'; }
-                            elseif ($u->isAdmin()) { $roleLabel = 'Admin'; }
-                            elseif ($u->isBranchManager()) { $roleLabel = 'Branch Manager'; }
-                            elseif ($u->isCashier()) { $roleLabel = 'Cashier'; }
-                            elseif ($u->isDeliveryBoy()) { $roleLabel = 'Delivery Boy'; }
-                        }
-                    @endphp
-                    <p class="text-xs text-gray-300">{{ $roleLabel }}</p>
+                    <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'Super Admin' }}</p>
+                    <p class="text-xs text-amber-200">Super Administrator</p>
+                </div>
+                <div class="flex flex-col space-y-1">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-xs text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-72">
+    <div class="main-content ml-80">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-50">
             <div class="flex items-center justify-between px-8 py-4">
@@ -505,15 +393,24 @@
                 <!-- Page Title -->
                 <div class="flex-1">
                     <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-tachometer-alt text-white text-sm"></i>
+                        <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-crown text-white text-lg"></i>
                         </div>
-                        <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Dashboard')</h1>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Super Admin Dashboard')</h1>
+                            <p class="text-sm text-gray-500">Complete system control and management</p>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Right Actions -->
                 <div class="flex items-center space-x-4">
+                    <!-- System Status -->
+                    <div class="hidden sm:flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-medium text-green-700">System Online</span>
+                    </div>
+                    
                     <!-- Notifications -->
                     <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                         <i class="fas fa-bell text-lg"></i>
@@ -522,25 +419,9 @@
                     
                     <!-- Current Date -->
                     <div class="hidden sm:flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                        <i class="fas fa-calendar-alt text-gray-500"></i>
+                        <i class="fas fa-calendar-day text-amber-500"></i>
                         <span class="text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
                     </div>
-                    
-                    <!-- User Info -->
-                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-sm">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
-                        </div>
-                        <span class="hidden md:block text-sm font-medium text-gray-700">{{ auth()->user()->name ?? 'User' }}</span>
-                    </div>
-                    
-                    <!-- Logout -->
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                            <i class="fas fa-sign-out-alt text-lg"></i>
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>
@@ -553,13 +434,12 @@
     
     <!-- JavaScript -->
     <script>
-        // Mobile menu toggle
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
             
             sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
+            overlay.classList.toggle('hidden');
         }
         
         // Close mobile menu when clicking outside
@@ -570,7 +450,7 @@
             
             if (!menuButton && !sidebar.contains(event.target) && window.innerWidth < 1024) {
                 sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
+                overlay.classList.add('hidden');
             }
         });
         
@@ -581,7 +461,7 @@
             
             if (window.innerWidth >= 1024) {
                 sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
+                overlay.classList.add('hidden');
             }
         });
         

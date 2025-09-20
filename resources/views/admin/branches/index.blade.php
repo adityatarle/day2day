@@ -1,4 +1,4 @@
-@extends('layouts.super-admin')
+@extends('layouts.app')
 
 @section('title', 'Branch Management')
 

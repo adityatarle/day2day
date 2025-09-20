@@ -417,6 +417,19 @@
                 </div>
                 <span class="font-medium">Orders from Branches</span>
             </a>
+            
+            <a href="{{ route('admin.local-purchases.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.local-purchases.*') ? 'active text-white' : '' }}">
+                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
+                <span class="font-medium">Local Purchase Requests</span>
+                @php
+                    $pendingCount = \App\Models\LocalPurchase::where('status', 'pending')->count();
+                @endphp
+                @if($pendingCount > 0)
+                    <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $pendingCount }}</span>
+                @endif
+            </a>
             @endif
             
             <a href="{{ route('reports.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('reports.*') ? 'active text-white' : '' }}">

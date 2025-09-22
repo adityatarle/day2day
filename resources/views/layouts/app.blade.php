@@ -585,10 +585,21 @@
                     </div>
                     
                     <!-- Notifications -->
-                    <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        <i class="fas fa-bell text-base sm:text-lg"></i>
-                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                    </button>
+                    <div class="relative">
+                        <button id="notifications-button" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-bell text-base sm:text-lg"></i>
+                            <span id="notifications-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border rounded-lg shadow-lg z-50">
+                            <div class="px-4 py-2 border-b flex items-center justify-between">
+                                <span class="font-semibold text-gray-700 text-sm">Notifications</span>
+                                <button id="notifications-mark-all" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                            </div>
+                            <div id="notifications-list" class="max-h-96 overflow-auto">
+                                <div class="p-4 text-sm text-gray-500">No notifications</div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Current Date -->
                     <div class="hidden lg:flex items-center space-x-2 bg-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border shadow-sm">

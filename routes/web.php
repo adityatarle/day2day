@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\BranchManagerDashboardController;
 use App\Http\Controllers\Web\CashierDashboardController;
 use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\OrderController;
+use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\InventoryController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\VendorController;
@@ -81,6 +82,11 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:cashier');
     
     // Product management - Admin only (create, edit, delete)
+    // Notifications API
+    Route::get('/api/notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
+    Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('api.notifications.mark-all-read');
+    Route::post('/api/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('api.notifications.read');
+
     Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');

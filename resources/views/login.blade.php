@@ -19,6 +19,43 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
+        /* Mobile-first responsive enhancements */
+        @media (max-width: 640px) {
+            .role-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .login-card {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            .form-input {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+            
+            .btn-login {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+                min-height: 44px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .role-card {
+                padding: 1.25rem;
+            }
+        }
+
+        /* Touch-friendly elements */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
         .login-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -79,53 +116,53 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-orange-50 to-red-50 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gradient-to-br from-orange-50 to-red-50 min-h-screen flex items-center justify-center p-2 sm:p-4">
     <div class="w-full max-w-4xl">
         <!-- Logo/Brand Section -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full mb-4 shadow-lg float-animation">
-                <i class="fas fa-utensils text-white text-2xl"></i>
+        <div class="text-center mb-6 sm:mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full mb-3 sm:mb-4 shadow-lg float-animation">
+                <i class="fas fa-utensils text-white text-xl sm:text-2xl"></i>
             </div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome to FoodCo</h1>
-            <p class="text-gray-600 text-lg">Choose your login type to access your management system</p>
+            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Welcome to FoodCo</h1>
+            <p class="text-gray-600 text-sm sm:text-base lg:text-lg px-4">Choose your login type to access your management system</p>
         </div>
 
         <!-- Role Selection Cards -->
-        <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <!-- Admin Login -->
-            <div class="role-card rounded-2xl p-6 cursor-pointer text-center" onclick="selectRole('admin')">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full mb-4">
-                    <i class="fas fa-crown text-white text-xl"></i>
+            <div class="role-card rounded-xl sm:rounded-2xl p-4 sm:p-6 cursor-pointer text-center touch-target" onclick="selectRole('admin')">
+                <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-full mb-3 sm:mb-4">
+                    <i class="fas fa-crown text-white text-lg sm:text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Admin Login</h3>
-                <p class="text-gray-600 text-sm">Full system access and management</p>
-                <div class="mt-4 text-red-600 font-medium">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Admin Login</h3>
+                <p class="text-gray-600 text-xs sm:text-sm">Full system access and management</p>
+                <div class="mt-3 sm:mt-4 text-red-600 font-medium text-sm">
                     <i class="fas fa-shield-alt mr-2"></i>
                     Super Admin Access
                 </div>
             </div>
 
             <!-- Branch Manager Login -->
-            <div class="role-card rounded-2xl p-6 cursor-pointer text-center" onclick="selectRole('branch')">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4">
-                    <i class="fas fa-building text-white text-xl"></i>
+            <div class="role-card rounded-xl sm:rounded-2xl p-4 sm:p-6 cursor-pointer text-center touch-target" onclick="selectRole('branch')">
+                <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-3 sm:mb-4">
+                    <i class="fas fa-building text-white text-lg sm:text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Branch Manager</h3>
-                <p class="text-gray-600 text-sm">Manage branch operations and staff</p>
-                <div class="mt-4 text-blue-600 font-medium">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Branch Manager</h3>
+                <p class="text-gray-600 text-xs sm:text-sm">Manage branch operations and staff</p>
+                <div class="mt-3 sm:mt-4 text-blue-600 font-medium text-sm">
                     <i class="fas fa-users mr-2"></i>
                     Branch Management
                 </div>
             </div>
 
             <!-- Outlet Staff Login -->
-            <div class="role-card rounded-2xl p-6 cursor-pointer text-center" onclick="selectRole('outlet')">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full mb-4">
-                    <i class="fas fa-store text-white text-xl"></i>
+            <div class="role-card rounded-xl sm:rounded-2xl p-4 sm:p-6 cursor-pointer text-center touch-target sm:col-span-2 md:col-span-1" onclick="selectRole('outlet')">
+                <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full mb-3 sm:mb-4">
+                    <i class="fas fa-store text-white text-lg sm:text-xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Outlet Staff</h3>
-                <p class="text-gray-600 text-sm">POS system and daily operations</p>
-                <div class="mt-4 text-green-600 font-medium">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Outlet Staff</h3>
+                <p class="text-gray-600 text-xs sm:text-sm">POS system and daily operations</p>
+                <div class="mt-3 sm:mt-4 text-green-600 font-medium text-sm">
                     <i class="fas fa-cash-register mr-2"></i>
                     POS & Operations
                 </div>
@@ -133,7 +170,7 @@
         </div>
 
         <!-- Login Forms Container -->
-        <div class="login-card rounded-2xl p-8">
+        <div class="login-card rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8">
             @if ($errors->any())
                 <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <div class="flex">
@@ -366,6 +403,28 @@
             // Show selection message
             document.getElementById('select-role-message').style.display = 'block';
         }
+        
+        // Mobile responsiveness enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add touch-friendly interactions
+            const buttons = document.querySelectorAll('button, .role-card, input[type="submit"]');
+            buttons.forEach(button => {
+                button.classList.add('touch-target');
+            });
+            
+            // Mobile responsive breakpoint detection
+            function checkBreakpoint() {
+                const width = window.innerWidth;
+                document.body.setAttribute('data-screen-size', 
+                    width < 640 ? 'mobile' : 
+                    width < 768 ? 'small-tablet' : 
+                    width < 1024 ? 'tablet' : 'desktop'
+                );
+            }
+            
+            checkBreakpoint();
+            window.addEventListener('resize', checkBreakpoint);
+        });
     </script>
 </body>
 </html>

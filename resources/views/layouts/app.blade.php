@@ -19,6 +19,48 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
+        /* Mobile-first responsive enhancements */
+        @media (max-width: 640px) {
+            .metric-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            .form-input {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+                min-height: 44px;
+            }
+            
+            .card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metric-card {
+                padding: 1.25rem;
+            }
+            
+            .grid {
+                gap: 1rem;
+            }
+        }
+
+        /* Touch-friendly elements */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
         /* Super Admin Theme - Gold & Blue */
         .sidebar {
             background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
@@ -310,6 +352,8 @@
                 z-index: 1001;
                 width: 100%;
                 max-width: 320px;
+                height: 100vh;
+                overflow-y: auto;
             }
             
             .sidebar.mobile-open {
@@ -318,7 +362,18 @@
             
             .main-content {
                 margin-left: 0;
-                padding: 1rem;
+                padding: 0.5rem;
+            }
+            
+            .nav-link {
+                padding: 0.75rem 1rem;
+                margin: 0.25rem 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .nav-icon {
+                width: 2rem;
+                height: 2rem;
             }
         }
 
@@ -328,41 +383,52 @@
             }
             
             .top-nav {
-                padding: 1rem;
+                padding: 0.75rem 1rem;
             }
             
             .top-nav .flex {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .top-nav .flex-1 {
-                order: 2;
-            }
-            
-            .top-nav .flex.items-center.space-x-4 {
-                order: 1;
-                justify-content: space-between;
-                width: 100%;
+                flex-wrap: wrap;
+                gap: 0.5rem;
             }
             
             .card {
                 margin-bottom: 1rem;
+                border-radius: 0.75rem;
             }
             
             .data-table {
                 font-size: 0.875rem;
+                min-width: 600px;
             }
             
             .data-table th,
             .data-table td {
                 padding: 0.5rem 0.75rem;
+                white-space: nowrap;
+            }
+            
+            /* Table wrapper for horizontal scroll */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Mobile-friendly buttons */
+            .btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+                justify-content: center;
             }
         }
 
         @media (max-width: 640px) {
             .main-content {
-                padding: 0.25rem;
+                padding: 0.5rem;
             }
             
             .top-nav {
@@ -392,6 +458,32 @@
             .data-table td {
                 padding: 0.375rem 0.5rem;
             }
+            
+            /* Mobile navigation improvements */
+            .nav-link span {
+                font-size: 0.85rem;
+            }
+            
+            /* Mobile grid improvements */
+            .grid {
+                gap: 0.75rem;
+            }
+            
+            /* Mobile form improvements */
+            .form-label {
+                font-size: 0.875rem;
+                margin-bottom: 0.375rem;
+            }
+            
+            /* Mobile typography */
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+            h3 { font-size: 1.125rem; }
+            
+            /* Mobile spacing */
+            .space-y-4 > * + * { margin-top: 0.75rem; }
+            .space-y-6 > * + * { margin-top: 1rem; }
+            .space-y-8 > * + * { margin-top: 1.5rem; }
         }
     </style>
     @if(auth()->check() && auth()->user()->isBranchManager())
@@ -521,6 +613,13 @@
             
             sidebar.classList.toggle('mobile-open');
             overlay.classList.toggle('hidden');
+            
+            // Prevent body scroll when menu is open
+            if (sidebar.classList.contains('mobile-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         }
         
         // Close mobile menu when clicking outside
@@ -591,6 +690,25 @@
                     card.style.transform = 'translateY(0)';
                 }, index * 100);
             });
+            
+            // Add touch-friendly interactions
+            const buttons = document.querySelectorAll('button, .btn, a[class*="btn"]');
+            buttons.forEach(button => {
+                button.classList.add('touch-target');
+            });
+            
+            // Mobile responsive breakpoint detection
+            function checkBreakpoint() {
+                const width = window.innerWidth;
+                document.body.setAttribute('data-screen-size', 
+                    width < 640 ? 'mobile' : 
+                    width < 768 ? 'small-tablet' : 
+                    width < 1024 ? 'tablet' : 'desktop'
+                );
+            }
+            
+            checkBreakpoint();
+            window.addEventListener('resize', checkBreakpoint);
         });
     </script>
 </body>

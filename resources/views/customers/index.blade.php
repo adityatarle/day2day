@@ -3,25 +3,28 @@
 @section('title', 'Customers')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Customers</h1>
-        <a href="{{ route('customers.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Add New Customer
+<div class="container mx-auto px-2 sm:px-4 py-4 sm:py-6 lg:py-8">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Customers</h1>
+        <a href="{{ route('customers.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base touch-target">
+            <i class="fas fa-plus mr-1 sm:mr-2"></i>
+            <span class="hidden sm:inline">Add New Customer</span>
+            <span class="sm:hidden">Add Customer</span>
         </a>
     </div>
 
     <!-- Search -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <form method="GET" action="{{ route('customers.index') }}" class="flex gap-4">
+    <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <form method="GET" action="{{ route('customers.index') }}" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div class="flex-1">
                 <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search Customers</label>
                 <input type="text" name="search" id="search" value="{{ request('search') }}" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 touch-target"
                        placeholder="Search by name, email, or phone">
             </div>
             <div class="flex items-end">
-                <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg w-full sm:w-auto touch-target">
+                    <i class="fas fa-search mr-2"></i>
                     Search
                 </button>
             </div>
@@ -29,44 +32,44 @@
     </div>
 
     <!-- Customers Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         @forelse($customers as $customer)
             <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     <div class="flex items-center mb-4">
                         <div class="flex-shrink-0">
-                            <div class="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
-                                <span class="text-white font-bold text-lg">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
+                            <div class="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-600 flex items-center justify-center">
+                                <span class="text-white font-bold text-sm sm:text-lg">{{ strtoupper(substr($customer->name, 0, 1)) }}</span>
                             </div>
                         </div>
-                        <div class="ml-4">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ $customer->name }}</h3>
-                            <p class="text-sm text-gray-500">{{ $customer->email }}</p>
+                        <div class="ml-3 sm:ml-4 min-w-0 flex-1">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate">{{ $customer->name }}</h3>
+                            <p class="text-xs sm:text-sm text-gray-500 truncate">{{ $customer->email }}</p>
                         </div>
                     </div>
                     
                     <div class="space-y-2 mb-4">
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Phone:</span>
-                            <span class="font-medium">{{ $customer->phone }}</span>
+                            <span class="font-medium truncate ml-2">{{ $customer->phone }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Address:</span>
-                            <span class="font-medium">{{ Str::limit($customer->address, 30) }}</span>
+                            <span class="font-medium truncate ml-2">{{ Str::limit($customer->address, 20) }}</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span class="text-gray-600">Total Orders:</span>
                             <span class="font-medium text-blue-600">{{ $customer->orders_count }}</span>
                         </div>
                     </div>
 
-                    <div class="flex justify-between items-center">
-                        <div class="text-sm text-gray-600">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
+                        <div class="text-xs sm:text-sm text-gray-600">
                             Member since {{ $customer->created_at->format('M Y') }}
                         </div>
-                        <div class="space-x-2">
-                            <a href="{{ route('customers.show', $customer) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View</a>
-                            <a href="{{ route('customers.edit', $customer) }}" class="text-green-600 hover:text-green-800 text-sm font-medium">Edit</a>
+                        <div class="flex space-x-3 sm:space-x-2">
+                            <a href="{{ route('customers.show', $customer) }}" class="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium touch-target">View</a>
+                            <a href="{{ route('customers.edit', $customer) }}" class="text-green-600 hover:text-green-800 text-xs sm:text-sm font-medium touch-target">Edit</a>
                         </div>
                     </div>
                 </div>

@@ -308,6 +308,8 @@
                 transition: transform 0.3s ease;
                 position: fixed;
                 z-index: 1001;
+                width: 100%;
+                max-width: 320px;
             }
             
             .sidebar.mobile-open {
@@ -316,6 +318,79 @@
             
             .main-content {
                 margin-left: 0;
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 0.5rem;
+            }
+            
+            .top-nav {
+                padding: 1rem;
+            }
+            
+            .top-nav .flex {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .top-nav .flex-1 {
+                order: 2;
+            }
+            
+            .top-nav .flex.items-center.space-x-4 {
+                order: 1;
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .data-table {
+                font-size: 0.875rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.75rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 0.25rem;
+            }
+            
+            .top-nav {
+                padding: 0.75rem;
+            }
+            
+            .card {
+                border-radius: 0.75rem;
+                padding: 1rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .form-input {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .data-table {
+                font-size: 0.75rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.375rem 0.5rem;
             }
         }
     </style>
@@ -390,50 +465,50 @@
     <div class="main-content ml-80">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-50">
-            <div class="flex items-center justify-between px-8 py-4">
+            <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
                 <!-- Mobile Menu Button -->
                 <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
                 
                 <!-- Page Title -->
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-crown text-white text-lg"></i>
+                <div class="flex-1 px-2 sm:px-0">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-crown text-white text-sm sm:text-lg"></i>
                         </div>
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Super Admin Dashboard')</h1>
-                            <p class="text-sm text-gray-500">Complete system control and management</p>
+                        <div class="min-w-0 flex-1">
+                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">@yield('title', 'Super Admin Dashboard')</h1>
+                            <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Complete system control and management</p>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Right Actions -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <!-- System Status -->
-                    <div class="hidden sm:flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                    <div class="hidden md:flex items-center space-x-2 bg-green-50 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-green-200">
                         <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span class="text-sm font-medium text-green-700">System Online</span>
+                        <span class="text-xs sm:text-sm font-medium text-green-700">System Online</span>
                     </div>
                     
                     <!-- Notifications -->
                     <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        <i class="fas fa-bell text-lg"></i>
+                        <i class="fas fa-bell text-base sm:text-lg"></i>
                         <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                     </button>
                     
                     <!-- Current Date -->
-                    <div class="hidden sm:flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                        <i class="fas fa-calendar-day text-amber-500"></i>
-                        <span class="text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
+                    <div class="hidden lg:flex items-center space-x-2 bg-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border shadow-sm">
+                        <i class="fas fa-calendar-day text-amber-500 text-sm"></i>
+                        <span class="text-xs sm:text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Page Content -->
-        <main class="p-8 fade-in">
+        <main class="p-4 sm:p-6 lg:p-8 fade-in">
             @yield('content')
         </main>
     </div>

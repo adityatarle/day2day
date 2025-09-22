@@ -5,26 +5,28 @@
 @section('content')
 <div class="p-6">
     <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Product Management</h1>
-                <p class="text-gray-600 mt-1">Manage your product catalog, pricing, and inventory across all branches.</p>
+    <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Product Management</h1>
+                <p class="text-gray-600 mt-1 text-sm sm:text-base">Manage your product catalog, pricing, and inventory across all branches.</p>
             </div>
             <div class="flex items-center space-x-3">
                 @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-                <a href="{{ route('products.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('products.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 inline mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    Add New Product
+                    <span class="hidden sm:inline">Add New Product</span>
+                    <span class="sm:hidden">Add Product</span>
                 </a>
                 @else
-                <div class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 sm:px-4 rounded-lg font-medium transition-colors text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 inline mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
-                    Branch View (Read Only)
+                    <span class="hidden sm:inline">Branch View (Read Only)</span>
+                    <span class="sm:hidden">Branch View</span>
                 </div>
                 @endif
             </div>
@@ -32,29 +34,29 @@
     </div>
 
     <!-- Product Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
             <div class="flex items-center">
-                <div class="bg-blue-100 p-3 rounded-lg">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-blue-100 p-2 sm:p-3 rounded-lg">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                     </svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total Products</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $products->total() }}</p>
+                <div class="ml-3 sm:ml-4 min-w-0 flex-1">
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Products</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900">{{ $products->total() }}</p>
                 </div>
             </div>
         </div>
 
         @foreach($categories as $cat)
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
             <div class="flex items-center">
-                <div class="p-3 rounded-lg
+                <div class="p-2 sm:p-3 rounded-lg
                     {{ $cat === 'fruit' ? 'bg-orange-100' : 
                        ($cat === 'vegetable' ? 'bg-green-100' : 
                        ($cat === 'leafy' ? 'bg-emerald-100' : 'bg-purple-100')) }}">
-                    <svg class="w-6 h-6 
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 
                         {{ $cat === 'fruit' ? 'text-orange-600' : 
                            ($cat === 'vegetable' ? 'text-green-600' : 
                            ($cat === 'leafy' ? 'text-emerald-600' : 'text-purple-600')) }}" 
@@ -62,9 +64,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                     </svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">{{ ucfirst($cat) }}</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $products->where('category', $cat)->count() }}</p>
+                <div class="ml-3 sm:ml-4 min-w-0 flex-1">
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">{{ ucfirst($cat) }}</p>
+                    <p class="text-lg sm:text-2xl font-semibold text-gray-900">{{ $products->where('category', $cat)->count() }}</p>
                 </div>
             </div>
         </div>
@@ -72,24 +74,24 @@
     </div>
 
     <!-- Search and Filters -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-        <div class="p-6">
-            <form method="GET" action="{{ route('products.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div class="md:col-span-2">
-                    <label class="form-label">Search Products</label>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 sm:mb-6">
+        <div class="p-4 sm:p-6">
+            <form method="GET" action="{{ route('products.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div class="sm:col-span-2 lg:col-span-2">
+                    <label class="form-label text-xs sm:text-sm">Search Products</label>
                     <div class="relative">
                         <input type="text" name="search" value="{{ request('search') }}" 
-                               class="form-input pl-10" placeholder="Search by name, code, or description">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               class="form-input pl-8 sm:pl-10 text-sm" placeholder="Search by name, code, or description">
+                        <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                     </div>
                 </div>
                 <div>
-                    <label class="form-label">Category</label>
-                    <select name="category" class="form-input">
+                    <label class="form-label text-xs sm:text-sm">Category</label>
+                    <select name="category" class="form-input text-sm">
                         <option value="">All Categories</option>
                         @foreach($categories as $category)
                             <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
@@ -99,8 +101,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="form-label">Branch</label>
-                    <select name="branch_id" class="form-input">
+                    <label class="form-label text-xs sm:text-sm">Branch</label>
+                    <select name="branch_id" class="form-input text-sm">
                         <option value="">All Branches</option>
                         @foreach($branches as $branch)
                             <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>
@@ -109,21 +111,21 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="flex items-end space-x-2">
-                    <button type="submit" class="btn-primary flex-1">
-                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-end space-x-2 sm:col-span-2 lg:col-span-1">
+                    <button type="submit" class="btn-primary flex-1 text-sm">
+                        <svg class="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                         Filter
                     </button>
-                    <a href="{{ route('products.index') }}" class="btn-secondary">Clear</a>
+                    <a href="{{ route('products.index') }}" class="btn-secondary text-sm">Clear</a>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Products Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         @forelse($products as $product)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover-lift">
                 <!-- Product Header -->

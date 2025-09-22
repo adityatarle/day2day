@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Responsiveness Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Mobile-first responsive enhancements */
+        @media (max-width: 640px) {
+            .metric-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .form-input {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .metric-card {
+                padding: 1.25rem;
+            }
+            
+            .grid {
+                gap: 1rem;
+            }
+        }
+
+        /* Touch-friendly elements */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Mobile Menu Test -->
+    <div class="lg:hidden fixed top-0 left-0 w-full bg-white shadow-sm z-50">
+        <div class="flex items-center justify-between px-4 py-3">
+            <button class="p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-lg font-bold text-gray-900">Mobile Test</h1>
+            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-user text-blue-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">
+        <!-- Welcome Section -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-2xl mb-6 sm:mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-crown text-lg sm:text-2xl text-yellow-300"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1">
+                                Mobile Responsive Test
+                            </h1>
+                            <p class="text-blue-100 text-sm sm:text-base lg:text-lg">Testing mobile responsiveness</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden lg:block mt-4 lg:mt-0">
+                    <div class="text-right space-y-2">
+                        <div class="text-2xl lg:text-3xl font-bold">Dec 19, 2024</div>
+                        <div class="text-blue-200 text-base lg:text-lg">Thursday</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600">Total Users</p>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">1,234</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-users text-blue-600 text-lg sm:text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600">Revenue</p>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">₹45,678</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-chart-line text-green-600 text-lg sm:text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600">Orders</p>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">567</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-shopping-cart text-purple-600 text-lg sm:text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600">Products</p>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-900">89</p>
+                    </div>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-box text-orange-600 text-lg sm:text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Test -->
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg mb-6 sm:mb-8">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Responsive Table Test</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[600px]">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-2 sm:py-3 px-1 sm:px-2 font-semibold text-gray-700 text-xs sm:text-sm">Name</th>
+                            <th class="text-left py-2 sm:py-3 px-1 sm:px-2 font-semibold text-gray-700 text-xs sm:text-sm hidden sm:table-cell">Email</th>
+                            <th class="text-right py-2 sm:py-3 px-1 sm:px-2 font-semibold text-gray-700 text-xs sm:text-sm">Orders</th>
+                            <th class="text-right py-2 sm:py-3 px-1 sm:px-2 font-semibold text-gray-700 text-xs sm:text-sm">Revenue</th>
+                            <th class="text-center py-2 sm:py-3 px-1 sm:px-2 font-semibold text-gray-700 text-xs sm:text-sm">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 sm:py-3 px-1 sm:px-2">
+                                <div>
+                                    <div class="font-semibold text-gray-900 text-sm sm:text-base">John Doe</div>
+                                    <div class="text-xs text-gray-600 sm:hidden">john@example.com</div>
+                                </div>
+                            </td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-gray-700 text-sm hidden sm:table-cell">john@example.com</td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-right font-semibold text-sm">25</td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-right font-semibold text-sm">₹12,500</td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-center">
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 sm:py-3 px-1 sm:px-2">
+                                <div>
+                                    <div class="font-semibold text-gray-900 text-sm sm:text-base">Jane Smith</div>
+                                    <div class="text-xs text-gray-600 sm:hidden">jane@example.com</div>
+                                </div>
+                            </td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-gray-700 text-sm hidden sm:table-cell">jane@example.com</td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-right font-semibold text-sm">18</td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-right font-semibold text-sm">₹9,200</td>
+                            <td class="py-2 sm:py-3 px-1 sm:px-2 text-center">
+                                <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Form Test -->
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg mb-6 sm:mb-8">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Responsive Form Test</h3>
+            <form class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div class="sm:col-span-2 lg:col-span-1">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Search</label>
+                    <input type="text" placeholder="Search..." class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Category</label>
+                    <select class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option>All Categories</option>
+                        <option>Fruits</option>
+                        <option>Vegetables</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
+                    <select class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option>All Status</option>
+                        <option>Active</option>
+                        <option>Inactive</option>
+                    </select>
+                </div>
+                <div class="flex items-end space-x-2 sm:col-span-2 lg:col-span-1">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium text-sm flex-1">
+                        <i class="fas fa-search mr-1"></i>
+                        Search
+                    </button>
+                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
+                        Clear
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Action Buttons Test -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <button class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-users-cog text-lg sm:text-xl"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h4 class="text-base sm:text-lg font-bold">Manage Users</h4>
+                        <p class="text-blue-100 text-xs sm:text-sm">Add, edit, or remove users</p>
+                    </div>
+                </div>
+            </button>
+
+            <button class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-building text-lg sm:text-xl"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h4 class="text-base sm:text-lg font-bold">Manage Branches</h4>
+                        <p class="text-green-100 text-xs sm:text-sm">Oversee all branch operations</p>
+                    </div>
+                </div>
+            </button>
+
+            <button class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl sm:col-span-2 lg:col-span-1">
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-cogs text-lg sm:text-xl"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h4 class="text-base sm:text-lg font-bold">Settings</h4>
+                        <p class="text-purple-100 text-xs sm:text-sm">Configure system parameters</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Test mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Mobile responsiveness test loaded');
+            
+            // Add touch-friendly interactions
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.classList.add('touch-target');
+            });
+            
+            // Test responsive breakpoints
+            function checkBreakpoint() {
+                const width = window.innerWidth;
+                console.log(`Current width: ${width}px`);
+                
+                if (width < 640) {
+                    console.log('Mobile view (< 640px)');
+                } else if (width < 768) {
+                    console.log('Small tablet view (640px - 768px)');
+                } else if (width < 1024) {
+                    console.log('Tablet view (768px - 1024px)');
+                } else {
+                    console.log('Desktop view (> 1024px)');
+                }
+            }
+            
+            checkBreakpoint();
+            window.addEventListener('resize', checkBreakpoint);
+        });
+    </script>
+</body>
+</html>

@@ -3,20 +3,21 @@
 @section('title', 'Add New User')
 
 @section('content')
-<div class="p-6">
+<div class="p-4 sm:p-6">
     <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Add New User</h1>
-                <p class="text-gray-600 mt-1">Create a new user account with appropriate role and permissions.</p>
+    <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Add New User</h1>
+                <p class="text-gray-600 mt-1 text-sm sm:text-base">Create a new user account with appropriate role and permissions.</p>
             </div>
-            <div class="flex items-center space-x-3">
-                <a href="{{ route('admin.users.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex-shrink-0">
+                <a href="{{ route('admin.users.index') }}" class="w-full sm:w-auto bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors touch-target">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Back to Users
+                    <span class="hidden xs:inline">Back to Users</span>
+                    <span class="xs:hidden">Back</span>
                 </a>
             </div>
         </div>
@@ -24,17 +25,17 @@
 
     <!-- Form -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="p-6 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">User Information</h3>
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">User Information</h3>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
             <form method="POST" action="{{ route('admin.users.store') }}">
                 @csrf
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <!-- Personal Information -->
-                    <div class="space-y-6">
-                        <h4 class="text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Information</h4>
+                    <div class="space-y-4 sm:space-y-6">
+                        <h4 class="text-sm sm:text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">Personal Information</h4>
                         
                         <div class="form-group">
                             <label class="form-label">Full Name *</label>
@@ -78,8 +79,8 @@
                     </div>
 
                     <!-- Account Information -->
-                    <div class="space-y-6">
-                        <h4 class="text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">Account Information</h4>
+                    <div class="space-y-4 sm:space-y-6">
+                        <h4 class="text-sm sm:text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">Account Information</h4>
                         
                         <div class="form-group">
                             <label class="form-label">Role *</label>
@@ -132,9 +133,9 @@
                 </div>
 
                 <!-- Role Descriptions -->
-                <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h5 class="font-medium text-blue-900 mb-3">Role Descriptions:</h5>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h5 class="font-medium text-blue-900 mb-3 text-sm sm:text-base">Role Descriptions:</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                         <div>
                             <span class="font-medium text-blue-800">Admin:</span>
                             <span class="text-blue-700">Full system access, user management, all modules</span>
@@ -155,9 +156,9 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                    <a href="{{ route('admin.users.index') }}" class="btn-secondary">Cancel</a>
-                    <button type="submit" class="btn-primary">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end space-y-3 sm:space-y-0 sm:space-x-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+                    <a href="{{ route('admin.users.index') }}" class="btn-secondary w-full sm:w-auto text-center touch-target">Cancel</a>
+                    <button type="submit" class="btn-primary w-full sm:w-auto touch-target">
                         <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>

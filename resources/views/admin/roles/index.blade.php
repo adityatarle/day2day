@@ -3,50 +3,50 @@
 @section('title', 'Roles & Permissions')
 
 @section('content')
-<div class="p-6">
+<div class="p-4 sm:p-6">
     <!-- Page Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Roles & Permissions</h1>
-                <p class="text-gray-600 mt-1">Manage user roles and their associated permissions across the system.</p>
+    <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Roles & Permissions</h1>
+                <p class="text-gray-600 mt-1 text-sm sm:text-base">Manage user roles and their associated permissions across the system.</p>
             </div>
         </div>
     </div>
 
     <!-- Roles Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         @foreach($roles as $role)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover-lift">
-            <div class="p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300">
+            <div class="p-4 sm:p-6">
                 <!-- Role Header -->
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-12 h-12 rounded-lg flex items-center justify-center
-                            {{ $role->name === 'admin' ? 'bg-red-100' : 
-                               ($role->name === 'branch_manager' ? 'bg-blue-100' : 
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center space-x-3 min-w-0 flex-1">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0
+                            {{ $role->name === 'admin' ? 'bg-red-100' :
+                               ($role->name === 'branch_manager' ? 'bg-blue-100' :
                                ($role->name === 'cashier' ? 'bg-green-100' : 'bg-yellow-100')) }}">
                             @if($role->name === 'admin')
-                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                                 </svg>
                             @elseif($role->name === 'branch_manager')
-                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                 </svg>
                             @elseif($role->name === 'cashier')
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                                 </svg>
                             @else
-                                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             @endif
                         </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ ucfirst(str_replace('_', ' ', $role->name)) }}</h3>
-                            <p class="text-sm text-gray-500">{{ $role->users_count }} users</p>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 truncate">{{ ucfirst(str_replace('_', ' ', $role->name)) }}</h3>
+                            <p class="text-xs sm:text-sm text-gray-500">{{ $role->users_count }} users</p>
                         </div>
                     </div>
                 </div>
@@ -279,133 +279,133 @@
     </div>
 
     <!-- Permission Matrix -->
-    <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="p-6 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">Permission Matrix</h3>
+    <div class="mt-6 sm:mt-8 bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Permission Matrix</h3>
         </div>
         <div class="overflow-x-auto">
-            <table class="table w-full">
+            <table class="table w-full min-w-[600px]">
                 <thead>
                     <tr>
-                        <th class="text-left">Module / Feature</th>
-                        <th class="text-center">Admin</th>
-                        <th class="text-center">Branch Manager</th>
-                        <th class="text-center">Cashier</th>
-                        <th class="text-center">Delivery Boy</th>
+                        <th class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Module / Feature</th>
+                        <th class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                        <th class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Branch Manager</th>
+                        <th class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cashier</th>
+                        <th class="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Boy</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="font-medium">User Management</td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 font-medium text-sm">User Management</td>
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
                     </tr>
                     <tr class="bg-gray-50">
-                        <td class="font-medium">Inventory Management</td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 font-medium text-sm">Inventory Management</td>
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
                     </tr>
                     <tr>
-                        <td class="font-medium">Order Processing</td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 font-medium text-sm">Order Processing</td>
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </td>
                     </tr>
                     <tr class="bg-gray-50">
-                        <td class="font-medium">Vendor Management</td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 font-medium text-sm">Vendor Management</td>
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
                     </tr>
                     <tr>
-                        <td class="font-medium">Financial Reports</td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 font-medium text-sm">Financial Reports</td>
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
                         </td>
-                        <td class="text-center">
-                            <svg class="w-5 h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <td class="px-4 sm:px-6 py-3 text-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </td>
@@ -413,22 +413,22 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-4 bg-gray-50 border-t border-gray-200">
-            <div class="flex items-center justify-center space-x-6 text-xs">
-                <div class="flex items-center">
-                    <svg class="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="p-3 sm:p-4 bg-gray-50 border-t border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-center space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm">
+                <div class="flex items-center justify-center sm:justify-start">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Full Access
                 </div>
-                <div class="flex items-center">
-                    <svg class="w-4 h-4 text-yellow-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center justify-center sm:justify-start">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                     Limited Access
                 </div>
-                <div class="flex items-center">
-                    <svg class="w-4 h-4 text-red-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center justify-center sm:justify-start">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-red-500 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                     No Access

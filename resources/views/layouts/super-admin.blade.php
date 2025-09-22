@@ -115,14 +115,14 @@
     <!-- Sidebar -->
     <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white z-50 flex flex-col">
         <!-- Logo Section -->
-        <div class="p-6 text-center border-b border-white/20">
-            <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
-                <i class="fas fa-crown text-2xl text-white"></i>
+        <div class="p-4 sm:p-6 text-center border-b border-white/20">
+            <div class="logo-icon w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl flex items-center justify-center">
+                <i class="fas fa-crown text-xl sm:text-2xl text-white"></i>
             </div>
-            <h1 class="text-2xl font-bold text-white">FoodCo</h1>
-            <p class="text-sm text-amber-100">Super Admin Panel</p>
-            <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs super-admin-badge">
-                <i class="fas fa-shield-alt mr-1"></i>
+            <h1 class="text-xl sm:text-2xl font-bold text-white">FoodCo</h1>
+            <p class="text-xs sm:text-sm text-amber-100">Super Admin Panel</p>
+            <div class="mt-2 sm:mt-3 inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs super-admin-badge">
+                <i class="fas fa-shield-alt mr-1 text-xs"></i>
                 System Administrator
             </div>
         </div>
@@ -133,20 +133,20 @@
         </div>
         
         <!-- User Profile -->
-        <div class="mt-auto p-6 border-t border-white/20 bg-black/30">
+        <div class="mt-auto p-4 sm:p-6 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'SA', 0, 2)) }}</span>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                    <span class="text-white font-bold text-sm sm:text-base">{{ strtoupper(substr(auth()->user()->name ?? 'SA', 0, 2)) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'Super Admin' }}</p>
+                    <p class="text-xs sm:text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'Super Admin' }}</p>
                     <p class="text-xs text-amber-200">Super Administrator</p>
                 </div>
                 <div class="flex flex-col space-y-1">
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="text-xs text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-sign-out-alt"></i>
+                        <button type="submit" class="text-xs text-gray-300 hover:text-white transition-colors touch-target p-1">
+                            <i class="fas fa-sign-out-alt text-sm"></i>
                         </button>
                     </form>
                 </div>
@@ -155,53 +155,53 @@
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-80">
+    <div class="main-content ml-80 lg:ml-80">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-40">
-            <div class="flex items-center justify-between px-8 py-4">
+            <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
                 <!-- Mobile Menu Button -->
-                <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">
-                    <i class="fas fa-bars text-xl"></i>
+                <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors touch-target" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars text-lg sm:text-xl"></i>
                 </button>
                 
                 <!-- Page Title -->
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-crown text-white text-lg"></i>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                            <i class="fas fa-crown text-white text-sm sm:text-lg"></i>
                         </div>
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Super Admin Dashboard')</h1>
-                            <p class="text-sm text-gray-500">Complete system control and management</p>
+                        <div class="min-w-0 flex-1">
+                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">@yield('title', 'Super Admin Dashboard')</h1>
+                            <p class="text-xs sm:text-sm text-gray-500 truncate">Complete system control and management</p>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Right Actions -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <!-- System Status -->
-                    <div class="hidden sm:flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                    <div class="hidden sm:flex items-center space-x-2 bg-green-50 px-3 sm:px-4 py-2 rounded-lg border border-green-200">
                         <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span class="text-sm font-medium text-green-700">System Online</span>
+                        <span class="text-xs sm:text-sm font-medium text-green-700">System Online</span>
                     </div>
-                    
+
                     <!-- Notifications -->
-                    <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        <i class="fas fa-bell text-lg"></i>
+                    <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors touch-target">
+                        <i class="fas fa-bell text-base sm:text-lg"></i>
                         <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                     </button>
-                    
+
                     <!-- Current Date -->
-                    <div class="hidden sm:flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                        <i class="fas fa-calendar-day text-amber-500"></i>
-                        <span class="text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
+                    <div class="hidden sm:flex items-center space-x-2 bg-white px-3 sm:px-4 py-2 rounded-lg border shadow-sm">
+                        <i class="fas fa-calendar-day text-amber-500 text-sm"></i>
+                        <span class="text-xs sm:text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Page Content -->
-        <div class="p-8">
+        <div class="p-4 sm:p-6 lg:p-8">
             @yield('content')
         </div>
     </div>

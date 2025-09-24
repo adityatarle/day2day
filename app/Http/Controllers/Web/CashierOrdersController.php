@@ -185,15 +185,16 @@ class CashierOrdersController extends Controller
                 ->first();
 
             if ($orderItem && $item['quantity'] <= $orderItem->quantity) {
+                $subtotal = $orderItem->unit_price * $item['quantity'];
+                
                 $returnItem = $return->returnItems()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $orderItem->unit_price,
-                    'subtotal' => $orderItem->unit_price * $item['quantity'],
-                    'reason' => $item['reason'] ?? null,
+                    'order_item_id' => $orderItem->id,
+                    'returned_quantity' => $item['quantity'],
+                    'refund_amount' => $subtotal,
+                    'condition_notes' => $item['reason'] ?? null,
                 ]);
 
-                $totalAmount += $returnItem->subtotal;
+                $totalAmount += $subtotal;
             }
         }
 

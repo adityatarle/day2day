@@ -3,7 +3,7 @@
 @section('title', 'Product Orders')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
@@ -134,8 +134,8 @@
     <!-- Product Orders Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
     @if($productOrders->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="min-w-full table-auto border-collapse">
+        <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+            <table class="min-w-full table-auto border-collapse" style="min-width: 600px;">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Order Number</th>

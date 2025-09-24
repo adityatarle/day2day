@@ -408,9 +408,9 @@
             }
             
             .main-content {
-                margin-left: 0;
+                margin-left: 0 !important;
                 padding: 0.5rem;
-                width: 100%;
+                width: 100% !important;
             }
             
             .nav-link {
@@ -466,6 +466,19 @@
                 white-space: nowrap;
             }
             
+            /* Mobile-first table improvements */
+            .mobile-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .mobile-table table {
+                width: 100%;
+                min-width: 600px;
+            }
+            
             /* Enhanced Table wrapper for horizontal scroll */
             .table-container {
                 overflow-x: auto;
@@ -518,7 +531,19 @@
 
         @media (max-width: 640px) {
             .main-content {
-                padding: 0.5rem;
+                padding: 0.25rem;
+            }
+            
+            /* Force full width on mobile */
+            .container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            
+            /* Ensure proper mobile layout */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
             }
             
             .top-nav {
@@ -593,10 +618,10 @@
 </head>
 <body class="bg-gray-50">
     <!-- Mobile Overlay -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-1000 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white flex flex-col">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white flex flex-col z-50">
         <!-- Logo Section -->
         <div class="p-6 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
@@ -644,9 +669,9 @@
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-80">
+    <div class="main-content ml-0 lg:ml-80">
         <!-- Top Navigation -->
-        <div class="top-nav sticky top-0 z-50">
+        <div class="top-nav sticky top-0 z-30">
             <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
                 <!-- Mobile Menu Button -->
                 <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">

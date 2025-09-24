@@ -22,6 +22,7 @@
                 <div>
                     <div class="text-sm text-gray-500">Expected Cash</div>
                     <div class="text-lg font-semibold">₹{{ number_format($expectedCash, 2) }}</div>
+                    <a href="{{ route('pos.ledger.index') }}" class="text-xs text-blue-600 hover:underline">View cash give/take</a>
                 </div>
                 <div>
                     <div class="text-sm text-gray-500">Total Sales</div>

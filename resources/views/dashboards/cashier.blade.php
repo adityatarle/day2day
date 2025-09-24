@@ -35,6 +35,12 @@
                         <span class="text-sm font-medium">Session Inactive</span>
                     </div>
                     @endif
+                    @if(isset($previous_closing_balance))
+                    <div class="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                        <i class="fas fa-wallet text-cyan-200"></i>
+                        <span class="text-sm font-medium">Prev Close: ₹{{ number_format($previous_closing_balance ?? 0, 2) }}</span>
+                    </div>
+                    @endif
                     <div class="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                         <i class="fas fa-map-marker-alt text-cyan-200"></i>
                         <span class="text-sm font-medium">{{ Str::limit($branch_info['address'], 20) }}</span>
@@ -179,7 +185,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <h4 class="font-semibold text-gray-900 text-sm">{{ Str::limit($product['name'], 20) }}</h4>
-                            <p class="text-xs text-gray-600">{{ $product['sku'] }}</p>
+                            <p class="text-xs text-gray-600">{{ $product['code'] }}</p>
                         </div>
                         <div class="text-right">
                             <p class="font-semibold text-teal-600 text-sm">₹{{ number_format($product['price'], 2) }}</p>

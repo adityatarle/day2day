@@ -26,6 +26,7 @@ use App\Http\Controllers\Web\PosWebController;
 use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\BranchManagementController;
 use App\Http\Controllers\Web\PosSessionController;
+use App\Http\Controllers\Web\CashLedgerController;
 use App\Http\Controllers\Auth\OutletAuthController;
 use App\Http\Controllers\Day2Day\AdminDashboardController as Day2DayAdminController;
 use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchController;
@@ -409,6 +410,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/pos/session/current', [PosSessionController::class, 'current'])->name('pos.session.current');
         Route::get('/pos/session/history', [PosSessionController::class, 'history'])->name('pos.session.history');
         Route::post('/api/pos/session/start', [PosSessionController::class, 'start'])->name('api.pos.session.start');
+
+        // Cash ledger routes
+        Route::get('/pos/ledger', [CashLedgerController::class, 'index'])->name('pos.ledger.index');
+        Route::post('/pos/ledger', [CashLedgerController::class, 'store'])->name('pos.ledger.store');
     });
 
     // Outlet Management (Super Admin, Admin and Branch Manager)

@@ -1,40 +1,40 @@
 <!-- Super Admin / Admin Navigation -->
-<nav class="p-6 space-y-2">
+<nav class="p-4 sm:p-6 space-y-2">
     <!-- Main Menu -->
     <div class="pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Main Menu</p>
     </div>
 
     <!-- Dashboard -->
-    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.dashboard') ? 'admin.dashboard' : (\Illuminate\Support\Facades\Route::has('dashboard.admin') ? 'dashboard.admin' : 'dashboard.super_admin')) }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.dashboard') || request()->routeIs('dashboard.admin') || request()->routeIs('dashboard.super_admin') ? 'active text-white' : '' }}">
-        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-gauge"></i>
+    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.dashboard') ? 'admin.dashboard' : (\Illuminate\Support\Facades\Route::has('dashboard.admin') ? 'dashboard.admin' : 'dashboard.super_admin')) }}" class="nav-link flex items-center p-3 sm:p-3 rounded-xl text-gray-300 touch-target min-h-[48px] {{ request()->routeIs('admin.dashboard') || request()->routeIs('dashboard.admin') || request()->routeIs('dashboard.super_admin') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-gauge text-sm sm:text-base"></i>
         </div>
-        <span class="font-medium">Dashboard</span>
+        <span class="font-medium text-sm sm:text-base truncate">Dashboard</span>
     </a>
 
     <!-- Products -->
-    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.products.index') ? 'admin.products.index' : 'products.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.products.*') || request()->routeIs('products.*') ? 'active text-white' : '' }}">
-        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-apple-alt"></i>
+    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.products.index') ? 'admin.products.index' : 'products.index') }}" class="nav-link flex items-center p-3 sm:p-3 rounded-xl text-gray-300 touch-target min-h-[48px] {{ request()->routeIs('admin.products.*') || request()->routeIs('products.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-apple-alt text-sm sm:text-base"></i>
         </div>
-        <span class="font-medium">Products</span>
+        <span class="font-medium text-sm sm:text-base truncate">Products</span>
     </a>
 
     <!-- Orders -->
-    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.orders.index') ? 'admin.orders.index' : 'orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.orders.*') || (request()->routeIs('orders.*') && !request()->routeIs('orders.workflow.*')) ? 'active text-white' : '' }}">
-        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-shopping-cart"></i>
+    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.orders.index') ? 'admin.orders.index' : 'orders.index') }}" class="nav-link flex items-center p-3 sm:p-3 rounded-xl text-gray-300 touch-target min-h-[48px] {{ request()->routeIs('admin.orders.*') || (request()->routeIs('orders.*') && !request()->routeIs('orders.workflow.*')) ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-shopping-cart text-sm sm:text-base"></i>
         </div>
-        <span class="font-medium">Orders</span>
+        <span class="font-medium text-sm sm:text-base truncate">Orders</span>
     </a>
 
     <!-- Inventory -->
-    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.inventory.index') ? 'admin.inventory.index' : 'inventory.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.inventory.*') || request()->routeIs('inventory.*') ? 'active text-white' : '' }}">
-        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-warehouse"></i>
+    <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.inventory.index') ? 'admin.inventory.index' : 'inventory.index') }}" class="nav-link flex items-center p-3 sm:p-3 rounded-xl text-gray-300 touch-target min-h-[48px] {{ request()->routeIs('admin.inventory.*') || request()->routeIs('inventory.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-warehouse text-sm sm:text-base"></i>
         </div>
-        <span class="font-medium">Inventory</span>
+        <span class="font-medium text-sm sm:text-base truncate">Inventory</span>
     </a>
 
     <!-- Customers -->

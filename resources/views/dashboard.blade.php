@@ -48,106 +48,106 @@
     </div>
 
     <!-- Key Metrics Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 xl:gap-8">
         <!-- Total Revenue -->
-        <div class="metric-card rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 group cursor-pointer slide-in-up delay-100 interactive-card">
-            <div class="flex items-center justify-between">
-                <div class="space-y-2 sm:space-y-3 min-w-0 flex-1">
+        <div class="metric-card rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 group cursor-pointer slide-in-up delay-100 interactive-card">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
+                <div class="space-y-1.5 sm:space-y-2 min-w-0 flex-1 order-2 sm:order-1">
                     <div class="flex items-center space-x-2">
                         <p class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total Revenue</p>
                         <div class="w-2 h-2 bg-blue-500 rounded-full pulse-glow"></div>
                     </div>
-                    <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    <p class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                         ₹{{ number_format($stats['total_revenue'] ?? 0, 2) }}
                     </p>
-                    <div class="space-y-1">
+                    <div class="space-y-1 mobile-hide sm:block">
                         <p class="text-xs sm:text-sm text-gray-500">This Month: ₹{{ number_format($stats['monthly_revenue'] ?? 0, 2) }}</p>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="progress-bar rounded-full" style="width: 75%"></div>
                         </div>
                     </div>
                 </div>
-                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-blue flex-shrink-0">
-                    <i class="fas fa-rupee-sign text-white text-lg sm:text-xl lg:text-2xl"></i>
+                <div class="w-12 h-12 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-blue flex-shrink-0 order-1 sm:order-2 self-start sm:self-auto">
+                    <i class="fas fa-rupee-sign text-white text-base sm:text-lg lg:text-xl"></i>
                 </div>
             </div>
         </div>
 
         <!-- Total Orders -->
-        <div class="metric-card rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 group cursor-pointer slide-in-up delay-200 interactive-card">
-            <div class="flex items-center justify-between">
-                <div class="space-y-2 sm:space-y-3 min-w-0 flex-1">
+        <div class="metric-card rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 group cursor-pointer slide-in-up delay-200 interactive-card">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
+                <div class="space-y-1.5 sm:space-y-2 min-w-0 flex-1 order-2 sm:order-1">
                     <div class="flex items-center space-x-2">
                         <p class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total Orders</p>
                         <div class="w-2 h-2 bg-green-500 rounded-full pulse-glow"></div>
                     </div>
-                    <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                    <p class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
                         {{ number_format($stats['total_orders'] ?? 0) }}
                     </p>
-                    <div class="space-y-1">
+                    <div class="space-y-1 mobile-hide sm:block">
                         <p class="text-xs sm:text-sm text-gray-500">All time orders</p>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-gradient-to-r from-green-400 to-emerald-500 rounded-full h-2" style="width: 85%"></div>
                         </div>
                     </div>
                 </div>
-                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-green flex-shrink-0">
-                    <i class="fas fa-shopping-cart text-white text-lg sm:text-xl lg:text-2xl"></i>
+                <div class="w-12 h-12 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-green flex-shrink-0 order-1 sm:order-2 self-start sm:self-auto">
+                    <i class="fas fa-shopping-cart text-white text-base sm:text-lg lg:text-xl"></i>
                 </div>
             </div>
         </div>
 
         <!-- Total Products -->
-        <div class="metric-card rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 group cursor-pointer slide-in-up delay-300 interactive-card">
-            <div class="flex items-center justify-between">
-                <div class="space-y-2 sm:space-y-3 min-w-0 flex-1">
+        <div class="metric-card rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 group cursor-pointer slide-in-up delay-300 interactive-card">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
+                <div class="space-y-1.5 sm:space-y-2 min-w-0 flex-1 order-2 sm:order-1">
                     <div class="flex items-center space-x-2">
                         <p class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total Products</p>
                         <div class="w-2 h-2 bg-purple-500 rounded-full pulse-glow"></div>
                     </div>
-                    <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
+                    <p class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
                         {{ number_format($stats['total_products'] ?? 0) }}
                     </p>
-                    <div class="space-y-1">
+                    <div class="space-y-1 mobile-hide sm:block">
                         <p class="text-xs sm:text-sm text-gray-500">Active products</p>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-gradient-to-r from-purple-400 to-violet-500 rounded-full h-2" style="width: 92%"></div>
                         </div>
                     </div>
                 </div>
-                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-purple flex-shrink-0">
-                    <i class="fas fa-box text-white text-lg sm:text-xl lg:text-2xl"></i>
+                <div class="w-12 h-12 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-purple flex-shrink-0 order-1 sm:order-2 self-start sm:self-auto">
+                    <i class="fas fa-box text-white text-base sm:text-lg lg:text-xl"></i>
                 </div>
             </div>
         </div>
 
         <!-- Total Customers -->
-        <div class="metric-card rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 group cursor-pointer slide-in-up delay-400 interactive-card">
-            <div class="flex items-center justify-between">
-                <div class="space-y-2 sm:space-y-3 min-w-0 flex-1">
+        <div class="metric-card rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 group cursor-pointer slide-in-up delay-400 interactive-card">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
+                <div class="space-y-1.5 sm:space-y-2 min-w-0 flex-1 order-2 sm:order-1">
                     <div class="flex items-center space-x-2">
                         <p class="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total Customers</p>
                         <div class="w-2 h-2 bg-orange-500 rounded-full pulse-glow"></div>
                     </div>
-                    <p class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                    <p class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
                         {{ number_format($stats['total_customers'] ?? 0) }}
                     </p>
-                    <div class="space-y-1">
+                    <div class="space-y-1 mobile-hide sm:block">
                         <p class="text-xs sm:text-sm text-gray-500">Registered customers</p>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-gradient-to-r from-orange-400 to-red-500 rounded-full h-2" style="width: 68%"></div>
                         </div>
                     </div>
                 </div>
-                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-orange flex-shrink-0">
-                    <i class="fas fa-users text-white text-lg sm:text-xl lg:text-2xl"></i>
+                <div class="w-12 h-12 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl sm:rounded-2xl flex items-center justify-center icon-bounce group-hover:glow-orange flex-shrink-0 order-1 sm:order-2 self-start sm:self-auto">
+                    <i class="fas fa-users text-white text-base sm:text-lg lg:text-xl"></i>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Secondary Metrics -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         <!-- Branches -->
         <div class="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 group hover:shadow-modern-lg transition-all duration-300">
             <div class="flex items-center justify-between">
@@ -207,7 +207,7 @@
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         <!-- Recent Orders -->
         <div class="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-modern-lg border border-gray-200/50 overflow-hidden">
             <div class="p-4 sm:p-6 border-b border-gray-200/50 bg-gradient-to-r from-gray-50 to-blue-50">
@@ -433,42 +433,42 @@
             <h3 class="text-2xl font-bold text-gray-900">Quick Actions</h3>
         </div>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <a href="{{ route('products.create') }}" class="group flex flex-col items-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl hover:shadow-xl transition-all duration-300 border border-blue-100 hover:border-blue-300 card-3d">
-                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 glow-blue">
-                    <i class="fas fa-plus text-white text-2xl"></i>
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <a href="{{ route('products.create') }}" class="group flex flex-col items-center p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl hover:shadow-xl transition-all duration-300 border border-blue-100 hover:border-blue-300 card-3d touch-target min-h-[120px] sm:min-h-[140px]">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300 glow-blue">
+                    <i class="fas fa-plus text-white text-lg sm:text-xl lg:text-2xl"></i>
                 </div>
-                <span class="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Add Product</span>
-                <span class="text-xs text-gray-500 mt-1 text-center">Create new inventory item</span>
+                <span class="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-center">Add Product</span>
+                <span class="text-xs text-gray-500 mt-1 text-center mobile-hide sm:block">Create new inventory item</span>
             </a>
             
-            <a href="{{ route('orders.create') }}" class="group flex flex-col items-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl hover:shadow-xl transition-all duration-300 border border-green-100 hover:border-green-300 card-3d">
-                <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 glow-green">
-                    <i class="fas fa-shopping-cart text-white text-2xl"></i>
+            <a href="{{ route('orders.create') }}" class="group flex flex-col items-center p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl hover:shadow-xl transition-all duration-300 border border-green-100 hover:border-green-300 card-3d touch-target min-h-[120px] sm:min-h-[140px]">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300 glow-green">
+                    <i class="fas fa-shopping-cart text-white text-lg sm:text-xl lg:text-2xl"></i>
                 </div>
-                <span class="text-sm font-bold text-gray-900 group-hover:text-green-600 transition-colors">New Order</span>
-                <span class="text-xs text-gray-500 mt-1 text-center">Process customer sale</span>
+                <span class="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-green-600 transition-colors text-center">New Order</span>
+                <span class="text-xs text-gray-500 mt-1 text-center mobile-hide sm:block">Process customer sale</span>
             </a>
             
-            <a href="{{ route('customers.create') }}" class="group flex flex-col items-center p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl hover:shadow-xl transition-all duration-300 border border-purple-100 hover:border-purple-300 card-3d">
-                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 glow-purple">
-                    <i class="fas fa-user-plus text-white text-2xl"></i>
+            <a href="{{ route('customers.create') }}" class="group flex flex-col items-center p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl sm:rounded-2xl hover:shadow-xl transition-all duration-300 border border-purple-100 hover:border-purple-300 card-3d touch-target min-h-[120px] sm:min-h-[140px]">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300 glow-purple">
+                    <i class="fas fa-user-plus text-white text-lg sm:text-xl lg:text-2xl"></i>
                 </div>
-                <span class="text-sm font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Add Customer</span>
-                <span class="text-xs text-gray-500 mt-1 text-center">Register new client</span>
+                <span class="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-purple-600 transition-colors text-center">Add Customer</span>
+                <span class="text-xs text-gray-500 mt-1 text-center mobile-hide sm:block">Register new client</span>
             </a>
             
-            <a href="{{ route('vendors.create') }}" class="group flex flex-col items-center p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl hover:shadow-xl transition-all duration-300 border border-orange-100 hover:border-orange-300 card-3d">
-                <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 glow-orange">
-                    <i class="fas fa-building text-white text-2xl"></i>
+            <a href="{{ route('vendors.create') }}" class="group flex flex-col items-center p-3 sm:p-4 lg:p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl sm:rounded-2xl hover:shadow-xl transition-all duration-300 border border-orange-100 hover:border-orange-300 card-3d touch-target min-h-[120px] sm:min-h-[140px]">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl sm:rounded-2xl flex items-center justify-center mb-2 sm:mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300 glow-orange">
+                    <i class="fas fa-building text-white text-lg sm:text-xl lg:text-2xl"></i>
                 </div>
-                <span class="text-sm font-bold text-gray-900 group-hover:text-orange-600 transition-colors">Add Vendor</span>
-                <span class="text-xs text-gray-500 mt-1 text-center">Onboard supplier</span>
+                <span class="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-orange-600 transition-colors text-center">Add Vendor</span>
+                <span class="text-xs text-gray-500 mt-1 text-center mobile-hide sm:block">Onboard supplier</span>
             </a>
         </div>
         
         <!-- Additional Quick Actions Row -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6 lg:mt-8">
             <a href="{{ route('reports.index') }}" class="group flex items-center p-4 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl hover:shadow-lg transition-all duration-300 border border-cyan-100 hover:border-cyan-300">
                 <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                     <i class="fas fa-chart-bar text-white"></i>

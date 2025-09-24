@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Return extends Model
+class OrderReturn extends Model
 {
     use HasFactory;
+
+    protected $table = 'returns';
 
     protected $fillable = [
         'order_id',

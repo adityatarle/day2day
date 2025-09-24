@@ -16,9 +16,12 @@ class OrderReturn extends Model
     protected $fillable = [
         'order_id',
         'delivery_boy_id',
+        'created_by',
         'status',
         'return_reason',
+        'reason',
         'refund_amount',
+        'total_amount',
         'refund_method',
         'notes',
         'return_date',
@@ -26,6 +29,7 @@ class OrderReturn extends Model
 
     protected $casts = [
         'refund_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
         'return_date' => 'datetime',
     ];
 

@@ -257,7 +257,7 @@ class SystemMonitoringController extends Controller
         $branches = Branch::with(['orders' => function($q) {
             $q->where('status', 'completed')->whereDate('created_at', today());
         }])->get()->map(function($branch) {
-            $manager = $branch->manager();
+            $manager = $branch->manager;
             return [
                 'id' => $branch->id,
                 'name' => $branch->name,

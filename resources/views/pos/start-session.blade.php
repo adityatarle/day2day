@@ -43,7 +43,7 @@
                                id="opening_cash" 
                                step="0.01" 
                                min="0"
-                               value="{{ old('opening_cash', '0.00') }}"
+                               value="{{ old('opening_cash', isset($previousClosingCash) ? number_format($previousClosingCash, 2, '.', '') : '0.00') }}"
                                class="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('opening_cash') border-red-500 @enderror"
                                required>
                     </div>
@@ -51,6 +51,9 @@
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                     <p class="text-gray-500 text-sm mt-1">Enter the amount of cash in the register at the start of the session</p>
+                    @if(isset($previousClosingCash))
+                    <p class="text-gray-500 text-sm mt-1">Suggested from last closing: ₹{{ number_format($previousClosingCash, 2) }}</p>
+                    @endif
                 </div>
 
                 <div class="flex space-x-4">

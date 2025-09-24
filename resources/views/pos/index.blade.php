@@ -7,25 +7,25 @@
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">POS System</h1>
-                    <span class="ml-4 px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 sm:py-4 space-y-3 sm:space-y-0">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900">POS System</h1>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs sm:text-sm font-medium rounded-full self-start sm:self-auto">
                         {{ $branch->name }} - {{ $branch->city->name ?? 'No City' }}
                     </span>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     @if($currentSession)
                         <div class="flex items-center space-x-2">
                             <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                            <span class="text-sm font-medium text-gray-700">Session Active</span>
-                            <span class="text-sm text-gray-500">Terminal: {{ $currentSession->terminal_id }}</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-700">Session Active</span>
+                            <span class="text-xs sm:text-sm text-gray-500 hidden sm:inline">Terminal: {{ $currentSession->terminal_id }}</span>
                         </div>
-                        <a href="{{ route('pos.close-session') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                        <a href="{{ route('pos.close-session') }}" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 rounded-lg font-medium text-sm sm:text-base text-center">
                             Close Session
                         </a>
                     @else
-                        <a href="{{ route('pos.start-session') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">
+                        <a href="{{ route('pos.start-session') }}" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 sm:px-4 rounded-lg font-medium text-sm sm:text-base text-center">
                             Start Session
                         </a>
                     @endif
@@ -37,37 +37,38 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         @if($currentSession)
             <!-- POS Interface -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <!-- Left Panel - Product Selection -->
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border">
-                    <div class="p-6">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Products</h2>
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border order-2 lg:order-1">
+                    <div class="p-4 sm:p-6">
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Products</h2>
                         
                         <!-- Search and Filters -->
-                        <div class="mb-4 flex space-x-4">
+                        <div class="mb-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                             <input type="text" id="product-search" placeholder="Search products..." 
-                                   class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <select id="category-filter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                   class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <select id="category-filter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">All Categories</option>
                             </select>
                         </div>
 
+                        <!-- Category Tabs -->
+                        <div id="category-tabs" class="flex flex-wrap gap-2 mb-3"></div>
+
                         <!-- Product Grid -->
-                        <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            <!-- Products will be loaded here via JavaScript -->
-                        </div>
+                        <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
                     </div>
                 </div>
 
                 <!-- Right Panel - Cart and Checkout -->
-                <div class="bg-white rounded-xl shadow-sm border">
-                    <div class="p-6">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Cart</h2>
+                <div class="bg-white rounded-xl shadow-sm border order-1 lg:order-2">
+                    <div class="p-4 sm:p-6">
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Cart</h2>
                         
                         <!-- Customer Selection -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
-                            <select id="customer-select" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="mb-3 sm:mb-4">
+                            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Customer</label>
+                            <select id="customer-select" class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Walk-in Customer</option>
                                 @foreach($customers as $customer)
                                     <option value="{{ $customer->id }}">{{ $customer->name }} - {{ $customer->phone }}</option>
@@ -76,35 +77,35 @@
                         </div>
 
                         <!-- Cart Items -->
-                        <div id="cart-items" class="mb-4 max-h-64 overflow-y-auto">
+                        <div id="cart-items" class="mb-3 sm:mb-4 max-h-48 sm:max-h-64 overflow-y-auto">
                             <!-- Cart items will be populated here -->
                         </div>
 
                         <!-- Totals -->
-                        <div class="border-t pt-4 mb-4">
-                            <div class="flex justify-between text-sm mb-2">
+                        <div class="border-t pt-3 sm:pt-4 mb-3 sm:mb-4">
+                            <div class="flex justify-between text-xs sm:text-sm mb-1 sm:mb-2">
                                 <span>Subtotal:</span>
                                 <span id="subtotal">₹0.00</span>
                             </div>
-                            <div class="flex justify-between text-sm mb-2">
+                            <div class="flex justify-between text-xs sm:text-sm mb-1 sm:mb-2">
                                 <span>Discount:</span>
                                 <input type="number" id="discount-amount" value="0" min="0" step="0.01"
-                                       class="w-20 text-right border border-gray-300 rounded px-2 py-1 text-sm">
+                                       class="w-16 sm:w-20 text-right border border-gray-300 rounded px-1 sm:px-2 py-1 text-xs sm:text-sm">
                             </div>
-                            <div class="flex justify-between text-sm mb-2">
+                            <div class="flex justify-between text-xs sm:text-sm mb-1 sm:mb-2">
                                 <span>Tax (18%):</span>
                                 <span id="tax-amount">₹0.00</span>
                             </div>
-                            <div class="flex justify-between text-lg font-bold border-t pt-2">
+                            <div class="flex justify-between text-sm sm:text-lg font-bold border-t pt-1 sm:pt-2">
                                 <span>Total:</span>
                                 <span id="total-amount">₹0.00</span>
                             </div>
                         </div>
 
                         <!-- Payment Method -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                            <select id="payment-method" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="mb-3 sm:mb-4">
+                            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Payment Method</label>
+                            <select id="payment-method" class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
                                 <option value="upi">UPI</option>
@@ -113,26 +114,26 @@
                         </div>
 
                         <!-- Payment Details -->
-                        <div id="payment-details" class="mb-4 space-y-3">
+                        <div id="payment-details" class="mb-3 sm:mb-4 space-y-2 sm:space-y-3">
                             <div id="amount-received-wrapper">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Amount Received</label>
+                                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Amount Received</label>
                                 <input type="number" id="amount-received" value="0" min="0" step="0.01"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <div class="mt-1 text-sm text-gray-600">Change to return: <span id="change-amount">₹0.00</span></div>
+                                       class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <div class="mt-1 text-xs sm:text-sm text-gray-600">Change: <span id="change-amount">₹0.00</span></div>
                             </div>
                             <div id="reference-number-wrapper" class="hidden">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Reference Number (Txn ID / Last 4)</label>
-                                <input type="text" id="reference-number" placeholder="e.g. UPI txn id or card ref"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Reference Number</label>
+                                <input type="text" id="reference-number" placeholder="Txn ID or card ref"
+                                       class="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="space-y-2">
-                            <button id="process-sale" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg disabled:opacity-50" disabled>
+                            <button id="process-sale" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 sm:py-3 rounded-lg disabled:opacity-50 text-sm sm:text-base" disabled>
                                 Process Sale
                             </button>
-                            <button id="clear-cart" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 rounded-lg">
+                            <button id="clear-cart" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 rounded-lg text-sm sm:text-base">
                                 Clear Cart
                             </button>
                         </div>
@@ -141,24 +142,24 @@
             </div>
 
             <!-- Session Info -->
-            <div class="mt-6 bg-white rounded-xl shadow-sm border p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Session Information</h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-blue-600" id="session-sales">₹{{ number_format($currentSession->total_sales, 2) }}</div>
-                        <div class="text-sm text-gray-600">Total Sales</div>
+            <div class="mt-4 sm:mt-6 bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Session Information</h3>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div class="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                        <div class="text-lg sm:text-2xl font-bold text-blue-600" id="session-sales">₹{{ number_format($currentSession->total_sales, 2) }}</div>
+                        <div class="text-xs sm:text-sm text-gray-600">Total Sales</div>
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-green-600" id="session-transactions">{{ $currentSession->total_transactions }}</div>
-                        <div class="text-sm text-gray-600">Transactions</div>
+                    <div class="bg-green-50 p-3 sm:p-4 rounded-lg">
+                        <div class="text-lg sm:text-2xl font-bold text-green-600" id="session-transactions">{{ $currentSession->total_transactions }}</div>
+                        <div class="text-xs sm:text-sm text-gray-600">Transactions</div>
                     </div>
-                    <div class="bg-purple-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-purple-600">₹{{ number_format($currentSession->opening_cash, 2) }}</div>
-                        <div class="text-sm text-gray-600">Opening Cash</div>
+                    <div class="bg-purple-50 p-3 sm:p-4 rounded-lg">
+                        <div class="text-lg sm:text-2xl font-bold text-purple-600">₹{{ number_format($currentSession->opening_cash, 2) }}</div>
+                        <div class="text-xs sm:text-sm text-gray-600">Opening Cash</div>
                     </div>
-                    <div class="bg-yellow-50 p-4 rounded-lg">
-                        <div class="text-2xl font-bold text-yellow-600">{{ $currentSession->started_at->format('H:i') }}</div>
-                        <div class="text-sm text-gray-600">Session Started</div>
+                    <div class="bg-yellow-50 p-3 sm:p-4 rounded-lg">
+                        <div class="text-lg sm:text-2xl font-bold text-yellow-600">{{ $currentSession->started_at->format('H:i') }}</div>
+                        <div class="text-xs sm:text-sm text-gray-600">Session Started</div>
                     </div>
                 </div>
             </div>
@@ -184,6 +185,8 @@
 <script>
 let cart = [];
 let products = [];
+let categories = [];
+let activeCategory = '';
 
 // Load products on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -214,6 +217,8 @@ async function loadProducts() {
         const data = await response.json();
         if (data.success) {
             products = data.data;
+            categories = [...new Set(products.map(p => p.category))].filter(Boolean).sort();
+            renderCategoryTabs();
             displayProducts(products);
             populateCategories();
         }
@@ -235,11 +240,12 @@ function displayProducts(productsToShow) {
         productCard.innerHTML = `
             <div class="text-sm font-medium text-gray-900 mb-1">${product.name}</div>
             <div class="text-xs text-gray-500 mb-2">${product.code}</div>
+            <div class="text-xs text-gray-500 mb-1">Stock: ${parseFloat(product.current_stock).toFixed(2)}</div>
             <div class="text-lg font-bold text-green-600">₹${parseFloat(product.city_price || product.selling_price).toFixed(2)}</div>
-            ${!product.is_available_in_city ? '<div class="text-xs text-red-500 mt-1">Not available in this city</div>' : ''}
+            ${(!product.is_available_in_city || parseFloat(product.current_stock) <= 0) ? '<div class="text-xs text-red-500 mt-1">Out of stock</div>' : ''}
         `;
         
-        if (!product.is_available_in_city) {
+        if (!product.is_available_in_city || parseFloat(product.current_stock) <= 0) {
             productCard.className += ' opacity-50 cursor-not-allowed';
             productCard.onclick = null;
         }
@@ -351,7 +357,7 @@ function clearCart() {
 // Filter products
 function filterProducts() {
     const search = document.getElementById('product-search').value.toLowerCase();
-    const category = document.getElementById('category-filter').value;
+    const category = activeCategory || document.getElementById('category-filter').value;
     
     let filtered = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(search) || 
@@ -373,6 +379,32 @@ function populateCategories() {
         option.value = category;
         option.textContent = category;
         categoryFilter.appendChild(option);
+    });
+}
+
+// Render category tabs (modern POS switch)
+function renderCategoryTabs() {
+    const container = document.getElementById('category-tabs');
+    container.innerHTML = '';
+    const allBtn = document.createElement('button');
+    allBtn.className = 'px-3 py-1 rounded-full border text-sm ' + (activeCategory === '' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
+    allBtn.textContent = 'All';
+    allBtn.onclick = () => { activeCategory = ''; filterProducts(); highlightActiveTab(''); };
+    container.appendChild(allBtn);
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'px-3 py-1 rounded-full border text-sm ' + (activeCategory === cat ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
+        btn.textContent = cat;
+        btn.onclick = () => { activeCategory = cat; filterProducts(); highlightActiveTab(cat); };
+        container.appendChild(btn);
+    });
+}
+
+function highlightActiveTab(cat) {
+    const container = document.getElementById('category-tabs');
+    Array.from(container.children).forEach(btn => {
+        const isActive = (btn.textContent === (cat || 'All'));
+        btn.className = 'px-3 py-1 rounded-full border text-sm ' + (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
     });
 }
 
@@ -473,10 +505,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateSessionStats(e.session);
                 }
             })
-            .listen('.stock.updated', (e) => {
-                // Optionally refresh product list or decrement stock badges
-                // For now, just log
-                console.log('Stock updated', e);
+            .listen('.stock.updated', async (e) => {
+                try {
+                    await loadProducts();
+                    filterProducts();
+                } catch (err) {
+                    console.error('Failed to refresh products after stock update', err);
+                }
             });
     }
 });

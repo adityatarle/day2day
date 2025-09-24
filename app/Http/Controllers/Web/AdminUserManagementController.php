@@ -9,6 +9,7 @@ use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use App\Notifications\UserRegistered;
 
 class AdminUserManagementController extends Controller
 {
@@ -56,6 +57,14 @@ class AdminUserManagementController extends Controller
         $validated['password'] = Hash::make($validated['password']);
 
         $user = User::create($validated);
+
+        // Notify admins about new user registration
+        $admins = User::whereHas('role', function ($q) {
+            $q->whereIn('name', ['super_admin', 'admin']);
+        })->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new UserRegistered($user));
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully.');

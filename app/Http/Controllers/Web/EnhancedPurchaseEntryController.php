@@ -64,10 +64,15 @@ class EnhancedPurchaseEntryController extends Controller
 
         $purchaseOrders = $query->latest('created_at')->paginate(15);
 
-        // Calculate detailed statistics for each order
+        // Calculate detailed statistics for each order using normalized aggregates
         $purchaseOrders->getCollection()->transform(function ($order) {
+            $order->recalculateReceiptAggregates();
             $order->total_expected = $order->purchaseOrderItems->sum('quantity');
-            $order->total_received = $order->purchaseEntries->sum('total_received_quantity');
+            $order->total_received = (float) $order->purchaseOrderItems->sum(function ($item) {
+                $direct = (float) ($item->received_quantity ?? 0);
+                $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+                return max($direct, $fromEntries);
+            });
             $order->total_remaining = $order->total_expected - $order->total_received;
             $order->total_spoiled = $order->purchaseEntries->sum('total_spoiled_quantity');
             $order->total_damaged = $order->purchaseEntries->sum('total_damaged_quantity');
@@ -116,6 +121,9 @@ class EnhancedPurchaseEntryController extends Controller
             abort(403, 'Access denied.');
         }
 
+        // Ensure aggregates are up-to-date before display
+        $purchaseOrder->recalculateReceiptAggregates();
+
         $purchaseOrder->load([
             'vendor', 
             'user', 
@@ -129,10 +137,12 @@ class EnhancedPurchaseEntryController extends Controller
 
         // Calculate detailed tracking for each item
         $itemTracking = $purchaseOrder->purchaseOrderItems->map(function ($item) use ($purchaseOrder) {
-            $totalReceived = $purchaseOrder->purchaseEntries
+            $receivedFromEntries = $purchaseOrder->purchaseEntries
                 ->flatMap->purchaseEntryItems
                 ->where('product_id', $item->product_id)
                 ->sum('received_quantity');
+            $direct = (float) ($item->received_quantity ?? 0);
+            $totalReceived = max($direct, (float) $receivedFromEntries);
             
             $totalSpoiled = $purchaseOrder->purchaseEntries
                 ->flatMap->purchaseEntryItems
@@ -169,13 +179,25 @@ class EnhancedPurchaseEntryController extends Controller
         // Calculate overall order statistics
         $orderStats = [
             'total_expected' => $purchaseOrder->purchaseOrderItems->sum('quantity'),
-            'total_received' => $purchaseOrder->purchaseEntries->sum('total_received_quantity'),
-            'total_remaining' => $purchaseOrder->purchaseOrderItems->sum('quantity') - $purchaseOrder->purchaseEntries->sum('total_received_quantity'),
+            'total_received' => (float) $purchaseOrder->purchaseOrderItems->sum(function ($item) {
+                $direct = (float) ($item->received_quantity ?? 0);
+                $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+                return max($direct, $fromEntries);
+            }),
+            'total_remaining' => $purchaseOrder->purchaseOrderItems->sum('quantity') - (float) $purchaseOrder->purchaseOrderItems->sum(function ($item) {
+                $direct = (float) ($item->received_quantity ?? 0);
+                $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+                return max($direct, $fromEntries);
+            }),
             'total_spoiled' => $purchaseOrder->purchaseEntries->sum('total_spoiled_quantity'),
             'total_damaged' => $purchaseOrder->purchaseEntries->sum('total_damaged_quantity'),
             'total_usable' => $purchaseOrder->purchaseEntries->sum('total_usable_quantity'),
             'completion_percentage' => $purchaseOrder->purchaseOrderItems->sum('quantity') > 0 ? 
-                ($purchaseOrder->purchaseEntries->sum('total_received_quantity') / $purchaseOrder->purchaseOrderItems->sum('quantity')) * 100 : 0,
+                (((float) $purchaseOrder->purchaseOrderItems->sum(function ($item) {
+                    $direct = (float) ($item->received_quantity ?? 0);
+                    $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+                    return max($direct, $fromEntries);
+                })) / $purchaseOrder->purchaseOrderItems->sum('quantity')) * 100 : 0,
             'receipt_count' => $purchaseOrder->purchaseEntries->count(),
         ];
 
@@ -223,7 +245,6 @@ class EnhancedPurchaseEntryController extends Controller
             'delivery_person' => 'nullable|string|max:255',
             'delivery_vehicle' => 'nullable|string|max:255',
             'delivery_notes' => 'nullable|string',
-            'is_partial_receipt' => 'boolean',
             'items' => 'required|array',
             'items.*.item_id' => 'required|exists:purchase_order_items,id',
             'items.*.received_quantity' => 'required|numeric|min:0',
@@ -240,8 +261,67 @@ class EnhancedPurchaseEntryController extends Controller
             abort(403, 'Access denied.');
         }
 
+        // Pre-validate: ensure no item exceeds ordered quantity when combined with previous entries
+        foreach ($request->items as $itemData) {
+            $purchaseOrderItem = PurchaseOrderItem::findOrFail($itemData['item_id']);
+            if ($purchaseOrderItem->purchase_order_id !== $purchaseOrder->id) {
+                abort(422, 'Invalid item reference.');
+            }
+
+            $receivedQuantity = (float) $itemData['received_quantity'];
+            $spoiledQuantity = (float) ($itemData['spoiled_quantity'] ?? 0);
+            $damagedQuantity = (float) ($itemData['damaged_quantity'] ?? 0);
+
+            if ($spoiledQuantity + $damagedQuantity > $receivedQuantity) {
+                return back()->withInput()->withErrors(['items' => 'Spoiled + Damaged cannot exceed Received quantity for product ID ' . $purchaseOrderItem->product_id]);
+            }
+
+            $previouslyReceived = (float) PurchaseEntryItem::where('purchase_order_item_id', $purchaseOrderItem->id)
+                ->sum('received_quantity');
+            $ordered = (float) $purchaseOrderItem->quantity;
+            if ($previouslyReceived + $receivedQuantity > $ordered + 0.00001) {
+                return back()->withInput()->withErrors(['items' => 'Total received cannot exceed ordered quantity for product ' . ($purchaseOrderItem->product->name ?? ('#' . $purchaseOrderItem->product_id))]);
+            }
+        }
+
         DB::transaction(function () use ($request, $purchaseOrder, $user) {
-            // Create purchase entry
+            // Load purchase order items to check quantities
+            $purchaseOrder->load('purchaseOrderItems');
+            
+            // Calculate if this is a partial receipt by checking all items
+            $isPartialReceipt = false;
+            $allItemsData = [];
+            
+            // First pass: calculate total received across all entries including this one
+            foreach ($purchaseOrder->purchaseOrderItems as $orderItem) {
+                $previouslyReceived = (float) PurchaseEntryItem::where('purchase_order_item_id', $orderItem->id)
+                    ->sum('received_quantity');
+                    
+                $currentReceiving = 0;
+                foreach ($request->items as $itemData) {
+                    if ($itemData['item_id'] == $orderItem->id) {
+                        $currentReceiving = (float) $itemData['received_quantity'];
+                        break;
+                    }
+                }
+                
+                $totalReceived = $previouslyReceived + $currentReceiving;
+                $ordered = (float) $orderItem->quantity;
+                
+                // If any item has less than ordered quantity, it's partial
+                if ($totalReceived < $ordered - 0.00001) {
+                    $isPartialReceipt = true;
+                }
+                
+                $allItemsData[$orderItem->id] = [
+                    'ordered' => $ordered,
+                    'previously_received' => $previouslyReceived,
+                    'current_receiving' => $currentReceiving,
+                    'total_received' => $totalReceived
+                ];
+            }
+            
+            // Create purchase entry with automatically determined partial status
             $purchaseEntry = PurchaseEntry::create([
                 'entry_number' => PurchaseEntry::generateEntryNumber(),
                 'purchase_order_id' => $purchaseOrder->id,
@@ -253,7 +333,7 @@ class EnhancedPurchaseEntryController extends Controller
                 'delivery_person' => $request->delivery_person,
                 'delivery_vehicle' => $request->delivery_vehicle,
                 'delivery_notes' => $request->delivery_notes,
-                'is_partial_receipt' => $request->boolean('is_partial_receipt'),
+                'is_partial_receipt' => $isPartialReceipt,
                 'entry_status' => 'received',
             ]);
 
@@ -373,8 +453,8 @@ class EnhancedPurchaseEntryController extends Controller
                 'entry_status' => ($totalSpoiled > 0 || $totalDamaged > 0) ? 'discrepancy' : 'received',
             ]);
 
-            // Update purchase order receive status
-            $purchaseOrder->updateReceiveStatus();
+            // Update purchase order receive status and aggregates
+            $purchaseOrder->recalculateReceiptAggregates();
         });
 
         return redirect()->route('enhanced-purchase-entries.show', $purchaseOrder)
@@ -445,5 +525,233 @@ class EnhancedPurchaseEntryController extends Controller
             ($overallStats['total_loss'] / $overallStats['total_received']) * 100 : 0;
 
         return view('branch.enhanced-purchase-entries.report', compact('entries', 'overallStats'));
+    }
+
+    /**
+     * Edit a purchase entry (adjust quantities with validation).
+     */
+    public function editEntry(PurchaseEntry $purchaseEntry)
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('branch_manager') || $purchaseEntry->branch_id !== $user->branch_id) {
+            abort(403, 'Access denied.');
+        }
+
+        $purchaseEntry->load(['purchaseOrder.purchaseOrderItems', 'purchaseEntryItems.product']);
+
+        // Compute per-item maximum allowed received considering other entries
+        $limits = [];
+        foreach ($purchaseEntry->purchaseEntryItems as $entryItem) {
+            $poItemId = $entryItem->purchase_order_item_id;
+            $poItem = $purchaseEntry->purchaseOrder->purchaseOrderItems->firstWhere('id', $poItemId);
+            $otherReceived = (float) PurchaseEntryItem::where('purchase_order_item_id', $poItemId)
+                ->where('purchase_entry_id', '!=', $purchaseEntry->id)
+                ->sum('received_quantity');
+            $limits[$entryItem->id] = [
+                'max_received' => max(0, (float) $poItem->quantity - $otherReceived) + (float) $entryItem->received_quantity,
+            ];
+        }
+
+        return view('branch.enhanced-purchase-entries.edit-entry', compact('purchaseEntry', 'limits'));
+    }
+
+    /**
+     * Update a purchase entry after editing quantities.
+     */
+    public function updateEntry(Request $request, PurchaseEntry $purchaseEntry)
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('branch_manager') || $purchaseEntry->branch_id !== $user->branch_id) {
+            abort(403, 'Access denied.');
+        }
+
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:purchase_entry_items,id',
+            'items.*.received_quantity' => 'required|numeric|min:0',
+            'items.*.spoiled_quantity' => 'nullable|numeric|min:0',
+            'items.*.damaged_quantity' => 'nullable|numeric|min:0',
+            'items.*.quality_notes' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $purchaseEntry, $user) {
+            $purchaseEntry->load(['purchaseOrder.purchaseOrderItems', 'purchaseEntryItems']);
+
+            // Validate against ordered quantities
+            foreach ($request->items as $data) {
+                $entryItem = $purchaseEntry->purchaseEntryItems->firstWhere('id', $data['id']);
+                if (!$entryItem) {
+                    abort(422, 'Invalid entry item.');
+                }
+                $poItemId = $entryItem->purchase_order_item_id;
+                $poItem = $purchaseEntry->purchaseOrder->purchaseOrderItems->firstWhere('id', $poItemId);
+                $newReceived = (float) $data['received_quantity'];
+                $spoiled = (float) ($data['spoiled_quantity'] ?? 0);
+                $damaged = (float) ($data['damaged_quantity'] ?? 0);
+                if ($spoiled + $damaged > $newReceived) {
+                    abort(422, 'Spoiled + Damaged cannot exceed Received for product ' . ($entryItem->product->name ?? '#'.$entryItem->product_id));
+                }
+                $otherReceived = (float) PurchaseEntryItem::where('purchase_order_item_id', $poItemId)
+                    ->where('purchase_entry_id', '!=', $purchaseEntry->id)
+                    ->sum('received_quantity');
+                if ($otherReceived + $newReceived > (float) $poItem->quantity + 0.00001) {
+                    abort(422, 'Total received cannot exceed ordered for product ' . ($entryItem->product->name ?? '#'.$entryItem->product_id));
+                }
+            }
+
+            // Remove previous stock movements for this entry to re-create cleanly
+            StockMovement::where('reference_type', 'purchase_entry')
+                ->where('reference_id', $purchaseEntry->id)
+                ->delete();
+            StockMovement::where('reference_type', 'purchase_entry_spoilage')
+                ->where('reference_id', $purchaseEntry->id)
+                ->delete();
+            StockMovement::where('reference_type', 'purchase_entry_damage')
+                ->where('reference_id', $purchaseEntry->id)
+                ->delete();
+
+            $totalExpected = 0;
+            $totalReceived = 0;
+            $totalSpoiled = 0;
+            $totalDamaged = 0;
+            $totalUsable = 0;
+            $totalExpectedWeight = 0;
+            $totalActualWeight = 0;
+
+            foreach ($request->items as $data) {
+                $entryItem = $purchaseEntry->purchaseEntryItems->firstWhere('id', $data['id']);
+                $poItem = $purchaseEntry->purchaseOrder->purchaseOrderItems->firstWhere('id', $entryItem->purchase_order_item_id);
+
+                $newReceived = (float) $data['received_quantity'];
+                $spoiled = (float) ($data['spoiled_quantity'] ?? 0);
+                $damaged = (float) ($data['damaged_quantity'] ?? 0);
+                $usable = $newReceived - $spoiled - $damaged;
+                $oldUsable = (float) $entryItem->usable_quantity;
+
+                $entryItem->update([
+                    'received_quantity' => $newReceived,
+                    'spoiled_quantity' => $spoiled,
+                    'damaged_quantity' => $damaged,
+                    'usable_quantity' => $usable,
+                    'quality_notes' => $data['quality_notes'] ?? $entryItem->quality_notes,
+                    'total_price' => $usable * (float) $entryItem->unit_price,
+                ]);
+
+                // Adjust product branch stock based on delta usable
+                $deltaUsable = $usable - $oldUsable;
+                if (abs($deltaUsable) > 0.00001) {
+                    $product = $entryItem->product;
+                    $currentStock = $product->getCurrentStock($purchaseEntry->branch_id);
+                    $product->updateBranchStock($purchaseEntry->branch_id, $currentStock + $deltaUsable);
+                }
+
+                // Totals
+                $totalExpected += (float) $poItem->quantity;
+                $totalReceived += $newReceived;
+                $totalSpoiled += $spoiled;
+                $totalDamaged += $damaged;
+                $totalUsable += $usable;
+                $totalExpectedWeight += (float) ($entryItem->expected_weight ?? 0);
+                $totalActualWeight += (float) ($entryItem->actual_weight ?? 0);
+
+                // Recreate stock movements
+                if ($usable > 0) {
+                    StockMovement::create([
+                        'product_id' => $entryItem->product_id,
+                        'branch_id' => $purchaseEntry->branch_id,
+                        'type' => 'purchase',
+                        'quantity' => $usable,
+                        'unit_price' => $entryItem->unit_price,
+                        'reference_type' => 'purchase_entry',
+                        'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
+                        'notes' => "Purchase Entry Updated: {$purchaseEntry->entry_number}",
+                    ]);
+                }
+                if ($spoiled > 0) {
+                    StockMovement::create([
+                        'product_id' => $entryItem->product_id,
+                        'branch_id' => $purchaseEntry->branch_id,
+                        'type' => 'loss',
+                        'quantity' => $spoiled,
+                        'unit_price' => $entryItem->unit_price,
+                        'reference_type' => 'purchase_entry_spoilage',
+                        'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
+                        'notes' => "Purchase Entry Spoilage Updated: {$purchaseEntry->entry_number}",
+                    ]);
+                }
+                if ($damaged > 0) {
+                    StockMovement::create([
+                        'product_id' => $entryItem->product_id,
+                        'branch_id' => $purchaseEntry->branch_id,
+                        'type' => 'loss',
+                        'quantity' => $damaged,
+                        'unit_price' => $entryItem->unit_price,
+                        'reference_type' => 'purchase_entry_damage',
+                        'reference_id' => $purchaseEntry->id,
+                        'user_id' => $user->id,
+                        'notes' => "Purchase Entry Damage Updated: {$purchaseEntry->entry_number}",
+                    ]);
+                }
+            }
+
+            // Update entry totals
+            $purchaseEntry->update([
+                'total_expected_quantity' => $totalExpected,
+                'total_received_quantity' => $totalReceived,
+                'total_spoiled_quantity' => $totalSpoiled,
+                'total_damaged_quantity' => $totalDamaged,
+                'total_usable_quantity' => $totalUsable,
+                'total_expected_weight' => $totalExpectedWeight ?: null,
+                'total_actual_weight' => $totalActualWeight ?: null,
+                'total_weight_difference' => ($totalActualWeight ?: 0) - ($totalExpectedWeight ?: 0),
+                'entry_status' => ($totalSpoiled > 0 || $totalDamaged > 0) ? 'discrepancy' : 'received',
+            ]);
+
+            // Recalculate order aggregates
+            optional($purchaseEntry->purchaseOrder)->recalculateReceiptAggregates();
+        });
+
+        return redirect()->route('enhanced-purchase-entries.entry', $purchaseEntry)
+            ->with('success', 'Purchase entry updated successfully!');
+    }
+
+    /**
+     * Delete a purchase entry and roll back aggregates and stock movements.
+     */
+    public function destroyEntry(PurchaseEntry $purchaseEntry)
+    {
+        $user = Auth::user();
+        if (!$user->hasRole('branch_manager') || $purchaseEntry->branch_id !== $user->branch_id) {
+            abort(403, 'Access denied.');
+        }
+
+        DB::transaction(function () use ($purchaseEntry) {
+            // Delete related stock movements for this entry
+            StockMovement::whereIn('reference_type', ['purchase_entry', 'purchase_entry_spoilage', 'purchase_entry_damage'])
+                ->where('reference_id', $purchaseEntry->id)
+                ->delete();
+
+            // Before delete, rollback branch stock by subtracting usable quantities
+            $purchaseEntry->loadMissing('purchaseEntryItems.product');
+            foreach ($purchaseEntry->purchaseEntryItems as $entryItem) {
+                $usable = (float) $entryItem->usable_quantity;
+                if ($usable > 0) {
+                    $product = $entryItem->product;
+                    $currentStock = $product->getCurrentStock($purchaseEntry->branch_id);
+                    $product->updateBranchStock($purchaseEntry->branch_id, $currentStock - $usable);
+                }
+            }
+
+            $order = $purchaseEntry->purchaseOrder()->first();
+            $purchaseEntry->delete();
+            if ($order) {
+                $order->recalculateReceiptAggregates();
+            }
+        });
+
+        return redirect()->route('enhanced-purchase-entries.index')
+            ->with('success', 'Purchase entry deleted. Aggregates updated.');
     }
 }

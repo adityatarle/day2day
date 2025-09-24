@@ -95,7 +95,7 @@
                     </form>
                 @endif
                 
-                @if(!$purchaseOrder->isReceived() && !$purchaseOrder->isCancelled())
+                @if($purchaseOrder->canBeCancelled())
                     <form method="POST" action="{{ route('purchase-orders.cancel', $purchaseOrder) }}" class="inline">
                         @csrf
                         <button type="submit" onclick="return confirm('Are you sure you want to cancel this purchase order?')" 
@@ -300,6 +300,64 @@
             </table>
         </div>
     </div>
+
+    <!-- Purchase Entries Section -->
+    @if($purchaseOrder->purchaseEntries->count() > 0)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">Purchase Entries (Receipt History)</h2>
+        
+        <div class="overflow-x-auto">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Entry Number</th>
+                        <th>Entry Date</th>
+                        <th>Received By</th>
+                        <th>Received Qty</th>
+                        <th>Spoiled/Damaged</th>
+                        <th>Usable Qty</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($purchaseOrder->purchaseEntries as $entry)
+                        <tr>
+                            <td class="font-medium">{{ $entry->entry_number }}</td>
+                            <td>{{ $entry->entry_date->format('M d, Y') }}</td>
+                            <td>{{ $entry->user->name }}</td>
+                            <td class="font-medium">{{ number_format($entry->total_received_quantity, 2) }}</td>
+                            <td class="{{ ($entry->total_spoiled_quantity + $entry->total_damaged_quantity) > 0 ? 'text-red-600' : 'text-gray-500' }}">
+                                {{ number_format($entry->total_spoiled_quantity + $entry->total_damaged_quantity, 2) }}
+                            </td>
+                            <td class="font-medium text-green-600">{{ number_format($entry->total_usable_quantity, 2) }}</td>
+                            <td>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $entry->getStatusBadgeClass() }}">
+                                    {{ $entry->getStatusDisplayText() }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ route('branch.enhanced-purchase-entries.show', $entry) }}" 
+                                   class="text-blue-600 hover:text-blue-800 font-medium">
+                                    View Details →
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr class="border-t-2 border-gray-300">
+                        <td colspan="3" class="text-right font-semibold">Total:</td>
+                        <td class="font-bold">{{ number_format($purchaseOrder->purchaseEntries->sum('total_received_quantity'), 2) }}</td>
+                        <td class="font-bold text-red-600">{{ number_format($purchaseOrder->purchaseEntries->sum('total_spoiled_quantity') + $purchaseOrder->purchaseEntries->sum('total_damaged_quantity'), 2) }}</td>
+                        <td class="font-bold text-green-600">{{ number_format($purchaseOrder->purchaseEntries->sum('total_usable_quantity'), 2) }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    @endif
 
     <!-- Status Timeline -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">

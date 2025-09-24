@@ -8,6 +8,7 @@ use App\Models\City;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Notifications\ManagerAssigned;
 
 class AdminBranchManagementController extends Controller
 {
@@ -196,13 +197,24 @@ class AdminBranchManagementController extends Controller
         }
 
         // Remove current manager from branch
-        $currentManager = $branch->manager();
+        $currentManager = $branch->manager;
         if ($currentManager) {
             $currentManager->update(['branch_id' => null]);
         }
 
         // Assign new manager
         $manager->update(['branch_id' => $branch->id]);
+
+        // Notify super admins and admins
+        $admins = User::whereHas('role', function ($q) {
+            $q->whereIn('name', ['super_admin', 'admin']);
+        })->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new ManagerAssigned($branch, $manager));
+        }
+
+        // Notify the manager
+        $manager->notify(new ManagerAssigned($branch, $manager));
 
         return response()->json([
             'success' => true,

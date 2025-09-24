@@ -23,10 +23,6 @@
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Inventory</p>
     </div>
     <div class="space-y-1">
-        <a href="{{ route('inventory.index') }}" class="nav-link flex items-center p-2.5 rounded-lg text-gray-300 ml-12 {{ request()->routeIs('inventory.index') ? 'active text-white' : '' }}">
-            <i class="fas fa-clipboard-list mr-3"></i>
-            <span class="text-sm">Overview</span>
-        </a>
         <a href="{{ route('inventory.addStockForm') }}" class="nav-link flex items-center p-2.5 rounded-lg text-gray-300 ml-12 {{ request()->routeIs('inventory.addStockForm') ? 'active text-white' : '' }}">
             <i class="fas fa-circle-arrow-down mr-3"></i>
             <span class="text-sm">Add Stock (Inward)</span>
@@ -85,6 +81,17 @@
         <span class="font-medium">Purchase Entries</span>
     </a>
 
+    <!-- Local Purchases -->
+    <div class="pt-4 pb-2">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Local Purchases</p>
+    </div>
+    <a href="{{ route('branch.local-purchases.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.local-purchases.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-shopping-basket"></i>
+        </div>
+        <span class="font-medium">Local Purchases</span>
+    </a>
+
     <!-- POS -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">POS</p>
@@ -94,6 +101,17 @@
             <i class="fas fa-cash-register"></i>
         </div>
         <span class="font-medium">POS</span>
+    </a>
+
+    <!-- Staff Management -->
+    <div class="pt-4 pb-2">
+        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Staff Management</p>
+    </div>
+    <a href="{{ route('branch.staff.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.staff.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-users"></i>
+        </div>
+        <span class="font-medium">Manage Staff</span>
     </a>
 
     <!-- Reports (Optional) -->

@@ -135,4 +135,22 @@ class PurchaseEntryItem extends Model
         
         return 'none';
     }
+
+    protected static function booted(): void
+    {
+        // Recalculate parent order aggregates when entry items change
+        $recalc = function (self $item) {
+            // Force fresh load to ensure we have the latest data
+            $entry = PurchaseEntry::find($item->purchase_entry_id);
+            if ($entry && $entry->purchase_order_id) {
+                $order = PurchaseOrder::find($entry->purchase_order_id);
+                if ($order) {
+                    $order->recalculateReceiptAggregates();
+                }
+            }
+        };
+
+        static::saved($recalc);
+        static::deleted($recalc);
+    }
 }

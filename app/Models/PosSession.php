@@ -63,6 +63,14 @@ class PosSession extends Model
     }
 
     /**
+     * Get the cash ledger entries associated with this session.
+     */
+    public function cashLedgerEntries(): HasMany
+    {
+        return $this->hasMany(CashLedgerEntry::class);
+    }
+
+    /**
      * Scope to get only active sessions.
      */
     public function scopeActive($query)
@@ -87,7 +95,10 @@ class PosSession extends Model
             ->where('payment_method', 'cash')
             ->sum('total_amount');
 
-        return $this->opening_cash + $cashSales;
+        $cashTakes = $this->cashLedgerEntries()->where('entry_type', 'take')->sum('amount');
+        $cashGives = $this->cashLedgerEntries()->where('entry_type', 'give')->sum('amount');
+
+        return $this->opening_cash + $cashSales + $cashTakes - $cashGives;
     }
 
     /**

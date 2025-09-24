@@ -7,16 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Return extends Model
+class OrderReturn extends Model
 {
     use HasFactory;
+
+    protected $table = 'returns';
 
     protected $fillable = [
         'order_id',
         'delivery_boy_id',
+        'created_by',
         'status',
         'return_reason',
+        'reason',
         'refund_amount',
+        'total_amount',
         'refund_method',
         'notes',
         'return_date',
@@ -24,6 +29,7 @@ class Return extends Model
 
     protected $casts = [
         'refund_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
         'return_date' => 'datetime',
     ];
 

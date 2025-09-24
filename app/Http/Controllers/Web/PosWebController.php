@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Events\BranchSaleProcessed;
 use App\Events\BranchStockUpdated;
+use App\Notifications\OrderCreated;
 
 class PosWebController extends Controller
 {
@@ -61,7 +62,16 @@ class PosWebController extends Controller
                 ->with('info', 'You already have an active POS session');
         }
 
-        return view('pos.start-session', compact('branch'));
+        // Prefill opening cash with previous day's closing cash if available
+        $previousClosingCash = PosSession::where('user_id', $user->id)
+            ->where('status', 'closed')
+            ->orderBy('ended_at', 'desc')
+            ->value('closing_cash');
+
+        return view('pos.start-session', [
+            'branch' => $branch,
+            'previousClosingCash' => $previousClosingCash,
+        ]);
     }
 
     /**
@@ -201,21 +211,20 @@ class PosWebController extends Controller
         
         // Get available products for this branch
         $products = Product::whereHas('branches', function($query) use ($branch) {
-            $query->where('branch_id', $branch->id)
-                  ->where('current_stock', '>', 0);
+            $query->where('branch_id', $branch->id);
         })
         ->where('is_active', true)
         ->with(['branches' => function($query) use ($branch) {
             $query->where('branch_id', $branch->id);
-        }, 'category'])
+        }])
         ->get()
         ->map(function($product) use ($branch) {
             $branchProduct = $product->branches->first();
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'code' => $product->sku,
-                'category' => $product->category->name ?? 'Uncategorized',
+                'code' => $product->code,
+                'category' => $product->category ?? 'Uncategorized',
                 'selling_price' => $branchProduct->selling_price ?? $product->selling_price,
                 'current_stock' => $branchProduct->current_stock ?? 0,
                 'city_price' => $branchProduct->selling_price ?? $product->selling_price,
@@ -239,21 +248,20 @@ class PosWebController extends Controller
         }
 
         $products = Product::whereHas('branches', function($query) use ($branch) {
-            $query->where('branch_id', $branch->id)
-                  ->where('current_stock', '>', 0);
+            $query->where('branch_id', $branch->id);
         })
         ->where('is_active', true)
         ->with(['branches' => function($query) use ($branch) {
             $query->where('branch_id', $branch->id);
-        }, 'category'])
+        }])
         ->get()
         ->map(function($product) use ($branch) {
             $branchProduct = $product->branches->first();
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'code' => $product->sku,
-                'category' => $product->category->name ?? 'Uncategorized',
+                'code' => $product->code,
+                'category' => $product->category ?? 'Uncategorized',
                 'selling_price' => $branchProduct->selling_price ?? $product->selling_price,
                 'current_stock' => $branchProduct->current_stock ?? 0,
                 'city_price' => $branchProduct->selling_price ?? $product->selling_price,
@@ -369,6 +377,16 @@ class PosWebController extends Controller
                 'total_transactions' => $freshSession->total_transactions,
             ]));
             event(new BranchStockUpdated($freshSession->branch_id, $stockChanges));
+
+            // Notify branch managers and cashiers of new order
+            $recipients = \App\Models\User::where('branch_id', $freshSession->branch_id)
+                ->whereHas('role', function ($q) {
+                    $q->whereIn('name', ['branch_manager', 'cashier']);
+                })
+                ->get();
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new OrderCreated($order));
+            }
 
             return response()->json([
                 'success' => true, 

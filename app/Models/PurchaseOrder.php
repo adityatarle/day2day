@@ -196,6 +196,50 @@ class PurchaseOrder extends Model
     }
 
     /**
+     * Check if purchase order is completed.
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    /**
+     * Check if any items have been received.
+     */
+    public function hasReceivedItems(): bool
+    {
+        // Check if any purchase order item has received quantity > 0
+        return $this->purchaseOrderItems()
+            ->where(function($query) {
+                $query->where('received_quantity', '>', 0)
+                      ->orWhere('actual_received_quantity', '>', 0);
+            })
+            ->exists();
+    }
+
+    /**
+     * Check if order can be cancelled.
+     */
+    public function canBeCancelled(): bool
+    {
+        // Cannot cancel if:
+        // 1. Order is already cancelled
+        // 2. Order is completed
+        // 3. Order has status 'received'
+        // 4. Any items have been received
+        if ($this->isCancelled() || $this->isCompleted() || $this->isReceived() || $this->hasReceivedItems()) {
+            return false;
+        }
+
+        // Cannot cancel if receive_status is 'partial' or 'complete'
+        if (in_array($this->receive_status, ['partial', 'complete'])) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check if purchase order is approved.
      */
     public function isApproved(): bool
@@ -256,6 +300,7 @@ class PurchaseOrder extends Model
             'confirmed' => 'Purchase Order Confirmed',
             'fulfilled' => 'Order Fulfilled',
             'received' => 'Received Order (Materials Received)',
+            'completed' => 'Completed Order',
             'cancelled' => 'Cancelled Purchase Order',
             default => ucfirst($this->status)
         };
@@ -273,6 +318,7 @@ class PurchaseOrder extends Model
             'confirmed' => 'bg-yellow-100 text-yellow-800',
             'fulfilled' => 'bg-purple-100 text-purple-800',
             'received' => 'bg-green-100 text-green-800',
+            'completed' => 'bg-green-600 text-white',
             'cancelled' => 'bg-red-100 text-red-800',
             default => 'bg-gray-100 text-gray-800'
         };
@@ -387,23 +433,8 @@ class PurchaseOrder extends Model
      */
     public function updateReceiveStatus(): void
     {
-        $this->load('purchaseOrderItems');
-        
-        $totalOrdered = $this->purchaseOrderItems->sum('quantity');
-        $totalReceived = $this->purchaseOrderItems->sum('received_quantity');
-        
-        $this->total_ordered_quantity = $totalOrdered;
-        $this->total_received_quantity = $totalReceived;
-        
-        if ($totalReceived == 0) {
-            $this->receive_status = 'not_received';
-        } elseif ($totalReceived >= $totalOrdered) {
-            $this->receive_status = 'complete';
-        } else {
-            $this->receive_status = 'partial';
-        }
-        
-        $this->save();
+        // Ensure aggregates are up-to-date and then persist status based on effective totals
+        $this->recalculateReceiptAggregates();
     }
 
     /**
@@ -470,7 +501,12 @@ class PurchaseOrder extends Model
     public function getRemainingQuantity(): float
     {
         $totalOrdered = $this->purchaseOrderItems->sum('quantity');
-        $totalReceived = $this->getTotalReceivedQuantity();
+        // Use normalized item-level received quantities for remaining calc
+        $totalReceived = $this->purchaseOrderItems->sum(function ($item) {
+            $direct = (float) ($item->received_quantity ?? 0);
+            $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+            return max($direct, $fromEntries);
+        });
         return max(0, $totalOrdered - $totalReceived);
     }
 
@@ -483,9 +519,13 @@ class PurchaseOrder extends Model
         if ($totalOrdered == 0) {
             return 0;
         }
-        
-        $totalReceived = $this->getTotalReceivedQuantity();
-        return ($totalReceived / $totalOrdered) * 100;
+        // Use normalized item-level received quantities for completion calc
+        $totalReceived = $this->purchaseOrderItems->sum(function ($item) {
+            $direct = (float) ($item->received_quantity ?? 0);
+            $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+            return max($direct, $fromEntries);
+        });
+        return $totalOrdered > 0 ? ($totalReceived / $totalOrdered) * 100 : 0;
     }
 
     /**
@@ -552,5 +592,131 @@ class PurchaseOrder extends Model
                 'has_discrepancies' => $totalSpoiled > 0 || $totalDamaged > 0,
             ];
         })->toArray();
+    }
+
+    /**
+     * Recalculate and synchronize receipt aggregates across order, items, and entries.
+     * - Aggregates entry items by purchase order item
+     * - Normalizes item.received_quantity using max(direct, fromEntries)
+     * - Updates order total ordered/received quantities and receive_status
+     * - If completely received, marks status as 'received' (does not change order_type)
+     */
+    public function recalculateReceiptAggregates(): void
+    {
+        \Log::info("Recalculating aggregates for PO: {$this->po_number} (ID: {$this->id})");
+        
+        $this->loadMissing([
+            'purchaseOrderItems',
+            'purchaseEntries.purchaseEntryItems',
+        ]);
+
+        // Build quick lookup of aggregated entry quantities keyed by purchase_order_item_id
+        $entryItems = $this->purchaseEntries
+            ->flatMap(function ($entry) {
+                return $entry->purchaseEntryItems;
+            });
+
+        \Log::info("Found {$entryItems->count()} entry items for PO {$this->po_number}");
+
+        $aggregatedByPoItemId = $entryItems
+            ->groupBy('purchase_order_item_id')
+            ->map(function ($group) {
+                return [
+                    'received' => (float) $group->sum('received_quantity'),
+                    'spoiled' => (float) $group->sum('spoiled_quantity'),
+                    'damaged' => (float) $group->sum('damaged_quantity'),
+                    'usable' => (float) $group->sum('usable_quantity'),
+                    'expected_weight' => (float) $group->sum(function ($i) { return (float) ($i->expected_weight ?? 0); }),
+                    'actual_weight' => (float) $group->sum(function ($i) { return (float) ($i->actual_weight ?? 0); }),
+                ];
+            });
+
+        \Log::info("Aggregated data by PO item ID", $aggregatedByPoItemId->toArray());
+
+        // Synchronize each order item with aggregated entry data
+        foreach ($this->purchaseOrderItems as $orderItem) {
+            $agg = $aggregatedByPoItemId->get($orderItem->id, [
+                'received' => 0.0,
+                'spoiled' => 0.0,
+                'damaged' => 0.0,
+                'usable' => 0.0,
+                'expected_weight' => 0.0,
+                'actual_weight' => 0.0,
+            ]);
+
+            $directReceived = (float) ($orderItem->received_quantity ?? 0);
+            $fromEntries = (float) $agg['received'];
+            $normalizedReceived = max($directReceived, $fromEntries);
+
+            $orderItem->received_quantity = $normalizedReceived;
+            // Only override actuals from entries if we have entry-based data
+            if ($fromEntries > 0) {
+                $orderItem->actual_received_quantity = $fromEntries;
+            }
+            if ($agg['spoiled'] > 0) {
+                $orderItem->spoiled_quantity = $agg['spoiled'];
+            }
+            if ($agg['damaged'] > 0) {
+                $orderItem->damaged_quantity = $agg['damaged'];
+            }
+            if ($agg['usable'] > 0) {
+                $orderItem->usable_quantity = $agg['usable'];
+            }
+            $newExpectedWeight = $agg['expected_weight'] > 0 ? $agg['expected_weight'] : $orderItem->expected_weight;
+            $newActualWeight = $agg['actual_weight'] > 0 ? $agg['actual_weight'] : $orderItem->actual_weight;
+            $orderItem->expected_weight = $newExpectedWeight;
+            $orderItem->actual_weight = $newActualWeight;
+            $orderItem->weight_difference = ($newActualWeight !== null && $newExpectedWeight !== null)
+                ? ($newActualWeight - $newExpectedWeight)
+                : $orderItem->weight_difference;
+            if ($orderItem->isDirty()) {
+                $orderItem->saveQuietly();
+            }
+        }
+
+        // Update order-level totals and status
+        $totalOrdered = (float) $this->purchaseOrderItems->sum('quantity');
+        $totalReceivedFromItems = (float) $this->purchaseOrderItems->sum(function ($item) {
+            $direct = (float) ($item->received_quantity ?? 0);
+            $fromEntries = (float) ($item->actual_received_quantity ?? 0);
+            return max($direct, $fromEntries);
+        });
+        $totalReceivedFromEntries = (float) $this->purchaseEntries->sum('total_received_quantity');
+
+        $effectiveTotalReceived = max($totalReceivedFromItems, $totalReceivedFromEntries);
+
+        $newReceiveStatus = 'not_received';
+        if ($effectiveTotalReceived <= 0) {
+            $newReceiveStatus = 'not_received';
+        } elseif ($effectiveTotalReceived + 0.00001 >= $totalOrdered && $totalOrdered > 0) {
+            $newReceiveStatus = 'complete';
+        } else {
+            $newReceiveStatus = 'partial';
+        }
+
+        $updates = [
+            'total_ordered_quantity' => $totalOrdered,
+            'total_received_quantity' => $effectiveTotalReceived,
+            'receive_status' => $newReceiveStatus,
+        ];
+
+        // Auto-mark as completed when all items are received
+        if ($newReceiveStatus === 'complete' && !in_array($this->status, ['completed', 'cancelled'])) {
+            $updates['status'] = 'completed';
+            if (!$this->received_at) {
+                $updates['received_at'] = now();
+                // Keep received_by unchanged unless set elsewhere
+            }
+        }
+
+        \Log::info("Updating PO {$this->po_number} with values:", $updates);
+
+        $this->fill($updates);
+        if ($this->isDirty()) {
+            $this->saveQuietly();
+            \Log::info("PO {$this->po_number} saved successfully");
+        } else {
+            \Log::info("PO {$this->po_number} had no changes to save");
+        }
     }
 }

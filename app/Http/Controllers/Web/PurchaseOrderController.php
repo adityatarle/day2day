@@ -9,6 +9,7 @@ use App\Models\Vendor;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\PoNumberSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -186,8 +187,8 @@ class PurchaseOrderController extends Controller
             $purchaseOrder = DB::transaction(function () use ($request) {
                 \Log::info('Purchase Order Transaction Started');
                 
-                // Generate PO number
-                $poNumber = 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::count() + 1, 4, '0', STR_PAD_LEFT);
+                // Generate PO number using atomic sequence generation
+                $poNumber = PoNumberSequence::getNextPoNumber('purchase_order', now()->year);
                 \Log::info('Generated PO Number: ' . $poNumber);
 
                 // Pre-calculate totals to satisfy NOT NULL DB constraints on insert
@@ -291,7 +292,13 @@ class PurchaseOrderController extends Controller
      */
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['vendor', 'branch', 'user', 'purchaseOrderItems.product']);
+        $purchaseOrder->load([
+            'vendor', 
+            'branch', 
+            'user', 
+            'purchaseOrderItems.product',
+            'purchaseEntries.user'
+        ]);
 
         return view('purchase-orders.show', compact('purchaseOrder'));
     }
@@ -430,7 +437,7 @@ class PurchaseOrderController extends Controller
      */
     public function receive(Request $request, PurchaseOrder $purchaseOrder)
     {
-        if (!$purchaseOrder->isConfirmed()) {
+        if (!$purchaseOrder->isConfirmed() && !$purchaseOrder->isFulfilled() && !$purchaseOrder->isSent()) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'Only confirmed purchase orders can be received.');
         }
@@ -439,6 +446,10 @@ class PurchaseOrderController extends Controller
             'received_items' => 'required|array',
             'received_items.*.item_id' => 'required|exists:purchase_order_items,id',
             'received_items.*.received_quantity' => 'required|numeric|min:0',
+            'delivery_date' => 'nullable|date',
+            'delivery_person' => 'nullable|string|max:255',
+            'delivery_vehicle' => 'nullable|string|max:255',
+            'delivery_notes' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $purchaseOrder) {
@@ -453,33 +464,62 @@ class PurchaseOrderController extends Controller
                 }
             }
 
+            // Create a Purchase Entry to track this receipt
+            $purchaseEntry = \App\Models\PurchaseEntry::create([
+                'entry_number' => \App\Models\PurchaseEntry::generateEntryNumber(),
+                'purchase_order_id' => $purchaseOrder->id,
+                'vendor_id' => $purchaseOrder->vendor_id,
+                'branch_id' => $targetBranchId,
+                'user_id' => auth()->id(),
+                'entry_date' => now(),
+                'delivery_date' => $request->delivery_date ?? now(),
+                'delivery_person' => $request->delivery_person,
+                'delivery_vehicle' => $request->delivery_vehicle,
+                'delivery_notes' => $request->delivery_notes,
+                'is_partial_receipt' => false, // Will be determined based on quantities
+                'entry_status' => 'received',
+            ]);
+
+            $totalExpected = 0;
+            $totalReceived = 0;
+            $totalUsable = 0;
             $hasReceivedItems = false;
             $allItemsReceived = true;
 
-            // Update inventory for each received item
+            // Process each received item
             foreach ($request->received_items as $receivedItem) {
                 $purchaseOrderItem = PurchaseOrderItem::find($receivedItem['item_id']);
                 $newReceivedQuantity = $receivedItem['received_quantity'];
                 
-                // Get previously received quantity
-                $previouslyReceived = $purchaseOrderItem->received_quantity ?? 0;
-                $totalReceivedQuantity = $previouslyReceived + $newReceivedQuantity;
-
                 if ($newReceivedQuantity > 0) {
                     $hasReceivedItems = true;
                     
-                    // Add stock to inventory (Received Order - materials received from vendor)
+                    // Create purchase entry item
+                    \App\Models\PurchaseEntryItem::create([
+                        'purchase_entry_id' => $purchaseEntry->id,
+                        'purchase_order_item_id' => $purchaseOrderItem->id,
+                        'product_id' => $purchaseOrderItem->product_id,
+                        'expected_quantity' => $purchaseOrderItem->quantity,
+                        'received_quantity' => $newReceivedQuantity,
+                        'spoiled_quantity' => 0,
+                        'damaged_quantity' => 0,
+                        'usable_quantity' => $newReceivedQuantity,
+                        'unit_price' => $purchaseOrderItem->unit_price,
+                        'total_price' => $newReceivedQuantity * $purchaseOrderItem->unit_price,
+                    ]);
+
+                    // Add stock to inventory
                     StockMovement::create([
                         'product_id' => $purchaseOrderItem->product_id,
                         'branch_id' => $targetBranchId,
                         'type' => 'purchase',
                         'quantity' => $newReceivedQuantity,
                         'unit_price' => $purchaseOrderItem->unit_price ?? 0,
-                        'reference_type' => 'purchase_order',
-                        'reference_id' => $purchaseOrder->id,
+                        'reference_type' => 'purchase_entry',
+                        'reference_id' => $purchaseEntry->id,
                         'user_id' => auth()->id(),
                         'movement_date' => now(),
-                        'notes' => "Partial Receipt - PO: {$purchaseOrder->po_number}",
+                        'notes' => "Purchase Entry: {$purchaseEntry->entry_number} - PO: {$purchaseOrder->po_number}",
                     ]);
 
                     // Update the product's current stock in the branch
@@ -488,32 +528,32 @@ class PurchaseOrderController extends Controller
                     $product->updateBranchStock($targetBranchId, $currentStock + $newReceivedQuantity);
                 }
 
-                // Update total received quantity in purchase order item (accumulate)
-                $purchaseOrderItem->update(['received_quantity' => $totalReceivedQuantity]);
+                $totalExpected += $purchaseOrderItem->quantity;
+                $totalReceived += $newReceivedQuantity;
+                $totalUsable += $newReceivedQuantity;
                 
-                // Check if this item is fully received
-                if ($totalReceivedQuantity < $purchaseOrderItem->quantity) {
+                // Check if this item is fully received (including previous receipts)
+                $previouslyReceived = \App\Models\PurchaseEntryItem::where('purchase_order_item_id', $purchaseOrderItem->id)
+                    ->where('purchase_entry_id', '!=', $purchaseEntry->id)
+                    ->sum('received_quantity');
+                    
+                if (($previouslyReceived + $newReceivedQuantity) < $purchaseOrderItem->quantity) {
                     $allItemsReceived = false;
                 }
             }
 
-            // Update purchase order receive status
-            if ($hasReceivedItems) {
-                if (!$purchaseOrder->received_at) {
-                    $purchaseOrder->update([
-                        'received_at' => now(),
-                        'received_by' => auth()->id(),
-                    ]);
-                }
-                
-                // Update receive status and totals
-                $purchaseOrder->updateReceiveStatus();
-                
-                // If all items are fully received, mark as complete
-                if ($allItemsReceived) {
-                    $purchaseOrder->markAsReceived();
-                }
-            }
+            // Update purchase entry totals
+            $purchaseEntry->update([
+                'total_expected_quantity' => $totalExpected,
+                'total_received_quantity' => $totalReceived,
+                'total_spoiled_quantity' => 0,
+                'total_damaged_quantity' => 0,
+                'total_usable_quantity' => $totalUsable,
+                'is_partial_receipt' => !$allItemsReceived,
+            ]);
+
+            // The PurchaseEntry model observer will automatically trigger recalculateReceiptAggregates
+            // This ensures Purchase Order totals and status are updated
         });
 
         $message = 'Materials received successfully! ';
@@ -532,9 +572,21 @@ class PurchaseOrderController extends Controller
      */
     public function cancel(PurchaseOrder $purchaseOrder)
     {
-        if ($purchaseOrder->isReceived()) {
+        if (!$purchaseOrder->canBeCancelled()) {
+            $errorMessage = 'Cannot cancel this order. ';
+            
+            if ($purchaseOrder->isCompleted()) {
+                $errorMessage .= 'The order has already been completed.';
+            } elseif ($purchaseOrder->hasReceivedItems()) {
+                $errorMessage .= 'Items have already been received. Please use the Return/Adjustment process if necessary.';
+            } elseif ($purchaseOrder->isReceived()) {
+                $errorMessage .= 'The order has already been marked as received.';
+            } elseif (in_array($purchaseOrder->receive_status, ['partial', 'complete'])) {
+                $errorMessage .= 'The order has been partially or completely received.';
+            }
+            
             return redirect()->route('purchase-orders.show', $purchaseOrder)
-                ->with('error', 'Cannot cancel a received purchase order.');
+                ->with('error', $errorMessage);
         }
 
         $purchaseOrder->update(['status' => 'cancelled']);

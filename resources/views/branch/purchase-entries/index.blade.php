@@ -137,119 +137,114 @@
     </div>
 
     <!-- Purchase Entries Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        @if($purchaseEntries->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Entry Number</th>
-                            <th>Date Received</th>
-                            <th>Receive Status</th>
-                            <th>Items</th>
-                            <th>Vendor</th>
-                            <th>Total Amount</th>
-                            <th>Receipt Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($purchaseEntries as $entry)
-                            <tr class="hover:bg-gray-50">
-                                <td>
-                                    <a href="{{ route('branch.purchase-entries.show', $entry) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                        {{ $entry->po_number }}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    @if($purchaseEntries->count() > 0)
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto border-collapse">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">PO Number</th>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Vendor</th>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Date</th>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Receive Status</th>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Items</th>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Total Amount</th>
+                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach($purchaseEntries as $entry)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                                <a href="{{ route('branch.purchase-entries.show', $entry) }}" class="text-blue-600 hover:text-blue-800 font-semibold text-xs sm:text-sm">
+                                    {{ $entry->po_number }}
+                                </a>
+                            </td>
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                                <span class="text-gray-900 font-medium text-xs sm:text-sm">
+                                    {{ $entry->vendor ? $entry->vendor->name : 'Admin' }}
+                                </span>
+                            </td>
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-xs sm:text-sm">
+                                {{ $entry->received_at ? $entry->received_at->format('M d, Y') : ($entry->created_at?->format('M d, Y') ?? '-') }}
+                            </td>
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                                @if($entry->receive_status === 'complete')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-green-100 text-green-800">
+                                        Complete
+                                    </span>
+                                @elseif($entry->receive_status === 'partial')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-orange-100 text-orange-800">
+                                        Partial
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-gray-100 text-gray-800">
+                                        Not Received
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                                <span class="text-gray-900 font-medium text-xs sm:text-sm">{{ $entry->purchase_order_items_count }}</span>
+                                <span class="text-gray-500 text-[10px] sm:text-sm">items</span>
+                            </td>
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                                <span class="text-gray-900 font-medium text-xs sm:text-sm">₹{{ number_format($entry->total_amount, 2) }}</span>
+                            </td>
+                            <td class="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+                                <div class="flex flex-col sm:flex-row gap-1 sm:gap-3">
+                                    <a href="{{ route('branch.purchase-entries.show', $entry) }}" class="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium">
+                                        View
                                     </a>
-                                </td>
-                                <td>{{ $entry->received_at ? $entry->received_at->format('M d, Y') : '-' }}</td>
-                                <td>
-                                    @if($entry->receive_status === 'complete')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Complete
-                                        </span>
-                                    @elseif($entry->receive_status === 'partial')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                            Partial
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            Not Received
-                                        </span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="text-gray-900 font-medium">{{ $entry->purchase_order_items_count }}</span>
-                                    <span class="text-gray-500 text-sm">items</span>
-                                </td>
-                                <td>
-                                    <span class="text-gray-900 font-medium">{{ $entry->vendor ? $entry->vendor->name : 'Admin' }}</span>
-                                </td>
-                                <td>
-                                    <span class="text-gray-900 font-medium">₹{{ number_format($entry->total_amount, 2) }}</span>
-                                </td>
-                                <td>
-                                    @if($entry->received_at)
-                                        <div>
-                                            <p class="text-green-600 font-medium">Receipt Recorded</p>
-                                            <p class="text-sm text-gray-500">{{ $entry->received_at->format('M d, Y') }}</p>
-                                        </div>
-                                    @else
-                                        <span class="text-red-600 font-medium">Receipt Pending</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('branch.purchase-entries.show', $entry) }}" 
-                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                            View
+                                    @if(in_array($entry->status, ['confirmed', 'fulfilled']) && $entry->receive_status !== 'complete')
+                                        <a href="{{ route('branch.purchase-entries.create-receipt', $entry) }}" class="text-green-600 hover:text-green-800 text-xs sm:text-sm font-medium">
+                                            {{ $entry->receive_status === 'partial' ? 'Continue Receipt' : 'Record Receipt' }}
                                         </a>
-                                        @if(in_array($entry->status, ['confirmed', 'fulfilled']) && $entry->receive_status !== 'complete')
-                                            <a href="{{ route('branch.purchase-entries.create-receipt', $entry) }}" 
-                                               class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                                {{ $entry->receive_status === 'partial' ? 'Continue Receipt' : 'Record Receipt' }}
-                                            </a>
-                                        @elseif($entry->received_at)
-                                            <a href="{{ route('branch.purchase-entries.receipt', $entry) }}" 
-                                               class="text-purple-600 hover:text-purple-800 text-sm font-medium">
-                                                View Receipt
-                                            </a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                                    @endif
+                                    @if($entry->received_at)
+                                        <a href="{{ route('branch.purchase-entries.receipt', $entry) }}" class="text-purple-600 hover:text-purple-800 text-xs sm:text-sm font-medium">
+                                            View Receipt
+                                        </a>
+                                        <a href="{{ route('purchase-orders.pdf', $entry) }}" target="_blank" class="text-gray-700 hover:text-gray-900 text-xs sm:text-sm font-medium">
+                                            PDF
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-            <!-- Pagination -->
-            @if($purchaseEntries->hasPages())
-                <div class="p-6 border-t border-gray-200">
-                    {{ $purchaseEntries->appends(request()->query())->links() }}
-                </div>
-            @endif
-        @else
-            <div class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No purchase entries found</h3>
-                <p class="mt-1 text-sm text-gray-500">
-                    @if(request()->hasAny(['search', 'status']))
-                        No purchase entries match your current filters.
-                    @else
-                        No received materials found. Purchase entries will appear here once you record delivery receipts for approved orders.
-                    @endif
-                </p>
-                @if(request()->hasAny(['search', 'status']))
-                    <div class="mt-6">
-                        <a href="{{ route('branch.purchase-entries.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200">
-                            Clear Filters
-                        </a>
-                    </div>
-                @endif
+        <!-- Pagination -->
+        @if($purchaseEntries->hasPages())
+            <div class="p-4 sm:p-6 border-t border-gray-200">
+                {{ $purchaseEntries->appends(request()->query())->links() }}
             </div>
         @endif
-    </div>
+    @else
+        <div class="text-center py-8 sm:py-12">
+            <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No purchase entries found</h3>
+            <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                @if(request()->hasAny(['search', 'status']))
+                    No purchase entries match your current filters.
+                @else
+                    No received materials found. Purchase entries will appear here once you record delivery receipts for approved orders.
+                @endif
+            </p>
+            @if(request()->hasAny(['search', 'status']))
+                <div class="mt-4 sm:mt-6">
+                    <a href="{{ route('branch.purchase-entries.index') }}" class="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200">
+                        Clear Filters
+                    </a>
+                </div>
+            @endif
+        </div>
+    @endif
+</div>
+
 </div>
 @endsection

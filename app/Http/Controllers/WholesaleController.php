@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Notifications\OrderCreated;
+use App\Models\User;
 
 class WholesaleController extends Controller
 {
@@ -280,6 +282,16 @@ class WholesaleController extends Controller
             $order->save();
 
             DB::commit();
+
+            // Notify branch managers and cashiers about new wholesale order
+            $recipients = User::where('branch_id', $branch->id)
+                ->whereHas('role', function ($q) {
+                    $q->whereIn('name', ['branch_manager', 'cashier']);
+                })
+                ->get();
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new OrderCreated($order));
+            }
 
             return response()->json([
                 'status' => 'success',

@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\BranchManagerDashboardController;
 use App\Http\Controllers\Web\CashierDashboardController;
 use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\OrderController;
+use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\InventoryController;
 use App\Http\Controllers\Web\CustomerController;
 use App\Http\Controllers\Web\VendorController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Web\PosWebController;
 use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\BranchManagementController;
 use App\Http\Controllers\Web\PosSessionController;
+use App\Http\Controllers\Web\CashLedgerController;
 use App\Http\Controllers\Auth\OutletAuthController;
 use App\Http\Controllers\Day2Day\AdminDashboardController as Day2DayAdminController;
 use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchController;
@@ -33,6 +35,7 @@ use App\Http\Controllers\Web\BranchProductOrderController;
 use App\Http\Controllers\Web\BranchPurchaseEntryController;
 use App\Http\Controllers\Web\EnhancedPurchaseEntryController;
 use App\Http\Controllers\Web\OrderWorkflowController;
+use App\Http\Controllers\LocalPurchaseController;
 
 // Home page - redirects to login if not authenticated
 Route::get('/', function () {
@@ -79,15 +82,24 @@ Route::middleware('auth')->group(function () {
         ->name('api.cashier.pos_data')
         ->middleware('role:cashier');
     
-    // Product management
-    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    // Product management - Admin only (create, edit, delete)
+    // Notifications API
+    Route::get('/api/notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
+    Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('api.notifications.mark-all-read');
+    Route::post('/api/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('api.notifications.read');
+
+    Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    });
+    
+    // Product viewing - Admin and Branch Manager (view only)
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/products/category/{category}', [ProductController::class, 'byCategory'])->name('products.byCategory');
     });
     
@@ -192,7 +204,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
         Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
         Route::get('/reports/customers', [ReportController::class, 'customers'])->name('reports.customers');
-        Route::get('/vendors', [VendorController::class, 'index'])->name('vendors.index');
         Route::get('/reports/vendors', [ReportController::class, 'vendors'])->name('reports.vendors');
         Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
         Route::get('/reports/profit-loss', [ReportController::class, 'profitLoss'])->name('reports.profitLoss');
@@ -202,7 +213,7 @@ Route::middleware('auth')->group(function () {
     // Super Admin and Admin routes
     Route::middleware('role:super_admin,admin')->group(function () {
         // Admin Dashboard
-        Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
         // Branch Orders Management - Admin can see all branch orders and assign vendors
         Route::get('/admin/branch-orders', [AdminBranchOrderController::class, 'index'])->name('admin.branch-orders.index');
@@ -270,6 +281,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');
         Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles.index');
+        
+        // Local Purchases management for admin
+        Route::get('/admin/local-purchases', [LocalPurchaseController::class, 'index'])->name('admin.local-purchases.index');
+        Route::get('/admin/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'show'])->name('admin.local-purchases.show');
+        Route::post('/admin/local-purchases/{localPurchase}/approve', [LocalPurchaseController::class, 'approve'])->name('admin.local-purchases.approve');
+        Route::post('/admin/local-purchases/{localPurchase}/reject', [LocalPurchaseController::class, 'reject'])->name('admin.local-purchases.reject');
+        Route::get('/admin/local-purchases-export', [LocalPurchaseController::class, 'export'])->name('admin.local-purchases.export');
     });
 
     // Branch Manager specific routes
@@ -295,6 +313,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/branch/product-orders/{productOrder}/edit', [BranchProductOrderController::class, 'edit'])->name('branch.product-orders.edit');
         Route::put('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'update'])->name('branch.product-orders.update');
         Route::delete('/branch/product-orders/{productOrder}', [BranchProductOrderController::class, 'destroy'])->name('branch.product-orders.destroy');
+        Route::post('/branch/product-orders/{productOrder}/sync-aggregates', [BranchProductOrderController::class, 'syncAggregates'])->name('branch.product-orders.sync-aggregates');
 
         // Branch Purchase Entries - Track deliveries from admin with discrepancies
         Route::get('/branch/purchase-entries', [BranchPurchaseEntryController::class, 'index'])->name('branch.purchase-entries.index');
@@ -306,6 +325,41 @@ Route::middleware('auth')->group(function () {
         Route::get('/branch/discrepancy-report', [BranchPurchaseEntryController::class, 'discrepancyReport'])->name('branch.purchase-entries.discrepancy-report');
         Route::get('/branch/purchase-entries-debug', [BranchPurchaseEntryController::class, 'debug'])->name('branch.purchase-entries.debug');
 
+        // Local Purchases - Branch managers can purchase locally
+        Route::get('/branch/local-purchases', [LocalPurchaseController::class, 'index'])->name('branch.local-purchases.index');
+        Route::get('/branch/local-purchases/create', [LocalPurchaseController::class, 'create'])->name('branch.local-purchases.create');
+        Route::post('/branch/local-purchases', [LocalPurchaseController::class, 'store'])->name('branch.local-purchases.store');
+        Route::get('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'show'])->name('branch.local-purchases.show');
+        Route::get('/branch/local-purchases/{localPurchase}/edit', [LocalPurchaseController::class, 'edit'])->name('branch.local-purchases.edit');
+        Route::put('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'update'])->name('branch.local-purchases.update');
+        Route::delete('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'destroy'])->name('branch.local-purchases.destroy');
+        Route::get('/branch/local-purchases-export', [LocalPurchaseController::class, 'export'])->name('branch.local-purchases.export');
+        
+        // Debug route for local purchases
+        Route::get('/branch/local-purchases-debug', function() {
+            $user = auth()->user();
+            $products = \App\Models\Product::active()
+                ->whereHas('branches', function ($query) use ($user) {
+                    $query->where('branch_id', $user->branch_id);
+                })
+                ->get();
+            $vendors = \App\Models\Vendor::active()->get();
+            $pendingOrders = \App\Models\PurchaseOrder::where('branch_id', $user->branch_id)
+                ->whereIn('status', ['pending', 'partial'])
+                ->with('items.product')
+                ->get();
+            
+            return response()->json([
+                'user' => $user,
+                'products_count' => $products->count(),
+                'vendors_count' => $vendors->count(),
+                'pending_orders_count' => $pendingOrders->count(),
+                'products' => $products->take(5),
+                'vendors' => $vendors->take(5),
+                'pending_orders' => $pendingOrders->take(5),
+            ]);
+        })->name('branch.local-purchases.debug');
+
         // Enhanced Purchase Entries - Comprehensive tracking with detailed quantities
         Route::get('/enhanced-purchase-entries', [EnhancedPurchaseEntryController::class, 'index'])->name('enhanced-purchase-entries.index');
         Route::get('/enhanced-purchase-entries/create', [EnhancedPurchaseEntryController::class, 'create'])->name('enhanced-purchase-entries.create');
@@ -313,6 +367,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/enhanced-purchase-entries/{purchaseOrder}', [EnhancedPurchaseEntryController::class, 'show'])->name('enhanced-purchase-entries.show');
         Route::get('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'showEntry'])->name('enhanced-purchase-entries.entry');
         Route::get('/enhanced-purchase-entries/report', [EnhancedPurchaseEntryController::class, 'report'])->name('enhanced-purchase-entries.report');
+        Route::get('/enhanced-purchase-entries/entry/{purchaseEntry}/edit', [EnhancedPurchaseEntryController::class, 'editEntry'])->name('enhanced-purchase-entries.entry.edit');
+        Route::put('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'updateEntry'])->name('enhanced-purchase-entries.entry.update');
+        Route::delete('/enhanced-purchase-entries/entry/{purchaseEntry}', [EnhancedPurchaseEntryController::class, 'destroyEntry'])->name('enhanced-purchase-entries.entry.destroy');
         
         // API routes for enhanced purchase entries
         Route::get('/api/purchase-orders/{purchaseOrder}/items', function($purchaseOrderId) {
@@ -353,6 +410,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/pos/session/current', [PosSessionController::class, 'current'])->name('pos.session.current');
         Route::get('/pos/session/history', [PosSessionController::class, 'history'])->name('pos.session.history');
         Route::post('/api/pos/session/start', [PosSessionController::class, 'start'])->name('api.pos.session.start');
+
+        // Cash ledger routes
+        Route::get('/pos/ledger', [CashLedgerController::class, 'index'])->name('pos.ledger.index');
+        Route::post('/pos/ledger', [CashLedgerController::class, 'store'])->name('pos.ledger.store');
     });
 
     // Outlet Management (Super Admin, Admin and Branch Manager)
@@ -409,8 +470,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/api/branches/{branch}/performance', [BranchManagementController::class, 'getPerformanceData'])->name('api.branches.performance');
     });
 
-    // Branch Inventory Management (Super Admin and Branch Manager)
-    Route::middleware('role:super_admin,branch_manager')->group(function () {
+    // Branch Inventory Management (Super Admin and Admin only)
+    Route::middleware('role:super_admin,admin')->group(function () {
         Route::get('/branches/{branch}/inventory', [BranchManagementController::class, 'inventory'])->name('branches.inventory');
         Route::post('/branches/{branch}/inventory/{product}', [BranchManagementController::class, 'updateInventoryItem'])->name('branches.inventory.update');
     });

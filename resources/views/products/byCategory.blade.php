@@ -12,7 +12,16 @@
     @if($products->isEmpty())
         <div class="bg-white p-12 rounded-xl shadow-sm border border-gray-200 text-center">
             <p class="text-gray-600 mb-4">No products found in this category.</p>
+            @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
             <a href="{{ route('products.create') }}" class="btn-primary">Add Product</a>
+            @else
+            <div class="bg-green-100 text-green-800 px-4 py-2 rounded-lg inline-flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                Branch Manager View
+            </div>
+            @endif
         </div>
     @else
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

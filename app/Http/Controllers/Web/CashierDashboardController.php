@@ -28,6 +28,21 @@ class CashierDashboardController extends Controller
         // Current POS session
         $current_session = $user->currentPosSession();
 
+        // Previous day's closing balance (fallback to last closed session if none yesterday)
+        $previous_day = Carbon::yesterday();
+        $previous_closing_balance = \App\Models\PosSession::where('user_id', $user->id)
+            ->where('status', 'closed')
+            ->whereDate('ended_at', $previous_day)
+            ->orderBy('ended_at', 'desc')
+            ->value('closing_cash');
+
+        if ($previous_closing_balance === null) {
+            $previous_closing_balance = \App\Models\PosSession::where('user_id', $user->id)
+                ->where('status', 'closed')
+                ->orderBy('ended_at', 'desc')
+                ->value('closing_cash');
+        }
+
         // Today's statistics for this cashier
         $today_stats = [
             'today_orders' => Order::where('branch_id', $branch->id)
@@ -48,7 +63,7 @@ class CashierDashboardController extends Controller
         ];
 
         // Branch overview (limited info for cashier)
-        $branch_manager = $branch->manager();
+        $branch_manager = $branch->manager;
         $branch_info = [
             'name' => $branch->name,
             'code' => $branch->code,
@@ -85,10 +100,10 @@ class CashierDashboardController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'sku' => $product->sku,
+                    'code' => $product->code,
                     'price' => $branchProduct->selling_price ?? $product->selling_price,
                     'stock' => $branchProduct->current_stock ?? 0,
-                    'category' => $product->category->name ?? 'Uncategorized',
+                    'category' => $product->category ?? 'Uncategorized',
                 ];
             });
 
@@ -202,7 +217,8 @@ class CashierDashboardController extends Controller
             'hourly_sales',
             'recent_customers',
             'pos_alerts',
-            'session_metrics'
+            'session_metrics',
+            'previous_closing_balance'
         ));
     }
 

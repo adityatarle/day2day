@@ -60,6 +60,9 @@
                             </button>
                         </div>
 
+                        <!-- Category Tabs -->
+                        <div id="category-tabs" class="flex flex-wrap gap-2 mb-4"></div>
+
                         <!-- Quick Add by SKU -->
                         <div class="mb-4 p-3 bg-gray-50 rounded-lg">
                             <div class="flex space-x-2">
@@ -260,6 +263,8 @@
 <script>
 let cart = [];
 let products = @json($products);
+let categories = [...new Set(products.map(p => p.category))].filter(Boolean).sort();
+let activeCategory = '';
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -273,6 +278,7 @@ function initializeEventListeners() {
     // Product search and filter
     document.getElementById('product-search').addEventListener('input', filterProducts);
     document.getElementById('category-filter').addEventListener('change', filterProducts);
+    renderCategoryTabs();
     
     // Quick add functionality
     document.getElementById('sku-input').addEventListener('keypress', function(e) {
@@ -466,7 +472,7 @@ function clearCart() {
 // Filter products
 function filterProducts() {
     const search = document.getElementById('product-search').value.toLowerCase();
-    const category = document.getElementById('category-filter').value;
+    const category = activeCategory || document.getElementById('category-filter').value;
     
     document.querySelectorAll('.product-card').forEach(card => {
         const productName = card.dataset.productName.toLowerCase();
@@ -490,6 +496,34 @@ function populateCategories() {
         option.value = category;
         option.textContent = category;
         categoryFilter.appendChild(option);
+    });
+}
+
+// Render category tabs for quick switching
+function renderCategoryTabs() {
+    const container = document.getElementById('category-tabs');
+    if (!container) return;
+    container.innerHTML = '';
+    const allBtn = document.createElement('button');
+    allBtn.className = 'px-3 py-1 rounded-full border text-sm bg-blue-600 text-white border-blue-600';
+    allBtn.textContent = 'All';
+    allBtn.onclick = () => { activeCategory = ''; filterProducts(); highlightActiveTab(''); };
+    container.appendChild(allBtn);
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'px-3 py-1 rounded-full border text-sm bg-white text-gray-700 border-gray-300';
+        btn.textContent = cat;
+        btn.onclick = () => { activeCategory = cat; filterProducts(); highlightActiveTab(cat); };
+        container.appendChild(btn);
+    });
+}
+
+function highlightActiveTab(cat) {
+    const container = document.getElementById('category-tabs');
+    if (!container) return;
+    Array.from(container.children).forEach(btn => {
+        const isActive = (btn.textContent === (cat || 'All'));
+        btn.className = 'px-3 py-1 rounded-full border text-sm ' + (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
     });
 }
 

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Return as OrderReturn;
+use App\Models\OrderReturn;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -185,15 +185,16 @@ class CashierOrdersController extends Controller
                 ->first();
 
             if ($orderItem && $item['quantity'] <= $orderItem->quantity) {
+                $subtotal = $orderItem->unit_price * $item['quantity'];
+                
                 $returnItem = $return->returnItems()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $orderItem->unit_price,
-                    'subtotal' => $orderItem->unit_price * $item['quantity'],
-                    'reason' => $item['reason'] ?? null,
+                    'order_item_id' => $orderItem->id,
+                    'returned_quantity' => $item['quantity'],
+                    'refund_amount' => $subtotal,
+                    'condition_notes' => $item['reason'] ?? null,
                 ]);
 
-                $totalAmount += $returnItem->subtotal;
+                $totalAmount += $subtotal;
             }
         }
 

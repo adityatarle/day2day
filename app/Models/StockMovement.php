@@ -126,7 +126,7 @@ class StockMovement extends Model
      */
     public function isIncoming(): bool
     {
-        return in_array($this->type, ['purchase', 'return', 'adjustment', 'transfer_in']);
+        return in_array($this->type, ['purchase', 'return', 'adjustment', 'adjustment_positive', 'transfer_in', 'local_purchase']);
     }
 
     /**
@@ -134,7 +134,7 @@ class StockMovement extends Model
      */
     public function isOutgoing(): bool
     {
-        return in_array($this->type, ['sale', 'loss', 'transfer_out', 'wastage']);
+        return in_array($this->type, ['sale', 'loss', 'adjustment_negative', 'transfer_out', 'wastage']);
     }
 
     /**
@@ -144,8 +144,11 @@ class StockMovement extends Model
     {
         return match($this->type) {
             'purchase' => 'Purchase',
+            'local_purchase' => 'Local Purchase',
             'sale' => 'Sale',
             'adjustment' => 'Adjustment',
+            'adjustment_positive' => 'Positive Adjustment',
+            'adjustment_negative' => 'Negative Adjustment',
             'loss' => 'Loss',
             'return' => 'Return',
             'transfer_in' => 'Transfer In',

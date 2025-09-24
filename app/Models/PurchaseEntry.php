@@ -218,4 +218,28 @@ class PurchaseEntry extends Model
         
         return "PE-{$year}{$month}-" . str_pad($count, 4, '0', STR_PAD_LEFT);
     }
+
+    protected static function booted(): void
+    {
+        // Recalculate parent order aggregates after any save/delete
+        static::saved(function (self $entry) {
+            if ($entry->purchase_order_id) {
+                // Force fresh load to ensure we have the latest data
+                $order = PurchaseOrder::find($entry->purchase_order_id);
+                if ($order) {
+                    $order->recalculateReceiptAggregates();
+                }
+            }
+        });
+
+        static::deleted(function (self $entry) {
+            if ($entry->purchase_order_id) {
+                // Reload from DB to avoid stale relations
+                $order = PurchaseOrder::find($entry->purchase_order_id);
+                if ($order) {
+                    $order->recalculateReceiptAggregates();
+                }
+            }
+        });
+    }
 }

@@ -58,7 +58,7 @@ class SuperAdminDashboardController extends Controller
             ->withSum('orders', 'total_amount')
             ->get()
             ->map(function($branch) {
-                $manager = $branch->manager();
+                $manager = $branch->manager;
                 return [
                     'id' => $branch->id,
                     'name' => $branch->name,

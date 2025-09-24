@@ -134,7 +134,7 @@
     <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-1000 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white z-50">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white z-50 flex flex-col">
         <!-- Logo Section -->
         <div class="p-6 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
@@ -178,12 +178,12 @@
         </div>
         
         <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto pb-24">
+        <div class="flex-1 min-h-0 overflow-y-auto">
             @include('partials.navigation.cashier')
         </div>
         
         <!-- User Profile -->
-        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/20 bg-black/30">
+        <div class="mt-auto p-6 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
                     <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'C', 0, 1)) }}</span>
@@ -205,10 +205,10 @@
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-80">
+    <div class="main-content ml-0 lg:ml-80">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-40">
-            <div class="flex items-center justify-between px-8 py-4">
+            <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
                 <!-- Mobile Menu Button -->
                 <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">
                     <i class="fas fa-bars text-xl"></i>
@@ -256,7 +256,7 @@
         </div>
         
         <!-- Page Content -->
-        <div class="p-8">
+        <div class="p-4 sm:p-6 lg:p-8">
             @yield('content')
         </div>
     </div>

@@ -9,6 +9,7 @@ use App\Models\Vendor;
 use App\Models\Branch;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\PoNumberSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -130,7 +131,7 @@ class AdminBranchOrderController extends Controller
         DB::transaction(function () use ($request, $branchOrder) {
             // Create a new purchase order for the vendor
             $vendorPO = PurchaseOrder::create([
-                'po_number' => 'PO-' . date('Y') . '-' . str_pad(PurchaseOrder::max('id') + 1, 4, '0', STR_PAD_LEFT),
+                'po_number' => PoNumberSequence::getNextPoNumber('purchase_order', now()->year),
                 'vendor_id' => $request->vendor_id,
                 'branch_id' => $branchOrder->branch_id, // Admin's main branch
                 'branch_request_id' => $branchOrder->id, // Link to the original branch request
@@ -276,6 +277,24 @@ class AdminBranchOrderController extends Controller
      */
     public function cancel(Request $request, PurchaseOrder $branchOrder)
     {
+        // Check if order can be cancelled
+        if (!$branchOrder->canBeCancelled()) {
+            $errorMessage = 'Cannot cancel this order. ';
+            
+            if ($branchOrder->isCompleted()) {
+                $errorMessage .= 'The order has already been completed.';
+            } elseif ($branchOrder->hasReceivedItems()) {
+                $errorMessage .= 'Items have already been received. Please use the Return/Adjustment process if necessary.';
+            } elseif ($branchOrder->isReceived()) {
+                $errorMessage .= 'The order has already been marked as received.';
+            } elseif (in_array($branchOrder->receive_status, ['partial', 'complete'])) {
+                $errorMessage .= 'The order has been partially or completely received.';
+            }
+            
+            return redirect()->route('admin.branch-orders.show', $branchOrder)
+                ->with('error', $errorMessage);
+        }
+
         $request->validate([
             'cancellation_reason' => 'required|string',
         ]);

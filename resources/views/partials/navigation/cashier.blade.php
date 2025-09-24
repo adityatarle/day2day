@@ -54,6 +54,13 @@
         <span class="font-medium">Session History</span>
     </a>
 
+    <a href="{{ route('pos.ledger.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.ledger.*') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-wallet"></i>
+        </div>
+        <span class="font-medium">Cash Give/Take</span>
+    </a>
+
     <!-- Orders & Sales -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Orders & Sales</p>

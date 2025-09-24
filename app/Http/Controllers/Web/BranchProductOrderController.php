@@ -7,9 +7,11 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Product;
 use App\Models\Branch;
+use App\Models\PoNumberSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
  * BranchProductOrderController
@@ -129,71 +131,91 @@ class BranchProductOrderController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($request, $user) {
-            // Generate request number
-            $requestNumber = 'BR-' . date('Y') . '-' . str_pad(
-                PurchaseOrder::where('order_type', 'branch_request')->count() + 1, 
-                4, '0', STR_PAD_LEFT
-            );
+        $maxRetries = 3;
+        $retryCount = 0;
+        
+        while ($retryCount < $maxRetries) {
+            try {
+                DB::transaction(function () use ($request, $user) {
+                    // Calculate subtotal before creating the purchase order
+                    $subtotal = 0;
+                    foreach ($request->items as $item) {
+                        $product = Product::find($item['product_id']);
+                        $estimatedPrice = $product->purchase_price ?? 0;
+                        $totalPrice = $item['quantity'] * $estimatedPrice;
+                        $subtotal += $totalPrice;
+                    }
 
-            // Calculate subtotal before creating the purchase order
-            $subtotal = 0;
-            foreach ($request->items as $item) {
-                $product = Product::find($item['product_id']);
-                $estimatedPrice = $product->purchase_price ?? 0;
-                $totalPrice = $item['quantity'] * $estimatedPrice;
-                $subtotal += $totalPrice;
+                    // Get or create a system vendor for branch requests
+                    $systemVendor = \App\Models\Vendor::firstOrCreate(
+                        ['code' => 'SYS001'],
+                        [
+                            'name' => 'System - Branch Requests',
+                            'code' => 'SYS001',
+                            'email' => 'system@branch-requests.com',
+                            'phone' => '0000000000',
+                            'address' => 'System Vendor for Branch Requests',
+                            'gst_number' => 'SYSTEM001',
+                            'is_active' => true,
+                        ]
+                    );
+
+                    // Generate a unique request number using atomic sequence generation
+                    $requestNumber = PoNumberSequence::getNextPoNumber('branch_request', now()->year);
+
+                    $productOrder = PurchaseOrder::create([
+                        'po_number' => $requestNumber,
+                        'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
+                        'branch_id' => $user->branch_id,
+                        'user_id' => $user->id,
+                        'status' => 'draft',
+                        'order_type' => 'branch_request',
+                        'payment_terms' => 'immediate',
+                        'transport_cost' => 0,
+                        'subtotal' => $subtotal,
+                        'tax_amount' => 0, // Will be calculated by admin
+                        'total_amount' => $subtotal,
+                        'notes' => $request->notes,
+                        'expected_delivery_date' => $request->expected_delivery_date,
+                        'priority' => $request->priority,
+                        'terminology_notes' => 'Branch Product Order - sent to admin for vendor assignment and fulfillment',
+                    ]);
+
+                    // Create product order items
+                    foreach ($request->items as $item) {
+                        $product = Product::find($item['product_id']);
+                        $estimatedPrice = $product->purchase_price ?? 0;
+                        $totalPrice = $item['quantity'] * $estimatedPrice;
+
+                        PurchaseOrderItem::create([
+                            'purchase_order_id' => $productOrder->id,
+                            'product_id' => $item['product_id'],
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $estimatedPrice,
+                            'total_price' => $totalPrice,
+                            'notes' => $item['reason'],
+                        ]);
+                    }
+                }, 1);
+                
+                // If we get here, the transaction was successful
+                break;
+                
+            } catch (UniqueConstraintViolationException $e) {
+                $retryCount++;
+                \Log::warning("PO number generation conflict, retry {$retryCount}/{$maxRetries}: " . $e->getMessage());
+                
+                if ($retryCount >= $maxRetries) {
+                    \Log::error("Failed to create purchase order after {$maxRetries} retries due to PO number conflicts");
+                    return redirect()->back()
+                        ->withErrors(['error' => 'Unable to create purchase order due to system conflict. Please try again.'])
+                        ->withInput();
+                }
+                
+                // Wait a small random amount before retrying to reduce collision probability
+                usleep(rand(10000, 50000)); // 10-50ms
             }
-
-            // Get or create a system vendor for branch requests
-            $systemVendor = \App\Models\Vendor::firstOrCreate(
-                ['code' => 'SYS001'],
-                [
-                    'name' => 'System - Branch Requests',
-                    'code' => 'SYS001',
-                    'email' => 'system@branch-requests.com',
-                    'phone' => '0000000000',
-                    'address' => 'System Vendor for Branch Requests',
-                    'gst_number' => 'SYSTEM001',
-                    'is_active' => true,
-                ]
-            );
-
-            // Create product order request
-            $productOrder = PurchaseOrder::create([
-                'po_number' => $requestNumber,
-                'vendor_id' => $systemVendor->id, // Use system vendor for branch requests
-                'branch_id' => $user->branch_id,
-                'user_id' => $user->id,
-                'status' => 'draft',
-                'order_type' => 'branch_request',
-                'payment_terms' => 'immediate',
-                'transport_cost' => 0,
-                'subtotal' => $subtotal,
-                'tax_amount' => 0, // Will be calculated by admin
-                'total_amount' => $subtotal,
-                'notes' => $request->notes,
-                'expected_delivery_date' => $request->expected_delivery_date,
-                'priority' => $request->priority,
-                'terminology_notes' => 'Branch Product Order - sent to admin for vendor assignment and fulfillment',
-            ]);
-
-            // Create product order items
-            foreach ($request->items as $item) {
-                $product = Product::find($item['product_id']);
-                $estimatedPrice = $product->purchase_price ?? 0;
-                $totalPrice = $item['quantity'] * $estimatedPrice;
-
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $productOrder->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $estimatedPrice,
-                    'total_price' => $totalPrice,
-                    'notes' => $item['reason'],
-                ]);
-            }
-        });
+        }
 
         return redirect()->route('branch.product-orders.index')
             ->with('success', 'Product order sent to admin successfully!');
@@ -211,9 +233,57 @@ class BranchProductOrderController extends Controller
             abort(403, 'Access denied.');
         }
 
-        $productOrder->load(['branch', 'user', 'vendor', 'purchaseOrderItems.product']);
+        // Load detailed relations for item tracking and entries
+        $productOrder->load([
+            'branch', 
+            'user', 
+            'vendor', 
+            'purchaseOrderItems.product',
+            'purchaseEntries' => function($q) { $q->orderBy('entry_date', 'desc'); },
+            'purchaseEntries.purchaseEntryItems.product',
+            'purchaseEntries.user'
+        ]);
 
-        return view('branch.product-orders.show', compact('productOrder'));
+        // Ensure latest aggregates before display
+        $productOrder->recalculateReceiptAggregates();
+        
+        // Refresh the model to ensure we have the latest data
+        $productOrder->refresh();
+
+        // Compute per-item tracking for ordered/received/remaining using normalized totals
+        $itemTracking = $productOrder->purchaseOrderItems->map(function ($item) use ($productOrder) {
+            $receivedFromEntries = $productOrder->purchaseEntries
+                ->flatMap->purchaseEntryItems
+                ->where('product_id', $item->product_id)
+                ->sum('received_quantity');
+            $direct = (float) ($item->received_quantity ?? 0);
+            $totalReceived = max($direct, (float) $receivedFromEntries);
+
+            $remaining = ((float) ($item->quantity ?? 0)) - $totalReceived;
+
+            return [
+                'item' => $item,
+                'ordered_quantity' => (float) ($item->quantity ?? 0),
+                'received_quantity' => (float) $totalReceived,
+                'remaining_quantity' => max(0, (float) $remaining),
+                'unit_price' => (float) ($item->unit_price ?? 0),
+                'total_price' => (float) ($item->total_price ?? 0),
+            ];
+        });
+
+        // Financials (keep existing fields and provide computed helpers)
+        $financials = [
+            'subtotal' => (float) $productOrder->subtotal,
+            'discount' => 0.0, // placeholder if discounting is added later
+            'tax_cgst' => 0.0,
+            'tax_sgst' => 0.0,
+            'tax_igst' => 0.0,
+            'transport' => (float) $productOrder->transport_cost,
+            'tax_total' => (float) $productOrder->tax_amount,
+            'grand_total' => (float) $productOrder->total_amount,
+        ];
+
+        return view('branch.product-orders.show', compact('productOrder', 'itemTracking', 'financials'));
     }
 
     /**
@@ -362,5 +432,24 @@ class BranchProductOrderController extends Controller
 
         return redirect()->route('branch.product-orders.index')
             ->with('success', 'Product order deleted successfully.');
+    }
+
+    /**
+     * Force synchronization of purchase order aggregates (diagnostic endpoint).
+     */
+    public function syncAggregates(PurchaseOrder $productOrder)
+    {
+        $user = Auth::user();
+        
+        // Verify access
+        if (!$user->hasRole('branch_manager') || $productOrder->branch_id !== $user->branch_id) {
+            abort(403, 'Access denied.');
+        }
+
+        // Force recalculation
+        $productOrder->recalculateReceiptAggregates();
+
+        return redirect()->route('branch.product-orders.show', $productOrder)
+            ->with('success', 'Purchase order synchronization completed successfully!');
     }
 }

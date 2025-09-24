@@ -301,11 +301,12 @@ class BranchPurchaseEntryController extends Controller
                 }
             }
             
-            // Update purchase order receive status
-            $purchaseEntry->updateReceiveStatus();
+            // Update purchase order receive status using normalized aggregates
+            $purchaseEntry->recalculateReceiptAggregates();
             
             // Update purchase order status if complete receipt
             if (!$isPartialReceipt) {
+                // recalc will auto-mark order as received; keep PO status aligned
                 $purchaseEntry->update(['status' => 'received']);
             }
         });

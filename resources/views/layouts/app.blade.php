@@ -19,10 +19,97 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* Sidebar Styles */
+        /* Mobile-first responsive enhancements */
+        @media (max-width: 640px) {
+            .metric-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                min-height: 48px;
+                min-width: 48px;
+            }
+            
+            .form-input {
+                padding: 0.75rem 1rem;
+                font-size: 1rem;
+                min-height: 48px;
+            }
+            
+            .card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                border-radius: 1rem;
+            }
+            
+            /* Mobile-specific improvements */
+            .mobile-stack {
+                flex-direction: column !important;
+                gap: 0.75rem !important;
+            }
+            
+            .mobile-full-width {
+                width: 100% !important;
+            }
+            
+            .mobile-center {
+                text-align: center !important;
+            }
+            
+            .mobile-hide {
+                display: none !important;
+            }
+            
+            .mobile-show {
+                display: block !important;
+            }
+            
+            /* Improved typography for mobile */
+            h1 { font-size: 1.75rem; line-height: 1.2; }
+            h2 { font-size: 1.5rem; line-height: 1.3; }
+            h3 { font-size: 1.25rem; line-height: 1.4; }
+            h4 { font-size: 1.125rem; line-height: 1.4; }
+            
+            /* Better spacing for mobile */
+            .space-y-8 > * + * { margin-top: 1rem; }
+            .space-y-6 > * + * { margin-top: 0.875rem; }
+            .space-y-4 > * + * { margin-top: 0.75rem; }
+            .space-y-3 > * + * { margin-top: 0.625rem; }
+            .space-y-2 > * + * { margin-top: 0.5rem; }
+        }
+
+        @media (max-width: 768px) {
+            .metric-card {
+                padding: 1.25rem;
+            }
+            
+            .grid {
+                gap: 1rem;
+            }
+            
+            /* Tablet-specific adjustments */
+            .tablet-hide {
+                display: none !important;
+            }
+            
+            .tablet-show {
+                display: block !important;
+            }
+        }
+
+        /* Touch-friendly elements */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        /* Super Admin Theme - Gold & Blue */
         .sidebar {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
         }
         
         .nav-link {
@@ -31,13 +118,13 @@
         }
         
         .nav-link:hover {
-            background: rgba(59, 130, 246, 0.1);
+            background: rgba(251, 191, 36, 0.15);
             transform: translateX(8px);
         }
         
         .nav-link.active {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
         }
         
         .nav-icon {
@@ -55,27 +142,41 @@
         
         /* Logo Animation */
         .logo-icon {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, #f59e0b, #d97706);
             animation: logoFloat 6s ease-in-out infinite;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
         }
         
         @keyframes logoFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
         }
         
         /* Main Content */
         .main-content {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             min-height: 100vh;
         }
         
         .top-nav {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(15px);
+            border-bottom: 2px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Super Admin specific styles */
+        .super-admin-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.2);
+        }
+        
+        .super-admin-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         
         /* Card Styles */
@@ -287,13 +388,19 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Responsive Design */
+        /* Enhanced Mobile Responsive Design */
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
-                transition: transform 0.3s ease;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 position: fixed;
                 z-index: 1001;
+                width: 100vw;
+                max-width: 320px;
+                height: 100vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             }
             
             .sidebar.mobile-open {
@@ -301,23 +408,197 @@
             }
             
             .main-content {
-                margin-left: 0;
+                margin-left: 0 !important;
+                padding: 0.5rem;
+                width: 100% !important;
             }
             
-            .mobile-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1000;
-                display: none;
+            .nav-link {
+                padding: 1rem 1.25rem;
+                margin: 0.375rem 0.75rem;
+                font-size: 0.95rem;
+                border-radius: 0.75rem;
+                min-height: 48px;
+                display: flex;
+                align-items: center;
             }
             
-            .mobile-overlay.active {
+            .nav-icon {
+                width: 2.25rem;
+                height: 2.25rem;
+                margin-right: 0.875rem;
+            }
+            
+            /* Mobile overlay improvements */
+            #mobile-overlay {
+                backdrop-filter: blur(8px);
+                background: rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 0.5rem;
+            }
+            
+            .top-nav {
+                padding: 0.75rem 1rem;
+            }
+            
+            .top-nav .flex {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+                border-radius: 0.75rem;
+            }
+            
+            .data-table {
+                font-size: 0.875rem;
+                min-width: 600px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.75rem;
+                white-space: nowrap;
+            }
+            
+            /* Mobile-first table improvements */
+            .mobile-table {
                 display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
             }
+            
+            .mobile-table table {
+                width: 100%;
+                min-width: 600px;
+            }
+            
+            /* Enhanced Table wrapper for horizontal scroll */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 0.75rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            
+            .table-container::-webkit-scrollbar {
+                height: 8px;
+            }
+            
+            .table-container::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 4px;
+            }
+            
+            .table-container::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+            
+            .table-container::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+            
+            /* Mobile-friendly buttons */
+            .btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+                justify-content: center;
+                min-height: 48px;
+            }
+            
+            /* Mobile card stack layout */
+            .mobile-card-list .card {
+                border-left: 4px solid #3b82f6;
+                margin-bottom: 1rem;
+            }
+            
+            .mobile-card-list .card:last-child {
+                margin-bottom: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 0.25rem;
+            }
+            
+            /* Force full width on mobile */
+            .container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+            
+            /* Ensure proper mobile layout */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+            }
+            
+            .top-nav {
+                padding: 0.75rem;
+            }
+            
+            .card {
+                border-radius: 0.75rem;
+                padding: 1rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .form-input {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            .data-table {
+                font-size: 0.75rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.375rem 0.5rem;
+            }
+            
+            /* Mobile navigation improvements */
+            .nav-link span {
+                font-size: 0.85rem;
+            }
+            
+            /* Mobile grid improvements */
+            .grid {
+                gap: 0.75rem;
+            }
+            
+            /* Mobile form improvements */
+            .form-label {
+                font-size: 0.875rem;
+                margin-bottom: 0.375rem;
+            }
+            
+            /* Mobile typography */
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+            h3 { font-size: 1.125rem; }
+            
+            /* Mobile spacing */
+            .space-y-4 > * + * { margin-top: 0.75rem; }
+            .space-y-6 > * + * { margin-top: 1rem; }
+            .space-y-8 > * + * { margin-top: 1.5rem; }
         }
     </style>
     @if(auth()->check() && auth()->user()->isBranchManager())
@@ -337,216 +618,192 @@
 </head>
 <body class="bg-gray-50">
     <!-- Mobile Overlay -->
-    <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-72 text-white flex flex-col">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white flex flex-col z-50">
         <!-- Logo Section -->
-        <div class="p-6 text-center border-b border-white/10 flex-shrink-0">
+        <div class="p-6 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
-                <i class="fas fa-leaf text-2xl text-white"></i>
+                @if(auth()->user()->isSuperAdmin())
+                    <i class="fas fa-crown text-2xl text-white"></i>
+                @elseif(auth()->user()->isBranchManager())
+                    <i class="fas fa-store text-2xl text-white"></i>
+                @elseif(auth()->user()->isCashier())
+                    <i class="fas fa-cash-register text-2xl text-white"></i>
+                @else
+                    <i class="fas fa-user text-2xl text-white"></i>
+                @endif
             </div>
-            <h1 class="text-2xl font-bold text-white">Day2Day Fresh</h1>
-            <p class="text-sm text-gray-300">Management System</p>
+            <h1 class="text-2xl font-bold text-white">FoodCo</h1>
+            <p class="text-sm text-amber-100">
+                @if(auth()->user()->isSuperAdmin())
+                    Super Admin Panel
+                @elseif(auth()->user()->isBranchManager())
+                    Branch Manager Panel
+                @elseif(auth()->user()->isCashier())
+                    POS System
+                @else
+                    User Panel
+                @endif
+            </p>
+            <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs super-admin-badge">
+                @if(auth()->user()->isSuperAdmin())
+                    <i class="fas fa-shield-alt mr-1"></i>
+                @elseif(auth()->user()->isBranchManager())
+                    <i class="fas fa-user-tie mr-1"></i>
+                @elseif(auth()->user()->isCashier())
+                    <i class="fas fa-user-check mr-1"></i>
+                @else
+                    <i class="fas fa-user mr-1"></i>
+                @endif
+                {{ auth()->user()->role->display_name ?? 'User' }}
+            </div>
         </div>
         
         <!-- Navigation -->
-        @php $user = auth()->user(); @endphp
-        <div class="flex-1 overflow-y-auto">
-        @if($user && $user->isBranchManager())
-            @include('partials.navigation.branch-manager')
-        @elseif($user && $user->isCashier())
-            @include('partials.navigation.cashier')
-        @elseif($user && $user->isSuperAdmin())
-            @include('partials.navigation.super-admin')
-        @else
-        <nav class="p-6 space-y-2">
-            <a href="{{ route('dashboard') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('dashboard') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-tachometer-alt"></i>
-                </div>
-                <span class="font-medium">Dashboard</span>
-            </a>
-            
-            <a href="{{ route('products.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('products.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-box"></i>
-                </div>
-                <span class="font-medium">Products</span>
-            </a>
-            
-            <a href="{{ route('orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('orders.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <span class="font-medium">Orders</span>
-            </a>
-            
-            <a href="{{ route('inventory.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('inventory.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-warehouse"></i>
-                </div>
-                <span class="font-medium">Inventory</span>
-            </a>
-            
-            <a href="{{ route('customers.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('customers.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-users"></i>
-                </div>
-                <span class="font-medium">Customers</span>
-            </a>
-            
-            <a href="{{ route('vendors.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('vendors.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-building"></i>
-                </div>
-                <span class="font-medium">Vendors</span>
-            </a>
-            
-            <a href="{{ route('purchase-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('purchase-orders.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
-                <span class="font-medium">Purchase Orders</span>
-            </a>
-
-            @if($user && $user->isAdmin())
-            <a href="{{ route('admin.branch-orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.branch-orders.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-store"></i>
-                </div>
-                <span class="font-medium">Orders from Branches</span>
-            </a>
+        <div class="flex-1 min-h-0 overflow-y-auto">
+            @if(auth()->check() && auth()->user()->hasRole('branch_manager'))
+                @include('partials.navigation.branch-manager')
+            @elseif(auth()->check() && auth()->user()->hasRole('cashier'))
+                @include('partials.navigation.cashier')
+            @else
+                @include('partials.navigation.super-admin')
             @endif
-            
-            <a href="{{ route('reports.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('reports.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <span class="font-medium">Reports</span>
-            </a>
-
-            @if($user && ($user->isAdmin() || $user->isBranchManager()))
-            <a href="{{ route('outlets.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('outlets.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-store"></i>
-                </div>
-                <span class="font-medium">Outlets</span>
-            </a>
-            @endif
-
-            @if($user && ($user->isAdmin() || $user->isBranchManager() || $user->isCashier()))
-            <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-cash-register"></i>
-                </div>
-                <span class="font-medium">POS System</span>
-            </a>
-            @endif
-            
-            <a href="{{ route('billing.quickSale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('billing.*') ? 'active text-white' : '' }}">
-                <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-plus-circle"></i>
-                </div>
-                <span class="font-medium">Quick Sale</span>
-            </a>
-        </nav>
-        @endif
         </div>
         
         <!-- User Profile -->
-        <div class="flex-shrink-0 p-6 border-t border-white/10 bg-black/20">
+        <div class="mt-auto p-6 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
-                    @php
-                        $roleLabel = 'User';
-                        if (auth()->check()) {
-                            $u = auth()->user();
-                            if ($u->isSuperAdmin()) { $roleLabel = 'Super Admin'; }
-                            elseif ($u->isAdmin()) { $roleLabel = 'Admin'; }
-                            elseif ($u->isBranchManager()) { $roleLabel = 'Branch Manager'; }
-                            elseif ($u->isCashier()) { $roleLabel = 'Cashier'; }
-                            elseif ($u->isDeliveryBoy()) { $roleLabel = 'Delivery Boy'; }
-                        }
-                    @endphp
-                    <p class="text-xs text-gray-300">{{ $roleLabel }}</p>
+                    <p class="text-xs text-amber-200">{{ auth()->user()->role->display_name ?? 'User' }}</p>
+                </div>
+                <div class="flex flex-col space-y-1">
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="text-xs text-gray-300 hover:text-white transition-colors">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-72">
+    <div class="main-content ml-0 lg:ml-80">
         <!-- Top Navigation -->
-        <div class="top-nav sticky top-0 z-50">
-            <div class="flex items-center justify-between px-8 py-4">
+        <div class="top-nav sticky top-0 z-30">
+            <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
                 <!-- Mobile Menu Button -->
                 <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
                 
                 <!-- Page Title -->
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-tachometer-alt text-white text-sm"></i>
+                <div class="flex-1 px-2 sm:px-0">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                            @if(auth()->user()->isSuperAdmin())
+                                <i class="fas fa-crown text-white text-sm sm:text-lg"></i>
+                            @elseif(auth()->user()->isBranchManager())
+                                <i class="fas fa-store text-white text-sm sm:text-lg"></i>
+                            @elseif(auth()->user()->isCashier())
+                                <i class="fas fa-cash-register text-white text-sm sm:text-lg"></i>
+                            @else
+                                <i class="fas fa-user text-white text-sm sm:text-lg"></i>
+                            @endif
                         </div>
-                        <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Dashboard')</h1>
+                        <div class="min-w-0 flex-1">
+                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                                @hasSection('title')
+                                    @yield('title')
+                                @else
+                                    @if(auth()->user()->isSuperAdmin())
+                                        Super Admin Dashboard
+                                    @elseif(auth()->user()->isBranchManager())
+                                        Branch Manager Dashboard
+                                    @elseif(auth()->user()->isCashier())
+                                        POS Dashboard
+                                    @else
+                                        User Dashboard
+                                    @endif
+                                @endif
+                            </h1>
+                            <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                                @if(auth()->user()->isSuperAdmin())
+                                    Complete system control and management
+                                @elseif(auth()->user()->isBranchManager())
+                                    Manage your branch operations
+                                @elseif(auth()->user()->isCashier())
+                                    Point of Sale System
+                                @else
+                                    User panel
+                                @endif
+                            </p>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Right Actions -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <!-- System Status -->
+                    <div class="hidden md:flex items-center space-x-2 bg-green-50 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-green-200">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-xs sm:text-sm font-medium text-green-700">System Online</span>
+                    </div>
+                    
                     <!-- Notifications -->
-                    <button class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                        <i class="fas fa-bell text-lg"></i>
-                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                    </button>
+                    <div class="relative">
+                        <button id="notifications-button" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-bell text-base sm:text-lg"></i>
+                            <span id="notifications-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border rounded-lg shadow-lg z-50">
+                            <div class="px-4 py-2 border-b flex items-center justify-between">
+                                <span class="font-semibold text-gray-700 text-sm">Notifications</span>
+                                <button id="notifications-mark-all" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                            </div>
+                            <div id="notifications-list" class="max-h-96 overflow-auto">
+                                <div class="p-4 text-sm text-gray-500">No notifications</div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Current Date -->
-                    <div class="hidden sm:flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                        <i class="fas fa-calendar-alt text-gray-500"></i>
-                        <span class="text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
+                    <div class="hidden lg:flex items-center space-x-2 bg-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border shadow-sm">
+                        <i class="fas fa-calendar-day text-amber-500 text-sm"></i>
+                        <span class="text-xs sm:text-sm font-medium text-gray-700">{{ now()->format('M d, Y') }}</span>
                     </div>
-                    
-                    <!-- User Info -->
-                    <div class="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg border shadow-sm">
-                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-sm">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
-                        </div>
-                        <span class="hidden md:block text-sm font-medium text-gray-700">{{ auth()->user()->name ?? 'User' }}</span>
-                    </div>
-                    
-                    <!-- Logout -->
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                            <i class="fas fa-sign-out-alt text-lg"></i>
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>
         
         <!-- Page Content -->
-        <main class="p-8 fade-in">
+        <main class="p-4 sm:p-6 lg:p-8 fade-in">
             @yield('content')
         </main>
     </div>
     
     <!-- JavaScript -->
     <script>
-        // Mobile menu toggle
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
             
             sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
+            overlay.classList.toggle('hidden');
+            
+            // Prevent body scroll when menu is open
+            if (sidebar.classList.contains('mobile-open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         }
         
         // Close mobile menu when clicking outside
@@ -557,7 +814,7 @@
             
             if (!menuButton && !sidebar.contains(event.target) && window.innerWidth < 1024) {
                 sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
+                overlay.classList.add('hidden');
             }
         });
         
@@ -568,7 +825,7 @@
             
             if (window.innerWidth >= 1024) {
                 sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
+                overlay.classList.add('hidden');
             }
         });
         
@@ -617,6 +874,25 @@
                     card.style.transform = 'translateY(0)';
                 }, index * 100);
             });
+            
+            // Add touch-friendly interactions
+            const buttons = document.querySelectorAll('button, .btn, a[class*="btn"]');
+            buttons.forEach(button => {
+                button.classList.add('touch-target');
+            });
+            
+            // Mobile responsive breakpoint detection
+            function checkBreakpoint() {
+                const width = window.innerWidth;
+                document.body.setAttribute('data-screen-size', 
+                    width < 640 ? 'mobile' : 
+                    width < 768 ? 'small-tablet' : 
+                    width < 1024 ? 'tablet' : 'desktop'
+                );
+            }
+            
+            checkBreakpoint();
+            window.addEventListener('resize', checkBreakpoint);
         });
     </script>
 </body>

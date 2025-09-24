@@ -719,17 +719,21 @@
                             @endif
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">@yield('title', 
-                                @if(auth()->user()->isSuperAdmin())
-                                    'Super Admin Dashboard'
-                                @elseif(auth()->user()->isBranchManager())
-                                    'Branch Manager Dashboard'
-                                @elseif(auth()->user()->isCashier())
-                                    'POS Dashboard'
+                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                                @hasSection('title')
+                                    @yield('title')
                                 @else
-                                    'User Dashboard'
+                                    @if(auth()->user()->isSuperAdmin())
+                                        Super Admin Dashboard
+                                    @elseif(auth()->user()->isBranchManager())
+                                        Branch Manager Dashboard
+                                    @elseif(auth()->user()->isCashier())
+                                        POS Dashboard
+                                    @else
+                                        User Dashboard
+                                    @endif
                                 @endif
-                            )</h1>
+                            </h1>
                             <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">
                                 @if(auth()->user()->isSuperAdmin())
                                     Complete system control and management

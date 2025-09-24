@@ -48,7 +48,7 @@ class CashierDashboardController extends Controller
         ];
 
         // Branch overview (limited info for cashier)
-        $branch_manager = $branch->manager();
+        $branch_manager = $branch->manager;
         $branch_info = [
             'name' => $branch->name,
             'code' => $branch->code,

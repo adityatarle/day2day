@@ -276,6 +276,31 @@ class PosSessionController extends Controller
     }
 
     /**
+     * Handle current session - redirect to active session or create new one.
+     */
+    public function current()
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return redirect()->route('dashboard')->with('error', 'No branch assigned to your account.');
+        }
+
+        // Check if user has an active session
+        $activeSession = $user->currentPosSession();
+        
+        if ($activeSession) {
+            // Redirect to the active session
+            return redirect()->route('pos.sessions.show', $activeSession);
+        } else {
+            // No active session, redirect to create new one
+            return redirect()->route('pos.sessions.create')
+                ->with('info', 'You don\'t have an active POS session. Please start a new session.');
+        }
+    }
+
+    /**
      * Get active sessions for branch management.
      */
     public function getActiveSessions()

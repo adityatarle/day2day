@@ -23,7 +23,7 @@ class BranchManagementController extends Controller
         
         // Add additional data for each branch
         $branches = $branches->map(function($branch) {
-            $branch->manager_name = $branch->manager()->name ?? 'No Manager';
+            $branch->manager_name = optional($branch->manager)->name ?? 'No Manager';
             $branch->total_staff = $branch->users()->count();
             $branch->today_sales = $branch->todaySales();
             $branch->active_pos_sessions = $branch->activePosSessionsCount();
@@ -120,7 +120,7 @@ class BranchManagementController extends Controller
 
         $branchStats = [
             'total_staff' => $branch->users()->count(),
-            'manager' => $branch->manager(),
+            'manager' => $branch->manager,
             'cashiers_count' => $branch->cashiers()->count(),
             'delivery_staff_count' => $branch->deliveryStaff()->count(),
             'today_sales' => $branch->todaySales(),
@@ -301,7 +301,7 @@ class BranchManagementController extends Controller
         }
 
         // Remove current manager if exists
-        $currentManager = $branch->manager();
+        $currentManager = $branch->manager;
         if ($currentManager) {
             $currentManager->update(['branch_id' => null]);
         }

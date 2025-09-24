@@ -197,7 +197,7 @@ class AdminBranchManagementController extends Controller
         }
 
         // Remove current manager from branch
-        $currentManager = $branch->manager();
+        $currentManager = $branch->manager;
         if ($currentManager) {
             $currentManager->update(['branch_id' => null]);
         }

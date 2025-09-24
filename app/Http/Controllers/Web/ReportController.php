@@ -222,10 +222,11 @@ class ReportController extends Controller
             ->take(10)
             ->get();
 
-        // Get sales by category
-        $salesByCategory = Product::withCount(['orderItems as total_sold'])
-            ->selectRaw('category, SUM(order_items_count) as total_sold')
-            ->groupBy('category')
+        // Get sales by category - fix the query to properly count order items
+        $salesByCategory = Product::join('order_items', 'products.id', '=', 'order_items.product_id')
+            ->selectRaw('products.category, COUNT(order_items.id) as total_sold')
+            ->groupBy('products.category')
+            ->orderBy('total_sold', 'desc')
             ->get();
 
         return view('reports.analytics', compact('topProducts', 'salesByCategory'));

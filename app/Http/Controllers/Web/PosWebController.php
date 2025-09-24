@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Events\BranchSaleProcessed;
 use App\Events\BranchStockUpdated;
+use App\Notifications\OrderCreated;
 
 class PosWebController extends Controller
 {
@@ -369,6 +370,16 @@ class PosWebController extends Controller
                 'total_transactions' => $freshSession->total_transactions,
             ]));
             event(new BranchStockUpdated($freshSession->branch_id, $stockChanges));
+
+            // Notify branch managers and cashiers of new order
+            $recipients = \App\Models\User::where('branch_id', $freshSession->branch_id)
+                ->whereHas('role', function ($q) {
+                    $q->whereIn('name', ['branch_manager', 'cashier']);
+                })
+                ->get();
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new OrderCreated($order));
+            }
 
             return response()->json([
                 'success' => true, 

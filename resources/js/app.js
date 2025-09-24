@@ -164,6 +164,117 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Notifications dropdown, fetch, and polling
+    const notifBtn = document.getElementById('notifications-button');
+    const notifDropdown = document.getElementById('notifications-dropdown');
+    const notifList = document.getElementById('notifications-list');
+    const notifBadge = document.getElementById('notifications-badge');
+    const notifMarkAll = document.getElementById('notifications-mark-all');
+
+    if (notifBtn && notifDropdown && notifList && notifBadge) {
+        let lastFetchedIds = new Set();
+
+        function toggleDropdown() {
+            notifDropdown.classList.toggle('hidden');
+        }
+
+        function closeDropdownOnOutsideClick(event) {
+            if (!notifDropdown.contains(event.target) && !notifBtn.contains(event.target)) {
+                notifDropdown.classList.add('hidden');
+            }
+        }
+
+        function renderNotifications(data) {
+            const { notifications, unread_count } = data;
+            notifList.innerHTML = '';
+
+            if (!notifications || notifications.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'p-4 text-sm text-gray-500';
+                empty.textContent = 'No notifications';
+                notifList.appendChild(empty);
+            } else {
+                notifications.forEach(n => {
+                    const isUnread = !n.read_at;
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = `w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 ${isUnread ? 'bg-blue-50' : ''}`;
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-bell text-gray-500 mt-0.5';
+                    const content = document.createElement('div');
+                    const title = document.createElement('div');
+                    title.className = 'font-medium text-sm text-gray-800';
+                    title.textContent = n.title || 'Notification';
+                    const message = document.createElement('div');
+                    message.className = 'text-sm text-gray-600';
+                    message.textContent = n.message || '';
+                    const meta = document.createElement('div');
+                    meta.className = 'text-xs text-gray-400 mt-1';
+                    meta.textContent = new Date(n.created_at).toLocaleString();
+                    content.appendChild(title);
+                    content.appendChild(message);
+                    content.appendChild(meta);
+                    item.appendChild(icon);
+                    item.appendChild(content);
+
+                    item.addEventListener('click', async () => {
+                        try {
+                            await window.axios.post(`/api/notifications/${n.id}/read`);
+                            item.classList.remove('bg-blue-50');
+                            fetchNotifications();
+                        } catch (e) {
+                            // ignore
+                        }
+                    });
+
+                    notifList.appendChild(item);
+                });
+            }
+
+            if (unread_count > 0) {
+                notifBadge.classList.remove('hidden');
+            } else {
+                notifBadge.classList.add('hidden');
+            }
+        }
+
+        async function fetchNotifications() {
+            try {
+                const res = await window.axios.get('/api/notifications?limit=10');
+                const data = res.data || {};
+                // Detect new notifications since last fetch
+                const currentIds = new Set((data.notifications || []).map(n => n.id));
+                const newIds = [...currentIds].filter(id => !lastFetchedIds.has(id));
+                if (lastFetchedIds.size > 0 && newIds.length > 0) {
+                    FoodCompany.showNotification('You have new notifications', 'info');
+                }
+                lastFetchedIds = currentIds;
+                renderNotifications(data);
+            } catch (e) {
+                // silently fail
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                await window.axios.post('/api/notifications/mark-all-read');
+                fetchNotifications();
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        notifBtn.addEventListener('click', toggleDropdown);
+        document.addEventListener('click', closeDropdownOnOutsideClick);
+        if (notifMarkAll) {
+            notifMarkAll.addEventListener('click', markAllRead);
+        }
+
+        // Initial fetch and polling every 20s
+        fetchNotifications();
+        setInterval(fetchNotifications, 20000);
+    }
 });
 
 // Export for use in other modules

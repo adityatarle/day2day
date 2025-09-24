@@ -214,10 +214,10 @@
     </div>
 
     <!-- Main Content -->
-    <div class="main-content ml-80">
+    <div class="main-content ml-0 lg:ml-80">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-40">
-            <div class="flex items-center justify-between px-8 py-4">
+            <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
                 <!-- Mobile Menu Button -->
                 <button type="button" class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors" onclick="toggleMobileMenu()">
                     <i class="fas fa-bars text-xl"></i>
@@ -265,7 +265,7 @@
         </div>
 
         <!-- Page Content -->
-        <div class="p-8">
+        <div class="p-4 sm:p-6 lg:p-8">
             @yield('content')
         </div>
     </div>

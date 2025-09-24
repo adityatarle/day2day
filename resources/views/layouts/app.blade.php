@@ -625,13 +625,39 @@
         <!-- Logo Section -->
         <div class="p-6 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
-                <i class="fas fa-crown text-2xl text-white"></i>
+                @if(auth()->user()->isSuperAdmin())
+                    <i class="fas fa-crown text-2xl text-white"></i>
+                @elseif(auth()->user()->isBranchManager())
+                    <i class="fas fa-store text-2xl text-white"></i>
+                @elseif(auth()->user()->isCashier())
+                    <i class="fas fa-cash-register text-2xl text-white"></i>
+                @else
+                    <i class="fas fa-user text-2xl text-white"></i>
+                @endif
             </div>
             <h1 class="text-2xl font-bold text-white">FoodCo</h1>
-            <p class="text-sm text-amber-100">Super Admin Panel</p>
+            <p class="text-sm text-amber-100">
+                @if(auth()->user()->isSuperAdmin())
+                    Super Admin Panel
+                @elseif(auth()->user()->isBranchManager())
+                    Branch Manager Panel
+                @elseif(auth()->user()->isCashier())
+                    POS System
+                @else
+                    User Panel
+                @endif
+            </p>
             <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs super-admin-badge">
-                <i class="fas fa-shield-alt mr-1"></i>
-                System Administrator
+                @if(auth()->user()->isSuperAdmin())
+                    <i class="fas fa-shield-alt mr-1"></i>
+                @elseif(auth()->user()->isBranchManager())
+                    <i class="fas fa-user-tie mr-1"></i>
+                @elseif(auth()->user()->isCashier())
+                    <i class="fas fa-user-check mr-1"></i>
+                @else
+                    <i class="fas fa-user mr-1"></i>
+                @endif
+                {{ auth()->user()->role->display_name ?? 'User' }}
             </div>
         </div>
         
@@ -650,11 +676,11 @@
         <div class="mt-auto p-6 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'SA', 0, 2)) }}</span>
+                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'Super Admin' }}</p>
-                    <p class="text-xs text-amber-200">Super Administrator</p>
+                    <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'User' }}</p>
+                    <p class="text-xs text-amber-200">{{ auth()->user()->role->display_name ?? 'User' }}</p>
                 </div>
                 <div class="flex flex-col space-y-1">
                     <form method="POST" action="{{ route('logout') }}">
@@ -682,11 +708,39 @@
                 <div class="flex-1 px-2 sm:px-0">
                     <div class="flex items-center space-x-2 sm:space-x-3">
                         <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-crown text-white text-sm sm:text-lg"></i>
+                            @if(auth()->user()->isSuperAdmin())
+                                <i class="fas fa-crown text-white text-sm sm:text-lg"></i>
+                            @elseif(auth()->user()->isBranchManager())
+                                <i class="fas fa-store text-white text-sm sm:text-lg"></i>
+                            @elseif(auth()->user()->isCashier())
+                                <i class="fas fa-cash-register text-white text-sm sm:text-lg"></i>
+                            @else
+                                <i class="fas fa-user text-white text-sm sm:text-lg"></i>
+                            @endif
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">@yield('title', 'Super Admin Dashboard')</h1>
-                            <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">Complete system control and management</p>
+                            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">@yield('title', 
+                                @if(auth()->user()->isSuperAdmin())
+                                    'Super Admin Dashboard'
+                                @elseif(auth()->user()->isBranchManager())
+                                    'Branch Manager Dashboard'
+                                @elseif(auth()->user()->isCashier())
+                                    'POS Dashboard'
+                                @else
+                                    'User Dashboard'
+                                @endif
+                            )</h1>
+                            <p class="text-xs sm:text-sm text-gray-500 hidden sm:block">
+                                @if(auth()->user()->isSuperAdmin())
+                                    Complete system control and management
+                                @elseif(auth()->user()->isBranchManager())
+                                    Manage your branch operations
+                                @elseif(auth()->user()->isCashier())
+                                    Point of Sale System
+                                @else
+                                    User panel
+                                @endif
+                            </p>
                         </div>
                     </div>
                 </div>

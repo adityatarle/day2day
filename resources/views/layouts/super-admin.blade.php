@@ -158,7 +158,7 @@
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-80 lg:ml-80">
+    <div class="main-content ml-0 lg:ml-80">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-40">
             <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">

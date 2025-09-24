@@ -130,11 +130,11 @@
                                         <div class="text-xs text-gray-500">units</div>
                                     </td>
                                     <td class="px-4 py-4 text-center">
-                                        <div class="text-sm font-medium {{ $tracking['received_quantity'] > 0 ? 'text-green-600' : 'text-gray-400' }}">{{ number_format($tracking['received_quantity'], 2) }}</div>
+                                        <div class="text-sm font-medium {{ $tracking['received_quantity'] > 0 ? 'text-green-600' : 'text-gray-400' }}">{{ number_format($productOrder->total_received_quantity, 2) }}</div>
                                         <div class="text-xs text-gray-500">units</div>
                                     </td>
                                     <td class="px-4 py-4 text-center">
-                                        <div class="text-sm font-medium {{ $tracking['remaining_quantity'] > 0 ? 'text-orange-600' : 'text-gray-400' }}">{{ number_format($tracking['remaining_quantity'], 2) }}</div>
+                                        <div class="text-sm font-medium {{ $tracking['remaining_quantity'] > 0 ? 'text-orange-600' : 'text-gray-400' }}">{{ number_format($productOrder->total_ordered_quantity - $productOrder->total_received_quantity, 2) }}</div>
                                         <div class="text-xs text-gray-500">units</div>
                                     </td>
                                     <td class="px-4 py-4">

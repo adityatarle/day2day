@@ -52,10 +52,11 @@
                             </select>
                         </div>
 
+                        <!-- Category Tabs -->
+                        <div id="category-tabs" class="flex flex-wrap gap-2 mb-3"></div>
+
                         <!-- Product Grid -->
-                        <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                            <!-- Products will be loaded here via JavaScript -->
-                        </div>
+                        <div id="products-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
                     </div>
                 </div>
 
@@ -184,6 +185,8 @@
 <script>
 let cart = [];
 let products = [];
+let categories = [];
+let activeCategory = '';
 
 // Load products on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -214,6 +217,8 @@ async function loadProducts() {
         const data = await response.json();
         if (data.success) {
             products = data.data;
+            categories = [...new Set(products.map(p => p.category))].filter(Boolean).sort();
+            renderCategoryTabs();
             displayProducts(products);
             populateCategories();
         }
@@ -235,11 +240,12 @@ function displayProducts(productsToShow) {
         productCard.innerHTML = `
             <div class="text-sm font-medium text-gray-900 mb-1">${product.name}</div>
             <div class="text-xs text-gray-500 mb-2">${product.code}</div>
+            <div class="text-xs text-gray-500 mb-1">Stock: ${parseFloat(product.current_stock).toFixed(2)}</div>
             <div class="text-lg font-bold text-green-600">₹${parseFloat(product.city_price || product.selling_price).toFixed(2)}</div>
-            ${!product.is_available_in_city ? '<div class="text-xs text-red-500 mt-1">Not available in this city</div>' : ''}
+            ${(!product.is_available_in_city || parseFloat(product.current_stock) <= 0) ? '<div class="text-xs text-red-500 mt-1">Out of stock</div>' : ''}
         `;
         
-        if (!product.is_available_in_city) {
+        if (!product.is_available_in_city || parseFloat(product.current_stock) <= 0) {
             productCard.className += ' opacity-50 cursor-not-allowed';
             productCard.onclick = null;
         }
@@ -351,7 +357,7 @@ function clearCart() {
 // Filter products
 function filterProducts() {
     const search = document.getElementById('product-search').value.toLowerCase();
-    const category = document.getElementById('category-filter').value;
+    const category = activeCategory || document.getElementById('category-filter').value;
     
     let filtered = products.filter(product => {
         const matchesSearch = product.name.toLowerCase().includes(search) || 
@@ -373,6 +379,32 @@ function populateCategories() {
         option.value = category;
         option.textContent = category;
         categoryFilter.appendChild(option);
+    });
+}
+
+// Render category tabs (modern POS switch)
+function renderCategoryTabs() {
+    const container = document.getElementById('category-tabs');
+    container.innerHTML = '';
+    const allBtn = document.createElement('button');
+    allBtn.className = 'px-3 py-1 rounded-full border text-sm ' + (activeCategory === '' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
+    allBtn.textContent = 'All';
+    allBtn.onclick = () => { activeCategory = ''; filterProducts(); highlightActiveTab(''); };
+    container.appendChild(allBtn);
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'px-3 py-1 rounded-full border text-sm ' + (activeCategory === cat ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
+        btn.textContent = cat;
+        btn.onclick = () => { activeCategory = cat; filterProducts(); highlightActiveTab(cat); };
+        container.appendChild(btn);
+    });
+}
+
+function highlightActiveTab(cat) {
+    const container = document.getElementById('category-tabs');
+    Array.from(container.children).forEach(btn => {
+        const isActive = (btn.textContent === (cat || 'All'));
+        btn.className = 'px-3 py-1 rounded-full border text-sm ' + (isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300');
     });
 }
 
@@ -473,10 +505,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateSessionStats(e.session);
                 }
             })
-            .listen('.stock.updated', (e) => {
-                // Optionally refresh product list or decrement stock badges
-                // For now, just log
-                console.log('Stock updated', e);
+            .listen('.stock.updated', async (e) => {
+                try {
+                    await loadProducts();
+                    filterProducts();
+                } catch (err) {
+                    console.error('Failed to refresh products after stock update', err);
+                }
             });
     }
 });

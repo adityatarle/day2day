@@ -238,4 +238,35 @@ class CustomerController extends Controller
 
         return view('customers.purchase-history', compact('customer', 'orders'));
     }
+
+    /**
+     * Search customers for cashier interface.
+     */
+    public function cashierSearch(Request $request)
+    {
+        $user = auth()->user();
+        $query = Customer::query();
+
+        // Branch managers should only see customers who have orders in their branch
+        if ($user->hasRole('branch_manager') && $user->branch_id) {
+            $branchId = $user->branch_id;
+            $query->whereHas('orders', function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+
+        // Search by name, email, or phone
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->latest()->paginate(20);
+
+        return view('cashier.customers.search', compact('customers'));
+    }
 }

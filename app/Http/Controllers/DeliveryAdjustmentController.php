@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Return;
+use App\Models\OrderReturn;
 use App\Models\ReturnItem;
 use App\Models\Delivery;
 use App\Models\Payment;
@@ -212,7 +212,7 @@ class DeliveryAdjustmentController extends Controller
         switch ($adjustment['action']) {
             case 'return':
                 // Create return record
-                $return = \App\Models\Return::create([
+                $return = OrderReturn::create([
                     'order_id' => $orderItem->order_id,
                     'customer_id' => $orderItem->order->customer_id,
                     'branch_id' => $branch->id,
@@ -467,7 +467,7 @@ class DeliveryAdjustmentController extends Controller
             $totalRefundAmount = 0;
 
             // Create return record
-            $return = \App\Models\Return::create([
+            $return = OrderReturn::create([
                 'order_id' => $order->id,
                 'customer_id' => $order->customer_id,
                 'branch_id' => $order->branch_id,

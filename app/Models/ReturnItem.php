@@ -28,7 +28,7 @@ class ReturnItem extends Model
      */
     public function return(): BelongsTo
     {
-        return $this->belongsTo(Return::class);
+        return $this->belongsTo(OrderReturn::class);
     }
 
     /**

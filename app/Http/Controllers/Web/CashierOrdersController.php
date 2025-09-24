@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Return as OrderReturn;
+use App\Models\OrderReturn;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 

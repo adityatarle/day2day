@@ -150,12 +150,14 @@ class AdminBranchOrderController extends Controller
 
             // Copy items from branch order to vendor purchase order
             foreach ($branchOrder->purchaseOrderItems as $branchItem) {
-                $vendorProduct = DB::table('product_vendors')
-                    ->where('product_id', $branchItem->product_id)
-                    ->where('vendor_id', $request->vendor_id)
-                    ->first();
-
-                $unitPrice = $vendorProduct ? $vendorProduct->supply_price : $branchItem->unit_price;
+                // Get the best available price for this vendor and product
+                $unitPrice = $branchItem->product->getBestVendorPrice($request->vendor_id);
+                
+                // If no price is available, use the estimated price from branch order
+                if (!$unitPrice || $unitPrice <= 0) {
+                    $unitPrice = $branchItem->unit_price;
+                }
+                
                 $totalPrice = $branchItem->quantity * $unitPrice;
 
                 $vendorPO->purchaseOrderItems()->create([

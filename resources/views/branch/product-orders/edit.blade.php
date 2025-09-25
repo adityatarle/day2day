@@ -65,9 +65,30 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h2 class="text-lg font-semibold text-gray-900">Products</h2>
-                        <p class="text-gray-600 text-sm">Update quantities and reasons</p>
+                        <p class="text-gray-600 text-sm">Update quantities and reasons - All products available</p>
                     </div>
                     <button type="button" id="add-item" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg">Add Product</button>
+                </div>
+
+                <!-- Product Search -->
+                <div class="mb-6">
+                    <div class="relative">
+                        <input type="text" id="product-search" placeholder="Search products by name or category..." 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="all">All</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="fruit">Fruits</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="vegetable">Vegetables</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="leafy">Leafy</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="exotic">Exotic</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="herbs">Herbs</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="dry_fruits">Dry Fruits</button>
+                        <button type="button" class="category-filter px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" data-category="organic">Organic</button>
+                    </div>
                 </div>
                 <div id="items-container" class="space-y-4">
                     @foreach($productOrder->purchaseOrderItems as $idx => $item)
@@ -143,6 +164,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const addItemBtn = document.getElementById('add-item');
     const itemsContainer = document.getElementById('items-container');
     const itemTemplate = document.getElementById('item-template');
+    const productSearch = document.getElementById('product-search');
+    const categoryFilters = document.querySelectorAll('.category-filter');
+    
+    let allProducts = @json($products);
+    let filteredProducts = allProducts;
+    let currentCategory = 'all';
 
     addItemBtn.addEventListener('click', addItem);
 
@@ -151,6 +178,61 @@ document.addEventListener('DOMContentLoaded', function() {
             e.target.closest('.item-row').remove();
         }
     });
+
+    // Product search functionality
+    productSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        filterProducts(searchTerm, currentCategory);
+        updateAllProductSelects();
+    });
+
+    // Category filter functionality
+    categoryFilters.forEach(filter => {
+        filter.addEventListener('click', function() {
+            // Update active filter
+            categoryFilters.forEach(f => f.classList.remove('bg-blue-500', 'text-white'));
+            this.classList.add('bg-blue-500', 'text-white');
+            
+            currentCategory = this.dataset.category;
+            const searchTerm = productSearch.value.toLowerCase();
+            filterProducts(searchTerm, currentCategory);
+            updateAllProductSelects();
+        });
+    });
+
+    function filterProducts(searchTerm, category) {
+        filteredProducts = allProducts.filter(product => {
+            const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
+                                product.category.toLowerCase().includes(searchTerm);
+            const matchesCategory = category === 'all' || product.category === category;
+            return matchesSearch && matchesCategory;
+        });
+    }
+
+    function updateAllProductSelects() {
+        const productSelects = document.querySelectorAll('.product-select');
+        productSelects.forEach(select => {
+            const currentValue = select.value;
+            updateProductSelectOptions(select);
+            select.value = currentValue; // Restore selected value if it still exists
+        });
+    }
+
+    function updateProductSelectOptions(select) {
+        // Clear existing options except the first one
+        while (select.children.length > 1) {
+            select.removeChild(select.lastChild);
+        }
+
+        // Add filtered products
+        filteredProducts.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = `${product.name} (${product.category})`;
+            option.dataset.category = product.category;
+            select.appendChild(option);
+        });
+    }
 
     function addItem() {
         const template = itemTemplate.innerHTML;
@@ -167,6 +249,9 @@ document.addEventListener('DOMContentLoaded', function() {
         productSelect.setAttribute('required', 'required');
         quantityInput.setAttribute('required', 'required');
         reasonInput.setAttribute('required', 'required');
+        
+        // Update product select with filtered products
+        updateProductSelectOptions(productSelect);
         
         itemsContainer.appendChild(itemRow);
         itemIndex++;

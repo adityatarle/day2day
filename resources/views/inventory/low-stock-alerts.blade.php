@@ -51,7 +51,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-orange-100 text-sm font-medium">Critical Stock Items</p>
-                    <p class="text-2xl font-bold">{{ $lowStockProducts->filter(function($product) { return $product->branches->some(function($branch) { return $branch->pivot->current_stock <= ($product->stock_threshold * 0.5); }); })->count() }}</p>
+                    <p class="text-2xl font-bold">{{ $lowStockProducts->filter(function($product) { return $product->branches->some(function($branch) use ($product) { return $branch->pivot->current_stock <= ($product->stock_threshold * 0.5); }); })->count() }}</p>
                 </div>
                 <div class="bg-white/20 p-3 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,7 +66,7 @@
                 <div>
                     <p class="text-yellow-100 text-sm font-medium">Potential Revenue Loss</p>
                     <p class="text-2xl font-bold">₹{{ number_format($lowStockProducts->sum(function($product) { 
-                        return $product->branches->sum(function($branch) { 
+                        return $product->branches->sum(function($branch) use ($product) { 
                             return ($product->stock_threshold - $branch->pivot->current_stock) * $branch->pivot->selling_price; 
                         }); 
                     }), 2) }}</p>

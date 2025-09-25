@@ -94,4 +94,28 @@ class Vendor extends Model
     {
         return $this->hasMany(LocalPurchase::class);
     }
+
+    /**
+     * Add a product to this vendor with optional pricing.
+     */
+    public function addProduct(int $productId, float $supplyPrice = null, bool $isPrimarySupplier = false): void
+    {
+        $this->products()->syncWithoutDetaching([
+            $productId => [
+                'supply_price' => $supplyPrice,
+                'is_primary_supplier' => $isPrimarySupplier,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        ]);
+    }
+
+    /**
+     * Check if this vendor can supply a product (either has specific pricing or can supply any product).
+     */
+    public function canSupplyProduct(Product $product): bool
+    {
+        // In the improved workflow, any vendor can supply any product
+        return true;
+    }
 }

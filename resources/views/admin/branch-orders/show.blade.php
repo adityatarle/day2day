@@ -120,6 +120,7 @@
                     <!-- Create Vendor Purchase Order Form -->
                     <div class="border rounded-lg p-4 bg-gray-50">
                         <h3 class="font-semibold text-gray-900 mb-3">Step 1: Create Vendor Purchase Order</h3>
+                        <p class="text-sm text-gray-600 mb-4">Any vendor can supply any product. The system will use vendor-specific pricing if available, otherwise it will use the product's standard purchase price.</p>
                         <form method="POST" action="{{ route('admin.branch-orders.create-vendor-po', $branchOrder) }}" class="space-y-3">
                             @csrf
                             <div>
@@ -132,6 +133,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <p class="text-xs text-gray-500 mt-1">All vendors can supply any product</p>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>

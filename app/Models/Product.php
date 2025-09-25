@@ -357,6 +357,22 @@ class Product extends Model
     }
 
     /**
+     * Get the best available price for a vendor (vendor-specific or fallback to purchase price).
+     */
+    public function getBestVendorPrice(int $vendorId): float
+    {
+        $vendorPrice = $this->getVendorPrice($vendorId);
+        
+        // Return vendor-specific price if available and greater than 0
+        if ($vendorPrice && $vendorPrice > 0) {
+            return $vendorPrice;
+        }
+        
+        // Fallback to product's purchase price
+        return $this->purchase_price ?? 0;
+    }
+
+    /**
      * Update vendor pricing.
      */
     public function updateVendorPrice(int $vendorId, float $price): void

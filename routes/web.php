@@ -281,6 +281,7 @@ Route::middleware('auth')->group(function () {
         
         // System Settings
         Route::get('/admin/settings', [AdminController::class, 'settings'])->name('admin.settings');
+        Route::post('/admin/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
         Route::get('/admin/security', [AdminController::class, 'security'])->name('admin.security');
         Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
         Route::get('/admin/roles', [AdminController::class, 'roles'])->name('admin.roles.index');

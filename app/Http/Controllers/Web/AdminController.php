@@ -246,4 +246,139 @@ class AdminController extends Controller
 
         return view('admin.purchase-entries.index', compact('purchaseEntries'));
     }
+
+    /**
+     * Display system settings
+     */
+    public function settings()
+    {
+        $branches = Branch::all();
+        $roles = Role::all();
+        $users = User::with(['role', 'branch'])->get();
+        
+        // Get system statistics
+        $stats = [
+            'total_users' => User::count(),
+            'active_users' => User::where('is_active', true)->count(),
+            'total_branches' => Branch::count(),
+            'active_branches' => Branch::where('is_active', true)->count(),
+            'total_products' => \App\Models\Product::count(),
+            'total_orders' => \App\Models\Order::count(),
+            'total_vendors' => \App\Models\Vendor::count(),
+        ];
+
+        // Load existing settings if they exist
+        $existingSettings = $this->loadSettings();
+
+        return view('admin.settings.index', compact('branches', 'roles', 'users', 'stats', 'existingSettings'));
+    }
+
+    /**
+     * Update system settings
+     */
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'company_name' => 'required|string|max:255',
+            'company_email' => 'required|email|max:255',
+            'company_phone' => 'nullable|string|max:20',
+            'company_address' => 'nullable|string|max:500',
+            'default_currency' => 'required|string|max:3',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'low_stock_threshold' => 'nullable|integer|min:0',
+            'auto_approve_orders' => 'boolean',
+            'email_notifications' => 'boolean',
+            'sms_notifications' => 'boolean',
+        ]);
+
+        // Store settings in config or database
+        // For now, we'll use Laravel's config system
+        $settings = [
+            'company_name' => $request->company_name,
+            'company_email' => $request->company_email,
+            'company_phone' => $request->company_phone,
+            'company_address' => $request->company_address,
+            'default_currency' => $request->default_currency,
+            'tax_rate' => $request->tax_rate,
+            'low_stock_threshold' => $request->low_stock_threshold,
+            'auto_approve_orders' => $request->boolean('auto_approve_orders'),
+            'email_notifications' => $request->boolean('email_notifications'),
+            'sms_notifications' => $request->boolean('sms_notifications'),
+        ];
+
+        // Update config file or store in database
+        // For this implementation, we'll store in a JSON file
+        file_put_contents(
+            storage_path('app/settings.json'),
+            json_encode($settings, JSON_PRETTY_PRINT)
+        );
+
+        return redirect()->route('admin.settings')->with('success', 'Settings updated successfully!');
+    }
+
+    /**
+     * Display security settings
+     */
+    public function security()
+    {
+        $users = User::with(['role', 'branch'])->get();
+        $roles = Role::all();
+        
+        return view('admin.settings.security', compact('users', 'roles'));
+    }
+
+    /**
+     * Display analytics dashboard
+     */
+    public function analytics()
+    {
+        $stats = [
+            'total_sales' => \App\Models\Order::sum('total_amount'),
+            'total_orders' => \App\Models\Order::count(),
+            'total_customers' => \App\Models\Customer::count(),
+            'total_products' => \App\Models\Product::count(),
+            'total_vendors' => \App\Models\Vendor::count(),
+            'total_branches' => Branch::count(),
+        ];
+
+        // Get recent activity
+        $recentOrders = \App\Models\Order::with(['customer', 'branch'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        $recentUsers = User::with(['role', 'branch'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('admin.settings.analytics', compact('stats', 'recentOrders', 'recentUsers'));
+    }
+
+    /**
+     * Load existing settings from storage
+     */
+    private function loadSettings()
+    {
+        $settingsPath = storage_path('app/settings.json');
+        
+        if (file_exists($settingsPath)) {
+            $settings = json_decode(file_get_contents($settingsPath), true);
+            return $settings ?: [];
+        }
+        
+        // Return default settings
+        return [
+            'company_name' => 'Day2Day Business',
+            'company_email' => 'admin@day2day.com',
+            'company_phone' => '+1-234-567-8900',
+            'company_address' => '123 Business Street, City, State 12345',
+            'default_currency' => 'USD',
+            'tax_rate' => '8.5',
+            'low_stock_threshold' => '10',
+            'auto_approve_orders' => false,
+            'email_notifications' => true,
+            'sms_notifications' => false,
+        ];
+    }
 }

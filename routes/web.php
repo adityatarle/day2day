@@ -214,6 +214,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,admin')->group(function () {
         // Admin Dashboard
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/admin/dashboard/todays-focus', [AdminDashboardController::class, 'todaysFocus'])->name('admin.dashboard.todays-focus');
+        Route::get('/admin/dashboard/performance', [AdminDashboardController::class, 'performance'])->name('admin.dashboard.performance');
+        Route::get('/admin/dashboard/widget-data', [AdminDashboardController::class, 'getWidgetData'])->name('admin.dashboard.widget-data');
 
         // Branch Orders Management - Admin can see all branch orders and assign vendors
         Route::get('/admin/branch-orders', [AdminBranchOrderController::class, 'index'])->name('admin.branch-orders.index');

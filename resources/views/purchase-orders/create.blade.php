@@ -2,6 +2,29 @@
 
 @section('title', 'Create Purchase Order')
 
+@section('head')
+<style>
+    .product-dropdown {
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        z-index: 50;
+    }
+    
+    .product-option:hover {
+        background-color: #f3f4f6;
+    }
+    
+    .product-option:last-child {
+        border-bottom: none;
+    }
+    
+    .product-search:focus + .product-dropdown {
+        display: block;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
@@ -240,9 +263,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                         <div>
                             <label class="form-label">Product</label>
-                            <select name="items[INDEX][product_id]" class="form-input product-select">
-                                <option value="">Select Product</option>
-                            </select>
+                            <div class="relative">
+                                <input type="text" name="items[INDEX][product_search]" class="form-input product-search" placeholder="Search products..." autocomplete="off">
+                                <input type="hidden" name="items[INDEX][product_id]" class="product-id-input">
+                                <div class="product-dropdown absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto">
+                                    <!-- Product options will be populated here -->
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="form-label">Quantity</label>
@@ -327,15 +354,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update totals when transport cost changes
     transportCostInput.addEventListener('input', updateTotals);
 
-    // Load vendor products when vendor is selected
-    vendorSelect.addEventListener('change', function() {
-        const vendorId = this.value;
-        if (vendorId) {
-            loadVendorProducts(vendorId);
-        } else {
-            clearProductOptions();
-        }
-    });
+    // All products data (loaded from server)
+    let allProducts = @json($products);
 
     function addItem() {
         const template = itemTemplate.innerHTML;
@@ -346,11 +366,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const itemRow = div.firstElementChild;
         
         // Add required attributes to the dynamically created elements
-        const productSelect = itemRow.querySelector('.product-select');
+        const productSearch = itemRow.querySelector('.product-search');
+        const productIdInput = itemRow.querySelector('.product-id-input');
         const quantityInput = itemRow.querySelector('.quantity-input');
         const priceInput = itemRow.querySelector('.price-input');
         
-        productSelect.setAttribute('required', 'required');
+        productSearch.setAttribute('required', 'required');
         quantityInput.setAttribute('required', 'required');
         priceInput.setAttribute('required', 'required');
         
@@ -374,11 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotals();
         });
 
-        // Load vendor products if vendor is already selected
-        const vendorId = vendorSelect.value;
-        if (vendorId) {
-            loadVendorProductsForItem(vendorId, itemRow);
-        }
+        // Setup searchable dropdown functionality
+        setupProductSearch(itemRow);
 
         itemIndex++;
     }
@@ -387,9 +405,16 @@ document.addEventListener('DOMContentLoaded', function() {
         addItem();
         const rows = document.querySelectorAll('.item-row');
         const itemRow = rows[rows.length - 1];
-        const select = itemRow.querySelector('.product-select');
-        // Store desired product id to select after vendor products load
-        select.dataset.prefill = String(productId);
+        const productSearch = itemRow.querySelector('.product-search');
+        const productIdInput = itemRow.querySelector('.product-id-input');
+        
+        // Find the product and set it
+        const product = allProducts.find(p => p.id == productId);
+        if (product) {
+            productSearch.value = `${product.name} (${product.category})`;
+            productIdInput.value = product.id;
+        }
+        
         const qtyInput = itemRow.querySelector('.quantity-input');
         qtyInput.value = quantity;
         updateItemTotal(itemRow);
@@ -423,106 +448,89 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('total-display').textContent = '₹' + totalAmount.toFixed(2);
     }
 
-    function loadVendorProducts(vendorId) {
-        fetch(`/api/vendors/${vendorId}/products`)
-            .then(response => response.json())
-            .then(products => {
-                document.querySelectorAll('.product-select').forEach(function(select) {
-                    let currentValue = select.value;
-                    if (select.dataset.prefill) {
-                        currentValue = select.dataset.prefill;
-                    }
-                    select.innerHTML = '<option value="">Select Product</option>';
-                    
-                    products.forEach(function(product) {
-                        const option = document.createElement('option');
-                        option.value = product.id;
-                        option.textContent = `${product.name} (${product.category}) - ₹${product.supply_price}`;
-                        option.dataset.supplyPrice = product.supply_price;
-                        if (product.id == currentValue) {
-                            option.selected = true;
-                        }
-                        select.appendChild(option);
-                    });
+    function setupProductSearch(itemRow) {
+        const productSearch = itemRow.querySelector('.product-search');
+        const productIdInput = itemRow.querySelector('.product-id-input');
+        const dropdown = itemRow.querySelector('.product-dropdown');
+        const priceInput = itemRow.querySelector('.price-input');
 
-                    // Auto-fill price when product is selected
-                    select.addEventListener('change', function() {
-                        const selectedOption = this.options[this.selectedIndex];
-                        if (selectedOption.dataset.supplyPrice) {
-                            const priceInput = this.closest('.item-row').querySelector('.price-input');
-                            priceInput.value = selectedOption.dataset.supplyPrice;
-                            updateItemTotal(this.closest('.item-row'));
-                            updateTotals();
-                        }
-                    });
-
-                    // If prefilled, trigger price fill and cleanup
-                    if (select.dataset.prefill) {
-                        const selectedOption = select.options[select.selectedIndex];
-                        if (selectedOption && selectedOption.dataset.supplyPrice) {
-                            const priceInput = select.closest('.item-row').querySelector('.price-input');
-                            priceInput.value = selectedOption.dataset.supplyPrice;
-                            updateItemTotal(select.closest('.item-row'));
-                            updateTotals();
-                        }
-                        delete select.dataset.prefill;
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error loading vendor products:', error);
-            });
-    }
-
-    function loadVendorProductsForItem(vendorId, itemRow) {
-        fetch(`/api/vendors/${vendorId}/products`)
-            .then(response => response.json())
-            .then(products => {
-                const select = itemRow.querySelector('.product-select');
-                select.innerHTML = '<option value="">Select Product</option>';
-                
-                products.forEach(function(product) {
-                    const option = document.createElement('option');
-                    option.value = product.id;
-                    option.textContent = `${product.name} (${product.category}) - ₹${product.supply_price}`;
-                    option.dataset.supplyPrice = product.supply_price;
-                    select.appendChild(option);
-                });
-
-                // Auto-fill price when product is selected
-                select.addEventListener('change', function() {
-                    const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption.dataset.supplyPrice) {
-                        const priceInput = itemRow.querySelector('.price-input');
-                        priceInput.value = selectedOption.dataset.supplyPrice;
-                        updateItemTotal(itemRow);
-                        updateTotals();
-                    }
-                });
-
-                // If prefilled, select and set price
-                if (select.dataset.prefill) {
-                    const prefillId = select.dataset.prefill;
-                    select.value = prefillId;
-                    const selectedOption = select.options[select.selectedIndex];
-                    if (selectedOption && selectedOption.dataset.supplyPrice) {
-                        const priceInput = itemRow.querySelector('.price-input');
-                        priceInput.value = selectedOption.dataset.supplyPrice;
-                        updateItemTotal(itemRow);
-                        updateTotals();
-                    }
-                    delete select.dataset.prefill;
-                }
-            })
-            .catch(error => {
-                console.error('Error loading vendor products:', error);
-            });
-    }
-
-    function clearProductOptions() {
-        document.querySelectorAll('.product-select').forEach(function(select) {
-            select.innerHTML = '<option value="">Select Vendor First</option>';
+        // Show dropdown on focus
+        productSearch.addEventListener('focus', function() {
+            showProductDropdown(this, dropdown);
         });
+
+        // Handle input changes
+        productSearch.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (query.length > 0) {
+                showProductDropdown(this, dropdown, query);
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Handle clicks outside to close dropdown
+        document.addEventListener('click', function(e) {
+            if (!itemRow.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Handle product selection
+        dropdown.addEventListener('click', function(e) {
+            const option = e.target.closest('.product-option');
+            if (option) {
+                const productId = option.dataset.productId;
+                const productName = option.dataset.productName;
+                const productCategory = option.dataset.productCategory;
+                const productPrice = option.dataset.productPrice;
+
+                productSearch.value = `${productName} (${productCategory})`;
+                productIdInput.value = productId;
+                priceInput.value = productPrice || '';
+                
+                dropdown.classList.add('hidden');
+                updateItemTotal(itemRow);
+                updateTotals();
+            }
+        });
+    }
+
+    function showProductDropdown(searchInput, dropdown, query = '') {
+        const searchTerm = query || searchInput.value.toLowerCase();
+        
+        // Filter products based on search term
+        const filteredProducts = allProducts.filter(product => 
+            product.name.toLowerCase().includes(searchTerm) ||
+            product.category.toLowerCase().includes(searchTerm) ||
+            product.sku?.toLowerCase().includes(searchTerm)
+        );
+
+        // Clear dropdown
+        dropdown.innerHTML = '';
+
+        if (filteredProducts.length === 0) {
+            dropdown.innerHTML = '<div class="p-3 text-gray-500 text-sm">No products found</div>';
+        } else {
+            filteredProducts.forEach(product => {
+                const option = document.createElement('div');
+                option.className = 'product-option p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+                option.dataset.productId = product.id;
+                option.dataset.productName = product.name;
+                option.dataset.productCategory = product.category;
+                option.dataset.productPrice = product.purchase_price || '';
+                
+                option.innerHTML = `
+                    <div class="font-medium text-gray-900">${product.name}</div>
+                    <div class="text-sm text-gray-500">${product.category} ${product.sku ? '• ' + product.sku : ''}</div>
+                    <div class="text-sm text-green-600 font-medium">₹${product.purchase_price || '0.00'}</div>
+                `;
+                
+                dropdown.appendChild(option);
+            });
+        }
+
+        dropdown.classList.remove('hidden');
     }
 
     // Helpers
@@ -632,15 +640,17 @@ document.addEventListener('DOMContentLoaded', function() {
         let itemErrors = [];
         for (let i = 0; i < items.length; i++) {
             const row = items[i];
-            const productSelect = row.querySelector('.product-select');
+            const productIdInput = row.querySelector('.product-id-input');
+            const productSearch = row.querySelector('.product-search');
             const quantityInput = row.querySelector('.quantity-input');
             const priceInput = row.querySelector('.price-input');
             
-            const productId = productSelect.value;
+            const productId = productIdInput.value;
+            const productName = productSearch.value;
             const quantity = parseFloat(quantityInput.value);
             const price = parseFloat(priceInput.value);
             
-            if (!productId) {
+            if (!productId || !productName) {
                 itemErrors.push(`Item ${i + 1}: Please select a product`);
             }
             if (!quantity || quantity <= 0) {
@@ -650,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 itemErrors.push(`Item ${i + 1}: Please enter a valid unit price`);
             }
             
-            if (productId && quantity > 0 && price >= 0) {
+            if (productId && productName && quantity > 0 && price >= 0) {
                 hasValidItems = true;
             }
         }

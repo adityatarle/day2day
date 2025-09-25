@@ -103,7 +103,8 @@ class PurchaseOrderController extends Controller
     {
         $user = Auth::user();
         $vendors = Vendor::active()->orderBy('name')->get();
-        $products = Product::active()->with('vendors')->orderBy('name')->get();
+        // Fetch ALL products regardless of vendor - remove vendor filtering
+        $products = Product::active()->orderBy('name')->get();
         
         // Branch filtering for branch managers
         if ($user->hasRole('branch_manager') && $user->branch_id) {
@@ -316,7 +317,8 @@ class PurchaseOrderController extends Controller
 
         $vendors = Vendor::active()->orderBy('name')->get();
         $branches = Branch::orderBy('name')->get();
-        $products = Product::active()->with('vendors')->orderBy('name')->get();
+        // Fetch ALL products regardless of vendor - remove vendor filtering
+        $products = Product::active()->orderBy('name')->get();
         $purchaseOrder->load('purchaseOrderItems.product');
 
         return view('purchase-orders.edit', compact('purchaseOrder', 'vendors', 'branches', 'products'));

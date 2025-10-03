@@ -56,10 +56,23 @@ return new class extends Migration
             $table->foreignId('to_warehouse_id')->nullable()->after('to_branch_id')->constrained('warehouses')->onDelete('set null');
             $table->enum('transfer_type', ['branch_to_branch', 'warehouse_to_branch', 'branch_to_warehouse', 'warehouse_to_warehouse'])->default('branch_to_branch')->after('status');
             $table->decimal('transfer_cost', 10, 2)->default(0)->after('transfer_type');
-            $table->text('vehicle_details')->nullable()->after('transfer_cost');
-            $table->string('driver_name')->nullable()->after('vehicle_details');
-            $table->string('driver_phone')->nullable()->after('driver_name');
-            $table->timestamp('estimated_arrival')->nullable()->after('approved_at');
+            
+            // Only add vehicle_details if it doesn't exist
+            if (!Schema::hasColumn('stock_transfers', 'vehicle_details')) {
+                $table->text('vehicle_details')->nullable()->after('transfer_cost');
+            }
+            
+            // Only add driver_name if it doesn't exist (it was added in an earlier migration)
+            if (!Schema::hasColumn('stock_transfers', 'driver_name')) {
+                $table->string('driver_name')->nullable()->after('vehicle_details');
+            }
+            
+            // Only add driver_phone if it doesn't exist (it was added in an earlier migration)
+            if (!Schema::hasColumn('stock_transfers', 'driver_phone')) {
+                $table->string('driver_phone')->nullable()->after('driver_name');
+            }
+            
+            $table->timestamp('estimated_arrival')->nullable()->after('expected_delivery');
             $table->timestamp('actual_arrival')->nullable()->after('estimated_arrival');
         });
 
@@ -148,17 +161,24 @@ return new class extends Migration
         Schema::table('stock_transfers', function (Blueprint $table) {
             $table->dropForeign(['from_warehouse_id']);
             $table->dropForeign(['to_warehouse_id']);
-            $table->dropColumn([
+            
+            $columnsToDrop = [
                 'from_warehouse_id',
                 'to_warehouse_id',
                 'transfer_type',
                 'transfer_cost',
-                'vehicle_details',
-                'driver_name',
-                'driver_phone',
                 'estimated_arrival',
                 'actual_arrival',
-            ]);
+            ];
+            
+            // Only drop vehicle_details if we added it (check if it exists)
+            if (Schema::hasColumn('stock_transfers', 'vehicle_details')) {
+                $columnsToDrop[] = 'vehicle_details';
+            }
+            
+            // Don't drop driver_name and driver_phone as they were added by an earlier migration
+            
+            $table->dropColumn($columnsToDrop);
         });
 
         Schema::dropIfExists('warehouse_stock');

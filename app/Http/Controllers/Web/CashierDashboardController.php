@@ -101,8 +101,8 @@ class CashierDashboardController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'code' => $product->code,
-                    'price' => $branchProduct->selling_price ?? $product->selling_price,
-                    'stock' => $branchProduct->current_stock ?? 0,
+                    'price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
+                    'stock' => $branchProduct?->pivot?->current_stock ?? 0,
                     'category' => $product->category ?? 'Uncategorized',
                 ];
             });

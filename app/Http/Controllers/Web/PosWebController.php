@@ -225,9 +225,9 @@ class PosWebController extends Controller
                 'name' => $product->name,
                 'code' => $product->code,
                 'category' => $product->category ?? 'Uncategorized',
-                'selling_price' => $branchProduct->selling_price ?? $product->selling_price,
-                'current_stock' => $branchProduct->current_stock ?? 0,
-                'city_price' => $branchProduct->selling_price ?? $product->selling_price,
+                'selling_price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
+                'current_stock' => $branchProduct?->pivot?->current_stock ?? 0,
+                'city_price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
                 'is_available_in_city' => true,
             ];
         });
@@ -262,9 +262,9 @@ class PosWebController extends Controller
                 'name' => $product->name,
                 'code' => $product->code,
                 'category' => $product->category ?? 'Uncategorized',
-                'selling_price' => $branchProduct->selling_price ?? $product->selling_price,
-                'current_stock' => $branchProduct->current_stock ?? 0,
-                'city_price' => $branchProduct->selling_price ?? $product->selling_price,
+                'selling_price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
+                'current_stock' => $branchProduct?->pivot?->current_stock ?? 0,
+                'city_price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
                 'is_available_in_city' => true,
             ];
         });

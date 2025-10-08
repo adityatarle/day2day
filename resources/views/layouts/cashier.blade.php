@@ -239,6 +239,23 @@
                             <span class="text-sm font-medium text-red-700">No Session</span>
                         @endif
                     </div>
+
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button id="notifications-button" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-bell text-base sm:text-lg"></i>
+                            <span id="notifications-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border rounded-lg shadow-lg z-50">
+                            <div class="px-4 py-2 border-b flex items-center justify-between">
+                                <span class="font-semibold text-gray-700 text-sm">Notifications</span>
+                                <button id="notifications-mark-all" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                            </div>
+                            <div id="notifications-list" class="max-h-96 overflow-auto">
+                                <div class="p-4 text-sm text-gray-500">No notifications</div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Quick Sale Button -->
                     <a href="{{ route('billing.quickSale') }}" class="quick-action px-4 py-2 text-white rounded-lg text-sm font-medium">

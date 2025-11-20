@@ -104,9 +104,20 @@ class CustomerController extends Controller
         // Set defaults
         $validated['credit_limit'] = $validated['credit_limit'] ?? 0;
         $validated['credit_days'] = $validated['credit_days'] ?? 0;
-        $validated['is_active'] = $request->has('is_active') ? true : false;
+        $validated['is_active'] = $request->has('is_active') ? (bool)$request->is_active : true; // Default to active
 
         $customer = Customer::create($validated);
+
+        // Redirect based on user role
+        $user = auth()->user();
+        if ($user->hasRole('cashier')) {
+            // For cashiers, redirect back to customer search with the new customer's name in search
+            $redirectTo = request()->get('redirect_to', route('cashier.customers.search'));
+            // Add search parameter to show the newly created customer
+            $redirectTo .= '?search=' . urlencode($customer->name);
+            return redirect($redirectTo)
+                ->with('success', 'Customer "' . $customer->name . '" created successfully!');
+        }
 
         return redirect()->route('customers.index')
             ->with('success', 'Customer created successfully!');
@@ -247,13 +258,14 @@ class CustomerController extends Controller
         $user = auth()->user();
         $query = Customer::query();
 
-        // Branch managers should only see customers who have orders in their branch
+        // Cashiers can see all customers, but branch managers see only their branch customers
         if ($user->hasRole('branch_manager') && $user->branch_id) {
             $branchId = $user->branch_id;
             $query->whereHas('orders', function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId);
             });
         }
+        // Cashiers see all customers - no restriction
 
         // Search by name, email, or phone
         if ($request->has('search') && !empty($request->search)) {
@@ -263,9 +275,12 @@ class CustomerController extends Controller
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%");
             });
+            // Order search results by name
+            $customers = $query->orderBy('name')->paginate(20);
+        } else {
+            // If no search query, show recent customers (ordered by most recent first)
+            $customers = $query->orderBy('created_at', 'desc')->paginate(20);
         }
-
-        $customers = $query->latest()->paginate(20);
 
         return view('cashier.customers.search', compact('customers'));
     }

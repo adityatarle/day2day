@@ -73,11 +73,48 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label">Branch Code *</label>
+                            <input type="text" name="code" value="{{ old('code', $branch->code) }}" 
+                                   class="form-input @error('code') border-red-500 @enderror" 
+                                   placeholder="Enter branch code" required>
+                            @error('code')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Address *</label>
                             <textarea name="address" rows="4" 
                                       class="form-input @error('address') border-red-500 @enderror" 
                                       placeholder="Enter complete branch address" required>{{ old('address', $branch->address) }}</textarea>
                             @error('address')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">City *</label>
+                            <select name="city_id" class="form-input @error('city_id') border-red-500 @enderror" required>
+                                <option value="">Select City</option>
+                                @foreach($cities as $city)
+                                    <option value="{{ $city->id }}" {{ old('city_id', $branch->city_id) == $city->id ? 'selected' : '' }}>
+                                        {{ $city->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('city_id')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Outlet Type *</label>
+                            <select name="outlet_type" class="form-input @error('outlet_type') border-red-500 @enderror" required>
+                                <option value="retail" {{ old('outlet_type', $branch->outlet_type) == 'retail' ? 'selected' : '' }}>Retail</option>
+                                <option value="wholesale" {{ old('outlet_type', $branch->outlet_type) == 'wholesale' ? 'selected' : '' }}>Wholesale</option>
+                                <option value="hybrid" {{ old('outlet_type', $branch->outlet_type) == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                            </select>
+                            @error('outlet_type')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>

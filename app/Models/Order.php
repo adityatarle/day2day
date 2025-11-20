@@ -238,14 +238,33 @@ class Order extends Model
     public function calculateTaxAmount(): float
     {
         $taxAmount = 0;
+        
+        // Ensure orderItems are loaded
+        if (!$this->relationLoaded('orderItems')) {
+            $this->load('orderItems.product');
+        }
+        
         foreach ($this->orderItems as $item) {
+            if (!$item->product) {
+                continue;
+            }
+            
             $product = $item->product;
-            $gstRate = $product->gstRates->first();
-            if ($gstRate) {
-                $taxAmount += ($item->total_price * $gstRate->rate) / 100;
+            
+            // Check if product has gstRates relationship and it's loaded
+            if (method_exists($product, 'gstRates')) {
+                if (!$product->relationLoaded('gstRates')) {
+                    $product->load('gstRates');
+                }
+                
+                $gstRate = $product->gstRates->first();
+                if ($gstRate && isset($gstRate->rate)) {
+                    $taxAmount += ($item->total_price * $gstRate->rate) / 100;
+                }
             }
         }
-        return $taxAmount;
+        
+        return round($taxAmount, 2);
     }
 
     /**

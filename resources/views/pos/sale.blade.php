@@ -115,9 +115,11 @@
                                         <option value="{{ $customer->id }}">{{ $customer->name }} - {{ $customer->phone }}</option>
                                     @endforeach
                                 </select>
-                                <button id="new-customer" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg">
+                                <a href="{{ route('customers.create') }}?redirect_to={{ urlencode(route('pos.sale')) }}" 
+                                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg inline-flex items-center justify-center" 
+                                   title="Add New Customer">
                                     <i class="fas fa-plus"></i>
-                                </button>
+                                </a>
                             </div>
                         </div>
 

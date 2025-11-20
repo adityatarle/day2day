@@ -64,15 +64,24 @@
         <div class="flex items-center justify-between">
             <div>
                 <h3 class="text-xl font-bold">Active POS Session</h3>
+                <p class="text-green-100">
+                    <i class="fas fa-user mr-1"></i>
+                    Handled by: <span class="font-semibold">{{ $current_session->handled_by }}</span>
+                </p>
                 <p class="text-green-100">Started: {{ $current_session->started_at->format('M d, Y H:i') }}</p>
                 <p class="text-green-100">Duration: {{ $current_session->started_at->diffForHumans(null, true) }}</p>
             </div>
             <div class="text-right">
                 <div class="text-2xl font-bold">₹{{ number_format($today_stats['session_sales'], 2) }}</div>
                 <div class="text-green-100">{{ $today_stats['session_orders'] }} orders</div>
-                <a href="{{ route('pos.close-session') }}" class="mt-2 inline-block bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Close Session
-                </a>
+                <div class="mt-4 flex space-x-2">
+                    <a href="{{ route('pos.index') }}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fas fa-shopping-cart mr-1"></i>Continue Selling
+                    </a>
+                    <a href="{{ route('pos.session-manager') }}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fas fa-tasks mr-1"></i>Manage Session
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -83,9 +92,12 @@
                 <h3 class="text-xl font-bold">No Active Session</h3>
                 <p class="text-orange-100">You need to start a POS session to process sales</p>
             </div>
-            <div>
-                <a href="{{ route('pos.start-session') }}" class="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg font-bold transition-colors">
-                    Start POS Session
+            <div class="flex space-x-3">
+                <a href="{{ route('pos.session-manager') }}" class="bg-white/20 hover:bg-white/30 px-4 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-tasks mr-2"></i>Session Manager
+                </a>
+                <a href="{{ route('pos.sessions.create') }}" class="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg font-bold transition-colors">
+                    <i class="fas fa-play mr-2"></i>Start Session
                 </a>
             </div>
         </div>

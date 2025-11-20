@@ -89,10 +89,21 @@
                 </div>
 
                 @php
-                    $paid = $order->payments()->sum('amount');
+                    // Try to get payments, but handle if table doesn't exist
+                    try {
+                        $paid = $order->payments()->sum('amount') ?? 0;
+                    } catch (\Exception $e) {
+                        // If payments table doesn't exist, use payment_status to determine paid amount
+                        if ($order->payment_status === 'paid') {
+                            $paid = $order->total_amount;
+                        } else {
+                            $paid = 0;
+                        }
+                    }
                     $balance = max($order->total_amount - $paid, 0);
                 @endphp
 
+                @if($paid > 0 || $balance > 0)
                 <div class="mt-2 flex justify-between text-sm">
                     <span>Paid</span>
                     <span>₹{{ number_format($paid, 2) }}</span>
@@ -101,6 +112,7 @@
                     <span>Balance</span>
                     <span>₹{{ number_format($balance, 2) }}</span>
                 </div>
+                @endif
             </div>
         </div>
 

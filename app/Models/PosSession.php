@@ -13,6 +13,7 @@ class PosSession extends Model
 
     protected $fillable = [
         'user_id',
+        'handled_by',
         'branch_id',
         'terminal_id',
         'opening_cash',

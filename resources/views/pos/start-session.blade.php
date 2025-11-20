@@ -17,6 +17,27 @@
             <form action="{{ route('pos.process-start-session') }}" method="POST">
                 @csrf
                 
+                <!-- Session Handler (if not set from session handler page) -->
+                @if(!session('handled_by'))
+                <div class="mb-6">
+                    <label for="handled_by" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2 text-blue-600"></i>
+                        Session Handler
+                    </label>
+                    <input type="text" 
+                           name="handled_by" 
+                           id="handled_by" 
+                           value="{{ auth()->user()->name }}"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('handled_by') border-red-500 @enderror"
+                           placeholder="Enter your name or ID"
+                           required>
+                    @error('handled_by')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-gray-500 text-sm mt-1">Who is handling this session?</p>
+                </div>
+                @endif
+                
                 <div class="mb-6">
                     <label for="terminal_id" class="block text-sm font-medium text-gray-700 mb-2">
                         Terminal ID

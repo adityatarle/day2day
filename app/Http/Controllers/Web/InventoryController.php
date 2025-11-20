@@ -130,7 +130,6 @@ class InventoryController extends Controller
                     'current_stock' => $request->quantity,
                     'selling_price' => $request->selling_price ?? $product->selling_price,
                     'is_available_online' => true,
-                    'stock_threshold' => $product->stock_threshold ?? 10,
                 ]);
             }
 

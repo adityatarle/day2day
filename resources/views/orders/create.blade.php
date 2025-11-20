@@ -21,6 +21,43 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Order Details</h2>
 
+        @if ($errors->any())
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">There were errors with your submission:</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc list-inside space-y-1">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <form id="order-form" class="space-y-8">
             @csrf
 
@@ -233,7 +270,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (items.length === 0) {
             alert('Please add at least one valid item.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
             return;
+        }
+
+        // Validate that all items have valid data
+        for (let i = 0; i < items.length; i++) {
+            if (!items[i].product_id || !items[i].quantity || !items[i].unit_price) {
+                alert('Please ensure all items have product, quantity, and price filled in.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+            if (parseFloat(items[i].quantity) <= 0) {
+                alert('Quantity must be greater than 0 for all items.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+            if (parseFloat(items[i].unit_price) < 0) {
+                alert('Unit price cannot be negative.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
         }
 
         const payload = {
@@ -245,37 +306,103 @@ document.addEventListener('DOMContentLoaded', function() {
             items: items
         };
 
-        try {
-            // Ensure CSRF cookie is set (for sanctum setups)
-            try { await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' }); } catch (e) {}
+        // Show processing state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2"></span>Processing...';
 
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': token,
-                    'X-XSRF-TOKEN': xsrfToken
-                },
-                body: JSON.stringify(payload),
-                credentials: 'same-origin'
+        try {
+            // Use form submission instead of fetch for web route
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ route("orders.store") }}';
+            
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = token;
+            form.appendChild(csrfInput);
+
+            // Add customer_id if selected
+            if (payload.customer_id) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'customer_id';
+                input.value = payload.customer_id;
+                form.appendChild(input);
+            }
+
+            // Add customer details if new customer
+            if (!payload.customer_id) {
+                if (payload.customer_name) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'customer_name';
+                    input.value = payload.customer_name;
+                    form.appendChild(input);
+                }
+                if (payload.customer_phone) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'customer_phone';
+                    input.value = payload.customer_phone;
+                    form.appendChild(input);
+                }
+            }
+
+            // Add order details
+            const orderTypeInput = document.createElement('input');
+            orderTypeInput.type = 'hidden';
+            orderTypeInput.name = 'order_type';
+            orderTypeInput.value = payload.order_type;
+            form.appendChild(orderTypeInput);
+
+            const paymentMethodInput = document.createElement('input');
+            paymentMethodInput.type = 'hidden';
+            paymentMethodInput.name = 'payment_method';
+            paymentMethodInput.value = payload.payment_method;
+            form.appendChild(paymentMethodInput);
+
+            // Add branch_id if available
+            const branchId = document.getElementById('branch_id')?.value;
+            if (branchId) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'branch_id';
+                input.value = branchId;
+                form.appendChild(input);
+            }
+
+            // Add items
+            payload.items.forEach((item, index) => {
+                const productInput = document.createElement('input');
+                productInput.type = 'hidden';
+                productInput.name = `items[${index}][product_id]`;
+                productInput.value = item.product_id;
+                form.appendChild(productInput);
+
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'hidden';
+                quantityInput.name = `items[${index}][quantity]`;
+                quantityInput.value = item.quantity;
+                form.appendChild(quantityInput);
+
+                const priceInput = document.createElement('input');
+                priceInput.type = 'hidden';
+                priceInput.name = `items[${index}][unit_price]`;
+                priceInput.value = item.unit_price;
+                form.appendChild(priceInput);
             });
 
-            const data = await response.json();
-            if (!response.ok) {
-                console.error('Order creation failed:', data);
-                alert(data.message || 'Failed to create order');
-                return;
-            }
-
-            if (data && data.data && data.data.id) {
-                window.location.href = `{{ url('/orders') }}/${data.data.id}`;
-            } else {
-                window.location.href = `{{ route('orders.index') }}`;
-            }
+            document.body.appendChild(form);
+            form.submit();
         } catch (error) {
             console.error('Error creating order:', error);
-            alert('An unexpected error occurred');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            alert('An unexpected error occurred: ' + error.message);
         }
     });
 });

@@ -216,23 +216,24 @@ class VendorController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'required|string',
             'gst_number' => 'nullable|string|max:15|unique:vendors,gst_number,' . $vendor->id,
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
             'products' => 'nullable|array',
             'products.*.product_id' => 'required_with:products.*|exists:products,id',
             'products.*.supply_price' => 'required_with:products.*|numeric|min:0.01',
-            'products.*.is_primary_supplier' => 'boolean',
+            'products.*.is_primary_supplier' => 'nullable|boolean',
         ]);
 
-        DB::transaction(function () use ($request, $vendor) {
-            $vendor->update([
-                'name' => $request->name,
-                'code' => $request->code,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'address' => $request->address,
-                'gst_number' => $request->gst_number,
-                'is_active' => $request->has('is_active'),
-            ]);
+        try {
+            DB::transaction(function () use ($request, $vendor) {
+                $vendor->update([
+                    'name' => $request->name,
+                    'code' => $request->code,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'gst_number' => $request->gst_number,
+                    'is_active' => $request->has('is_active') ? (bool)$request->is_active : $vendor->is_active,
+                ]);
 
             // Update product relationships
             $vendor->products()->detach();
@@ -249,6 +250,17 @@ class VendorController extends Controller
                 }
             }
         });
+        } catch (\Exception $e) {
+            \Log::error('Vendor update failed: ' . $e->getMessage(), [
+                'vendor_id' => $vendor->id,
+                'request_data' => $request->all(),
+                'exception' => $e
+            ]);
+            
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to update vendor. Please check all fields and try again. Error: ' . $e->getMessage()]);
+        }
 
         return redirect()->route('vendors.show', $vendor)
             ->with('success', 'Vendor updated successfully!');

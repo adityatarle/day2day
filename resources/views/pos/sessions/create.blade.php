@@ -38,16 +38,16 @@
                 <div class="space-y-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Opening Balance (₹) <span class="text-red-500">*</span>
+                            Opening Cash (₹) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" 
-                               id="opening-balance" 
-                               name="opening_balance" 
-                               step="0.01" 
+                               id="opening-cash" 
+                               name="opening_cash" 
+                               step="1" 
                                min="0" 
                                required
                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                               placeholder="0.00">
+                               placeholder="0">
                         <p class="text-sm text-gray-500 mt-1">Enter the amount of cash in the register at the start of your session</p>
                     </div>
 
@@ -118,11 +118,11 @@
 document.getElementById('start-session-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const openingBalance = document.getElementById('opening-balance').value;
+    const openingCash = document.getElementById('opening-cash').value;
     const notes = document.getElementById('notes').value;
     
-    if (!openingBalance || parseFloat(openingBalance) < 0) {
-        alert('Please enter a valid opening balance');
+    if (!openingCash || parseInt(openingCash) < 0) {
+        alert('Please enter a valid opening cash amount');
         return;
     }
     
@@ -130,8 +130,8 @@ document.getElementById('start-session-form').addEventListener('submit', functio
     document.getElementById('loading-modal').classList.remove('hidden');
     
     const formData = {
-        opening_balance: parseFloat(openingBalance),
-        notes: notes
+        opening_cash: parseInt(openingCash),
+        session_notes: notes
     };
     
     fetch('{{ route("pos.sessions.store") }}', {
@@ -148,13 +148,11 @@ document.getElementById('start-session-form').addEventListener('submit', functio
         document.getElementById('loading-modal').classList.add('hidden');
         
         if (data.success) {
-            alert('POS Session started successfully!');
-            // Redirect to the session or POS system
-            if (data.session && data.session.id) {
-                window.location.href = `/pos/sessions/${data.session.id}`;
-            } else {
+            alert('POS Session started successfully! Redirecting to POS Terminal...');
+            // Add a small delay to ensure session is properly created
+            setTimeout(function() {
                 window.location.href = '{{ route("pos.index") }}';
-            }
+            }, 1000);
         } else {
             if (data.errors) {
                 let errorMessage = 'Please fix the following errors:\n';
@@ -174,16 +172,16 @@ document.getElementById('start-session-form').addEventListener('submit', functio
     });
 });
 
-// Auto-focus on opening balance input
+// Auto-focus on opening cash input
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('opening-balance').focus();
+    document.getElementById('opening-cash').focus();
 });
 
-// Format opening balance input
-document.getElementById('opening-balance').addEventListener('input', function(e) {
-    let value = parseFloat(e.target.value);
+// Format opening cash input (whole numbers only)
+document.getElementById('opening-cash').addEventListener('input', function(e) {
+    let value = parseInt(e.target.value);
     if (!isNaN(value)) {
-        e.target.value = value.toFixed(2);
+        e.target.value = value;
     }
 });
 </script>

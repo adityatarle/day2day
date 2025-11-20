@@ -129,12 +129,17 @@ class AdminBranchManagementController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'outlet_type' => 'required|in:retail,wholesale,hybrid',
             'operating_hours' => 'nullable|array',
-            'pos_enabled' => 'boolean',
+            'pos_enabled' => 'nullable|boolean',
             'pos_terminal_id' => ['nullable', 'string', 'max:50', Rule::unique('branches')->ignore($branch->id)],
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        $branch->update($validated);
+        // Handle boolean fields properly
+        $updateData = $validated;
+        $updateData['pos_enabled'] = $request->has('pos_enabled') ? (bool)$request->pos_enabled : $branch->pos_enabled;
+        $updateData['is_active'] = $request->has('is_active') ? (bool)$request->is_active : $branch->is_active;
+
+        $branch->update($updateData);
 
         return redirect()->route('admin.branches.index')
             ->with('success', 'Branch updated successfully.');

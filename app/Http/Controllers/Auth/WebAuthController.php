@@ -186,7 +186,7 @@ class WebAuthController extends Controller
 
         // Redirect based on role
         if ($user->hasRole('cashier')) {
-            return redirect()->intended('/pos');
+            return redirect()->intended('/pos/session-handler');
         } else {
             return redirect()->intended('/dashboard');
         }
@@ -227,7 +227,7 @@ class WebAuthController extends Controller
         } elseif ($user->isBranchManager()) {
             return redirect('/dashboard');
         } elseif ($user->isCashier()) {
-            return redirect('/pos');
+            return redirect('/pos/session-handler');
         } elseif ($user->isDeliveryBoy()) {
             return redirect('/delivery/dashboard');
         }

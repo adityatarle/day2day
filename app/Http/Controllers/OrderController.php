@@ -66,6 +66,14 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        // Check authentication first
+        if (!auth()->check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated. Please log in to create orders.'
+            ], 401);
+        }
+
         $validator = Validator::make($request->all(), [
             'customer_id' => 'nullable|exists:customers,id',
             'customer_name' => 'required_without:customer_id|string|max:255',
@@ -96,6 +104,15 @@ class OrderController extends Controller
             DB::beginTransaction();
 
             $user = auth()->user();
+            
+            if (!$user) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+            
             $branch = $user->branch;
 
             if (!$branch) {

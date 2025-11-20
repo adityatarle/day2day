@@ -121,6 +121,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:super_admin,admin,branch_manager,cashier')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
+        Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
         Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
@@ -135,14 +136,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/orders/workflow/status/{status}', [OrderWorkflowController::class, 'byStatus'])->name('orders.workflow.by-status');
         Route::put('/orders/{order}/workflow/priority', [OrderWorkflowController::class, 'updatePriority'])->name('orders.workflow.update-priority');
         Route::get('/billing/quick-sale', [OrderController::class, 'quickSaleForm'])->name('billing.quickSale');
+        Route::post('/billing/quick-sale', [OrderController::class, 'quickSaleStore'])->name('billing.quickSale.store');
         Route::get('/billing/wholesale', [OrderController::class, 'wholesaleForm'])->name('billing.wholesale');
     });
     
     // Customer management
-    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
-        Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+    // IMPORTANT: Specific routes (like /create) must come BEFORE parameterized routes (like /{customer})
+    // Customer create/store - accessible to cashiers too
+    Route::middleware('role:super_admin,admin,branch_manager,cashier')->group(function () {
         Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
         Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+    });
+    
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
+        Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
         Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
@@ -208,6 +215,33 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
         Route::get('/reports/profit-loss', [ReportController::class, 'profitLoss'])->name('reports.profitLoss');
         Route::get('/reports/analytics', [ReportController::class, 'analytics'])->name('reports.analytics');
+    });
+
+    // Financial Reports
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
+        Route::get('/reports/financial', [App\Http\Controllers\Web\FinancialReportController::class, 'index'])->name('reports.financial.index');
+        Route::post('/reports/financial/profit-loss', [App\Http\Controllers\Web\FinancialReportController::class, 'profitLoss'])->name('reports.financial.profit-loss');
+        Route::post('/reports/financial/cash-flow', [App\Http\Controllers\Web\FinancialReportController::class, 'cashFlow'])->name('reports.financial.cash-flow');
+        Route::post('/reports/financial/balance-sheet', [App\Http\Controllers\Web\FinancialReportController::class, 'balanceSheet'])->name('reports.financial.balance-sheet');
+        Route::post('/reports/financial/sales-register', [App\Http\Controllers\Web\FinancialReportController::class, 'salesRegister'])->name('reports.financial.sales-register');
+        Route::post('/reports/financial/purchase-register', [App\Http\Controllers\Web\FinancialReportController::class, 'purchaseRegister'])->name('reports.financial.purchase-register');
+        Route::post('/reports/financial/expense-analysis', [App\Http\Controllers\Web\FinancialReportController::class, 'expenseAnalysis'])->name('reports.financial.expense-analysis');
+    });
+
+    // Notifications
+    Route::middleware('auth')->group(function () {
+        Route::get('/notifications', [App\Http\Controllers\Web\NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/preferences', [App\Http\Controllers\Web\NotificationController::class, 'getPreferences'])->name('notifications.preferences');
+        Route::post('/notifications/preferences', [App\Http\Controllers\Web\NotificationController::class, 'updatePreferences'])->name('notifications.update-preferences');
+        Route::post('/notifications/mark-read', [App\Http\Controllers\Web\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+        Route::post('/notifications/mark-unread', [App\Http\Controllers\Web\NotificationController::class, 'markAsUnread'])->name('notifications.mark-unread');
+        Route::post('/notifications/mark-all-read', [App\Http\Controllers\Web\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+        Route::post('/notifications/handle-action', [App\Http\Controllers\Web\NotificationController::class, 'handleAction'])->name('notifications.handle-action');
+        
+        // API endpoints for AJAX
+        Route::get('/api/notifications/unread-count', [App\Http\Controllers\Web\NotificationController::class, 'getUnreadCount'])->name('api.notifications.unread-count');
+        Route::get('/api/notifications/recent', [App\Http\Controllers\Web\NotificationController::class, 'getRecent'])->name('api.notifications.recent');
+        Route::get('/api/notifications/stats', [App\Http\Controllers\Web\NotificationController::class, 'getStats'])->name('api.notifications.stats');
     });
     
     // Super Admin and Admin routes
@@ -434,18 +468,25 @@ Route::middleware('auth')->group(function () {
 
     // POS System (Cashier, Branch Manager, Admin, Super Admin)
     Route::middleware('role:super_admin,admin,branch_manager,cashier')->group(function () {
-        Route::get('/pos', [PosWebController::class, 'index'])->name('pos.index');
+        Route::get('/pos/session-handler', [PosWebController::class, 'sessionHandler'])->name('pos.session-handler');
+        Route::post('/pos/session-handler', [PosWebController::class, 'processSessionHandler'])->name('pos.process-session-handler');
         Route::get('/pos/start-session', [PosWebController::class, 'startSession'])->name('pos.start-session');
         Route::post('/pos/start-session', [PosWebController::class, 'processStartSession'])->name('pos.process-start-session');
+        Route::get('/pos/session-manager', [PosWebController::class, 'sessionManager'])->name('pos.session-manager');
         Route::get('/pos/close-session', [PosWebController::class, 'closeSession'])->name('pos.close-session');
         Route::post('/pos/close-session', [PosWebController::class, 'processCloseSession'])->name('pos.process-close-session');
-        Route::get('/pos/sale', [PosWebController::class, 'sale'])->name('pos.sale');
         Route::get('/pos/sales', [PosWebController::class, 'sales'])->name('pos.sales');
         Route::get('/pos/history', [PosWebController::class, 'sessionHistory'])->name('pos.history');
         
         // POS API routes
         Route::get('/api/pos/products', [PosWebController::class, 'getProducts'])->name('api.pos.products');
         Route::post('/api/pos/process-sale', [PosWebController::class, 'processSale'])->name('api.pos.process-sale');
+    });
+
+    // POS Terminal routes (require active session for cashiers)
+    Route::middleware(['role:super_admin,admin,branch_manager,cashier', 'require.active.pos.session'])->group(function () {
+        Route::get('/pos', [PosWebController::class, 'index'])->name('pos.index');
+        Route::get('/pos/sale', [PosWebController::class, 'sale'])->name('pos.sale');
     });
     
     // User Management (Super Admin and Branch Manager)

@@ -30,6 +30,9 @@ class PosWebController extends Controller
                 ->with('error', 'You are not assigned to any branch');
         }
 
+        // Debug: Log branch status
+        \Log::info('POS Index - Branch: ' . $branch->id . ', POS Enabled: ' . ($branch->pos_enabled ? 'Yes' : 'No'));
+        
         if (!$branch->pos_enabled) {
             return redirect()->route('dashboard')
                 ->with('error', 'POS is not enabled for your branch');
@@ -38,7 +41,53 @@ class PosWebController extends Controller
         $currentSession = PosSession::where('user_id', $user->id)->active()->first();
         $customers = Customer::active()->get();
         
+        // Debug: Log session status
+        \Log::info('POS Index - User: ' . $user->id . ', Session: ' . ($currentSession ? $currentSession->id : 'None'));
+        
         return view('pos.index', compact('branch', 'currentSession', 'customers'));
+    }
+
+    /**
+     * Display the POS session manager.
+     */
+    public function sessionManager()
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+        
+        if (!$branch) {
+            return redirect()->route('dashboard')
+                ->with('error', 'You are not assigned to any branch');
+        }
+
+        $currentSession = $user->currentPosSession();
+        
+        // Get today's statistics
+        $todayStats = [
+            'total_orders' => Order::where('branch_id', $branch->id)
+                ->whereDate('created_at', today())
+                ->count(),
+            'total_sales' => Order::where('branch_id', $branch->id)
+                ->whereDate('created_at', today())
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+            'active_sessions' => PosSession::where('branch_id', $branch->id)
+                ->where('status', 'active')
+                ->count(),
+            'avg_order_value' => Order::where('branch_id', $branch->id)
+                ->whereDate('created_at', today())
+                ->where('status', 'completed')
+                ->avg('total_amount') ?? 0,
+        ];
+
+        // Get recent sessions
+        $recentSessions = PosSession::where('user_id', $user->id)
+            ->with(['user', 'branch'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('pos.session-manager', compact('currentSession', 'todayStats', 'recentSessions'));
     }
 
     /**
@@ -97,14 +146,21 @@ class PosWebController extends Controller
             return back()->withErrors(['terminal_id' => 'This terminal already has an active session']);
         }
 
+        // Get handled_by from session or request
+        $handledBy = $request->session()->get('handled_by') ?? $request->handled_by ?? $user->name;
+
         $session = PosSession::create([
             'user_id' => $user->id,
+            'handled_by' => $handledBy,
             'branch_id' => $branch->id,
             'terminal_id' => $request->terminal_id,
             'opening_cash' => $request->opening_cash,
             'started_at' => now(),
             'status' => 'active',
         ]);
+
+        // Clear the handled_by from session after creating the POS session
+        $request->session()->forget('handled_by');
 
         return redirect()->route('pos.index')
             ->with('success', 'POS session started successfully');
@@ -315,6 +371,7 @@ class PosWebController extends Controller
                 'customer_id' => $request->customer_id,
                 'branch_id' => $user->branch_id,
                 'pos_session_id' => $session->id,
+                'user_id' => $user->id,
                 'created_by' => $user->id,
                 'subtotal' => $subtotal,
                 'discount_amount' => $discountAmount,
@@ -410,5 +467,66 @@ class PosWebController extends Controller
                 'message' => 'Error processing sale: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Show session handler form (for cashiers after login)
+     */
+    public function sessionHandler()
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+        
+        if (!$branch) {
+            return redirect()->route('dashboard')
+                ->with('error', 'You are not assigned to any branch');
+        }
+
+        // Check if user already has an active session
+        $currentSession = $user->currentPosSession();
+        if ($currentSession) {
+            return redirect()->route('pos.index')
+                ->with('info', 'You already have an active session');
+        }
+
+        return view('pos.session-handler', compact('branch'));
+    }
+
+    /**
+     * Process session handler form
+     */
+    public function processSessionHandler(Request $request)
+    {
+        $request->validate([
+            'handled_by' => 'required|string|max:255',
+        ]);
+
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        // Check if user already has an active session
+        $currentSession = $user->currentPosSession();
+        if ($currentSession) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already have an active session'
+            ]);
+        }
+
+        // Store handled_by in session for later use
+        $request->session()->put('handled_by', $request->handled_by);
+
+        // If this is an AJAX request, return JSON response
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Session handler set successfully',
+                'redirect_url' => route('pos.start-session')
+            ]);
+        }
+
+        // For regular form submission, redirect to start session
+        return redirect()->route('pos.start-session')
+            ->with('success', 'Session handler set successfully');
     }
 }

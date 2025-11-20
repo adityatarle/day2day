@@ -7,15 +7,18 @@
     <div class="max-w-2xl mx-auto">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Add New Customer</h1>
-            <a href="{{ route('customers.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg touch-target text-center text-sm sm:text-base mobile-full-width sm:w-auto">
+            @php
+                $backRoute = auth()->user()->hasRole('cashier') ? route('cashier.customers.search') : route('customers.index');
+            @endphp
+            <a href="{{ $backRoute }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg touch-target text-center text-sm sm:text-base mobile-full-width sm:w-auto">
                 <i class="fas fa-arrow-left mr-1 sm:mr-2"></i>
-                <span class="hidden sm:inline">Back to Customers</span>
+                <span class="hidden sm:inline">Back</span>
                 <span class="sm:hidden">Back</span>
             </a>
         </div>
 
         <div class="bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6">
-            <form action="{{ route('customers.store') }}" method="POST">
+            <form action="{{ route('customers.store') }}?redirect_to={{ urlencode(request()->get('redirect_to', route('cashier.customers.search'))) }}" method="POST">
                 @csrf
 
                 <!-- Customer Name -->
@@ -137,7 +140,10 @@
 
                 <!-- Submit Buttons -->
                 <div class="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-4">
-                    <a href="{{ route('customers.index') }}" 
+                    @php
+                        $cancelRoute = auth()->user()->hasRole('cashier') ? route('cashier.customers.search') : route('customers.index');
+                    @endphp
+                    <a href="{{ $cancelRoute }}" 
                        class="btn-secondary mobile-full-width sm:w-auto text-center touch-target order-2 sm:order-1">
                         <i class="fas fa-times mr-1 sm:mr-2"></i>
                         Cancel

@@ -7,6 +7,13 @@
         <span class="font-medium">POS Dashboard</span>
     </a>
 
+    <a href="{{ route('pos.session-manager') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.session-manager') ? 'active text-white' : '' }}">
+        <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <span class="font-medium">Session Manager</span>
+    </a>
+
     <!-- POS Operations -->
     <div class="pt-4 pb-2">
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">POS Operations</p>

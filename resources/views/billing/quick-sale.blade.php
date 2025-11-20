@@ -14,6 +14,31 @@
             </a>
         </div>
 
+        @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <div>
+                        <strong>Error:</strong>
+                        <ul class="list-disc list-inside mt-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (session('success'))
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>{{ session('success') }}</span>
+                </div>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             <!-- Product Selection -->
             <div class="lg:col-span-2 order-2 lg:order-1">
@@ -84,10 +109,19 @@
 
                     <!-- Customer Selection -->
                     <div class="mt-4 sm:mt-6">
-                        <label for="customerSelect" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Customer</label>
+                        <div class="flex items-center justify-between mb-2">
+                            <label for="customerSelect" class="block text-xs sm:text-sm font-medium text-gray-700">Customer</label>
+                            <a href="{{ route('customers.create') }}?redirect_to={{ urlencode(route('billing.quickSale')) }}" class="text-xs text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-plus mr-1"></i>Add Customer
+                            </a>
+                        </div>
                         <select id="customerSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 touch-target">
                             <option value="">Walk-in Customer</option>
-                            <!-- Customer options will be populated here -->
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                    {{ $customer->name }} - {{ $customer->phone }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -236,13 +270,63 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Here you would typically send the cart data to the server
-        // For now, we'll just show a success message
-        alert('Sale completed successfully!');
+        const submitBtn = this;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+        // Prepare form data
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route("billing.quickSale.store") }}';
         
-        // Clear cart
-        cart = [];
-        updateCart();
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
+        form.appendChild(csrfInput);
+
+        // Add customer_id
+        const customerId = document.getElementById('customerSelect').value;
+        if (customerId) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'customer_id';
+            input.value = customerId;
+            form.appendChild(input);
+        }
+
+        // Add payment_method
+        const paymentMethodInput = document.createElement('input');
+        paymentMethodInput.type = 'hidden';
+        paymentMethodInput.name = 'payment_method';
+        paymentMethodInput.value = document.getElementById('paymentMethod').value;
+        form.appendChild(paymentMethodInput);
+
+        // Add items
+        cart.forEach((item, index) => {
+            const productInput = document.createElement('input');
+            productInput.type = 'hidden';
+            productInput.name = `items[${index}][product_id]`;
+            productInput.value = item.productId;
+            form.appendChild(productInput);
+
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'hidden';
+            quantityInput.name = `items[${index}][quantity]`;
+            quantityInput.value = item.quantity;
+            form.appendChild(quantityInput);
+
+            const priceInput = document.createElement('input');
+            priceInput.type = 'hidden';
+            priceInput.name = `items[${index}][unit_price]`;
+            priceInput.value = item.productPrice;
+            form.appendChild(priceInput);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
     });
 
     // Initialize cart

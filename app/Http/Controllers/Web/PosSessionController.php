@@ -65,8 +65,8 @@ class PosSessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'opening_balance' => 'required|numeric|min:0',
-            'notes' => 'nullable|string|max:500',
+            'opening_cash' => 'required|integer|min:0',
+            'session_notes' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -82,12 +82,15 @@ class PosSessionController extends Controller
         $session = PosSession::create([
             'user_id' => $user->id,
             'branch_id' => $branch->id,
+            'terminal_id' => 'TERMINAL-001', // Default terminal ID
             'started_at' => now(),
-            'opening_balance' => $request->opening_balance,
-            'current_balance' => $request->opening_balance,
+            'opening_cash' => $request->opening_cash,
             'status' => 'active',
-            'notes' => $request->notes,
+            'session_notes' => $request->session_notes ? [$request->session_notes] : [],
         ]);
+        
+        // Debug: Log session creation
+        \Log::info('POS Session Created - ID: ' . $session->id . ', User: ' . $user->id . ', Status: ' . $session->status);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -160,7 +163,7 @@ class PosSessionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'closing_balance' => 'required|numeric|min:0',
+            'closing_cash' => 'required|integer|min:0',
             'closing_notes' => 'nullable|string|max:500',
         ]);
 
@@ -168,27 +171,22 @@ class PosSessionController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Calculate expected closing balance
-        $cashSales = $posSession->orders()
-            ->where('status', 'completed')
-            ->where('payment_method', 'cash')
-            ->sum('total_amount');
-        
-        $expectedBalance = $posSession->opening_balance + $cashSales;
+        // Calculate expected closing cash
+        $expectedCash = $posSession->calculateExpectedCash();
 
         $posSession->update([
             'ended_at' => now(),
-            'closing_balance' => $request->closing_balance,
-            'expected_closing_balance' => $expectedBalance,
-            'variance' => $request->closing_balance - $expectedBalance,
-            'closing_notes' => $request->closing_notes,
+            'closing_cash' => $request->closing_cash,
+            'expected_cash' => $expectedCash,
+            'cash_difference' => $request->closing_cash - $expectedCash,
+            'session_notes' => array_merge($posSession->session_notes ?? [], $request->closing_notes ? [$request->closing_notes] : []),
             'status' => 'closed',
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'POS session closed successfully.',
-            'variance' => $posSession->variance
+            'cash_difference' => $posSession->cash_difference
         ]);
     }
 
@@ -276,6 +274,54 @@ class PosSessionController extends Controller
     }
 
     /**
+     * Get session history statistics.
+     */
+    private function getSessionHistoryStats(User $user)
+    {
+        $query = PosSession::query();
+
+        // Apply role-based filtering
+        if ($user->isSuperAdmin()) {
+            // Super admin can see all sessions
+        } elseif ($user->isBranchManager()) {
+            // Branch manager can see sessions for their branch
+            $query = $query->where('branch_id', $user->branch_id);
+        } else {
+            // Cashiers can only see their own sessions
+            $query = $query->where('user_id', $user->id);
+        }
+
+        $totalSessions = $query->count();
+        $activeSessions = $query->where('status', 'active')->count();
+        $closedSessions = $query->where('status', 'closed')->count();
+        
+        $totalSales = $query->where('status', 'closed')
+            ->withSum('orders', 'total_amount')
+            ->get()
+            ->sum('orders_sum_total_amount');
+
+        $avgSessionDuration = $query->where('status', 'closed')
+            ->whereNotNull('ended_at')
+            ->get()
+            ->avg(function($session) {
+                return $session->started_at->diffInMinutes($session->ended_at);
+            });
+
+        $totalVariance = $query->where('status', 'closed')
+            ->whereNotNull('cash_difference')
+            ->sum('cash_difference');
+
+        return [
+            'total_sessions' => $totalSessions,
+            'active_sessions' => $activeSessions,
+            'closed_sessions' => $closedSessions,
+            'total_sales' => $totalSales,
+            'avg_session_duration' => $avgSessionDuration ? round($avgSessionDuration, 2) : 0,
+            'total_variance' => $totalVariance,
+        ];
+    }
+
+    /**
      * Handle current session - redirect to active session or create new one.
      */
     public function current()
@@ -301,6 +347,27 @@ class PosSessionController extends Controller
     }
 
     /**
+     * Display POS session history.
+     */
+    public function history()
+    {
+        $user = auth()->user();
+        $branch = $user->branch;
+
+        if (!$branch) {
+            return redirect()->route('dashboard')->with('error', 'No branch assigned to your account.');
+        }
+
+        // Get session history based on user role
+        $sessions = $this->getSessionsForUser($user);
+        
+        // Get additional statistics for the history view
+        $stats = $this->getSessionHistoryStats($user);
+        
+        return view('pos.sessions.history', compact('sessions', 'stats'));
+    }
+
+    /**
      * Get active sessions for branch management.
      */
     public function getActiveSessions()
@@ -322,7 +389,7 @@ class PosSessionController extends Controller
                     'user_name' => $session->user->name,
                     'started_at' => $session->started_at,
                     'duration' => $session->started_at->diffForHumans(),
-                    'opening_balance' => $session->opening_balance,
+                    'opening_cash' => $session->opening_cash,
                     'current_sales' => $session->orders()->where('status', 'completed')->sum('total_amount'),
                 ];
             });

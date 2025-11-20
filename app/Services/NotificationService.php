@@ -2,634 +2,507 @@
 
 namespace App\Services;
 
-use App\Models\StockAlert;
-use App\Models\StockTransfer;
-use App\Models\StockTransferQuery;
 use App\Models\User;
-use App\Models\Branch;
+use App\Models\NotificationType;
+use App\Models\NotificationTemplate;
+use App\Models\UserNotificationPreference;
+use App\Models\NotificationHistory;
+use App\Models\NotificationAction;
+use App\Models\NotificationQueue;
+use App\Jobs\SendNotificationJob;
+use App\Jobs\SendEmailNotificationJob;
+use App\Jobs\SendSmsNotificationJob;
+use App\Jobs\SendWhatsAppNotificationJob;
+use App\Jobs\SendPushNotificationJob;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Notification;
-use Exception;
+use Illuminate\Support\Facades\DB;
 
 class NotificationService
 {
     /**
-     * Create stock alert
-     */
-    public function createAlert(array $alertData): StockAlert
-    {
-        try {
-            $alert = StockAlert::create([
-                'branch_id' => $alertData['branch_id'],
-                'product_id' => $alertData['product_id'] ?? null,
-                'stock_transfer_id' => $alertData['stock_transfer_id'] ?? null,
-                'alert_type' => $alertData['alert_type'],
-                'severity' => $alertData['severity'],
-                'title' => $alertData['title'],
-                'message' => $alertData['message'],
-                'recipients' => $alertData['recipients'] ?? null,
-            ]);
-
-            // Send notifications based on severity
-            $this->processAlert($alert);
-
-            Log::info("Stock alert created", [
-                'alert_id' => $alert->id,
-                'type' => $alert->alert_type,
-                'severity' => $alert->severity,
-                'branch_id' => $alert->branch_id,
-            ]);
-
-            return $alert;
-
-        } catch (Exception $e) {
-            Log::error("Failed to create stock alert", [
-                'alert_data' => $alertData,
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Process alert and send notifications
-     */
-    public function processAlert(StockAlert $alert): void
-    {
-        try {
-            // Determine recipients based on alert type and severity
-            $recipients = $this->determineRecipients($alert);
-
-            // Send notifications to each recipient
-            foreach ($recipients as $recipient) {
-                $this->sendNotification($recipient, $alert);
-            }
-
-            // Update alert with recipients
-            $alert->update([
-                'recipients' => $recipients->pluck('id')->toArray()
-            ]);
-
-        } catch (Exception $e) {
-            Log::error("Failed to process alert", [
-                'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
      * Send notification to user
      */
-    protected function sendNotification(User $user, StockAlert $alert): void
-    {
+    public function sendNotification(
+        User $user,
+        string $notificationTypeName,
+        array $data = [],
+        array $actions = []
+    ): bool {
         try {
-            // Send in-app notification
-            $this->sendInAppNotification($user, $alert);
+            $notificationType = NotificationType::where('name', $notificationTypeName)
+                ->where('is_active', true)
+                ->first();
 
-            // Send email for critical alerts or user preference
-            if ($alert->severity === 'critical' || $this->shouldSendEmail($user, $alert)) {
-                $this->sendEmailNotification($user, $alert);
+            if (!$notificationType) {
+                Log::warning("Notification type not found: {$notificationTypeName}");
+                return false;
             }
 
-            // Send SMS for critical alerts (if phone number available)
-            if ($alert->severity === 'critical' && $user->phone) {
-                $this->sendSMSNotification($user, $alert);
+            // Get user preferences for this notification type
+            $preferences = UserNotificationPreference::where('user_id', $user->id)
+                ->where('notification_type_id', $notificationType->id)
+                ->first();
+
+            if (!$preferences) {
+                // Create default preferences
+                $preferences = UserNotificationPreference::create(
+                    array_merge(
+                        UserNotificationPreference::getDefaults($user->id, $notificationType->id),
+                        ['notification_type_id' => $notificationType->id]
+                    )
+                );
             }
 
-        } catch (Exception $e) {
-            Log::error("Failed to send notification", [
+            $enabledChannels = $preferences->getEnabledChannels();
+            
+            if (empty($enabledChannels)) {
+                Log::info("No channels enabled for user {$user->id} and notification type {$notificationTypeName}");
+                return true; // Not an error, just no channels enabled
+            }
+
+            $success = true;
+
+            foreach ($enabledChannels as $channel) {
+                if (!$notificationType->supportsChannel($channel)) {
+                    continue;
+                }
+
+                $channelSuccess = $this->sendToChannel(
+                    $user,
+                    $notificationType,
+                    $channel,
+                    $data,
+                    $actions,
+                    $preferences
+                );
+
+                if (!$channelSuccess) {
+                    $success = false;
+                }
+            }
+
+            return $success;
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send notification: " . $e->getMessage(), [
                 'user_id' => $user->id,
-                'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
+                'notification_type' => $notificationTypeName,
+                'data' => $data,
+                'error' => $e->getTraceAsString()
             ]);
+            return false;
         }
     }
 
     /**
-     * Send in-app notification
+     * Send notification to multiple users
      */
-    protected function sendInAppNotification(User $user, StockAlert $alert): void
-    {
-        // This would integrate with your notification system
-        // For now, we'll just log it
-        Log::info("In-app notification sent", [
-            'user_id' => $user->id,
-            'alert_id' => $alert->id,
-            'title' => $alert->title,
-        ]);
+    public function sendBulkNotification(
+        array $userIds,
+        string $notificationTypeName,
+        array $data = [],
+        array $actions = []
+    ): array {
+        $results = [
+            'success' => 0,
+            'failed' => 0,
+            'errors' => []
+        ];
+
+        foreach ($userIds as $userId) {
+            $user = User::find($userId);
+            if (!$user) {
+                $results['failed']++;
+                $results['errors'][] = "User not found: {$userId}";
+                continue;
+            }
+
+            $success = $this->sendNotification($user, $notificationTypeName, $data, $actions);
+            
+            if ($success) {
+                $results['success']++;
+            } else {
+                $results['failed']++;
+                $results['errors'][] = "Failed to send to user: {$userId}";
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Send notification to users by role
+     */
+    public function sendNotificationToRole(
+        string $role,
+        string $notificationTypeName,
+        array $data = [],
+        array $actions = []
+    ): array {
+        $users = User::whereHas('role', function ($query) use ($role) {
+            $query->where('name', $role);
+        })->get();
+
+        $userIds = $users->pluck('id')->toArray();
+        
+        return $this->sendBulkNotification($userIds, $notificationTypeName, $data, $actions);
+    }
+
+    /**
+     * Send notification to users by branch
+     */
+    public function sendNotificationToBranch(
+        int $branchId,
+        string $notificationTypeName,
+        array $data = [],
+        array $actions = []
+    ): array {
+        $users = User::where('branch_id', $branchId)->get();
+        $userIds = $users->pluck('id')->toArray();
+        
+        return $this->sendBulkNotification($userIds, $notificationTypeName, $data, $actions);
+    }
+
+    /**
+     * Send notification to specific channel
+     */
+    private function sendToChannel(
+        User $user,
+        NotificationType $notificationType,
+        string $channel,
+        array $data,
+        array $actions,
+        UserNotificationPreference $preferences
+    ): bool {
+        try {
+            $template = $notificationType->getTemplateForChannel($channel);
+            
+            if (!$template) {
+                Log::warning("No template found for channel: {$channel}");
+                return false;
+            }
+
+            // Validate template variables
+            $errors = $template->validateVariables($data);
+            if (!empty($errors)) {
+                Log::error("Template validation failed: " . implode(', ', $errors));
+                return false;
+            }
+
+            // Render template
+            $rendered = $template->render($data);
+            
+            // Add user data to notification data
+            $notificationData = array_merge($data, [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone ?? '',
+                ]
+            ]);
+
+            // Handle different channels
+            switch ($channel) {
+                case 'database':
+                    return $this->sendDatabaseNotification($user, $notificationType, $rendered, $notificationData, $actions);
+                
+                case 'mail':
+                    return $this->sendEmailNotification($user, $notificationType, $rendered, $notificationData, $preferences);
+                
+                case 'sms':
+                    return $this->sendSmsNotification($user, $notificationType, $rendered, $notificationData);
+                
+                case 'whatsapp':
+                    return $this->sendWhatsAppNotification($user, $notificationType, $rendered, $notificationData);
+                
+                case 'push':
+                    return $this->sendPushNotification($user, $notificationType, $rendered, $notificationData);
+                
+                default:
+                    Log::warning("Unsupported channel: {$channel}");
+                    return false;
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send to channel {$channel}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send database notification
+     */
+    private function sendDatabaseNotification(
+        User $user,
+        NotificationType $notificationType,
+        array $rendered,
+        array $data,
+        array $actions
+    ): bool {
+        try {
+            DB::beginTransaction();
+
+            // Create notification history record
+            $notification = NotificationHistory::createRecord(
+                $user->id,
+                $notificationType->id,
+                'database',
+                $rendered['subject'] ?? $notificationType->display_name,
+                $rendered['body'],
+                $data,
+                'sent'
+            );
+
+            // Create actions
+            foreach ($actions as $action) {
+                NotificationAction::createForNotification(
+                    $notification->id,
+                    $action['type'] ?? 'view',
+                    $action['label'] ?? 'View',
+                    $action['url'] ?? null,
+                    $action['data'] ?? [],
+                    $action['primary'] ?? false
+                );
+            }
+
+            DB::commit();
+            return true;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to send database notification: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
      * Send email notification
      */
-    protected function sendEmailNotification(User $user, StockAlert $alert): void
-    {
+    private function sendEmailNotification(
+        User $user,
+        NotificationType $notificationType,
+        array $rendered,
+        array $data,
+        UserNotificationPreference $preferences
+    ): bool {
         try {
-            // This would send actual email using Laravel's mail system
-            Log::info("Email notification sent", [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'alert_id' => $alert->id,
-                'title' => $alert->title,
-            ]);
+            if ($preferences->isRealtimeEmail()) {
+                // Send immediately
+                SendEmailNotificationJob::dispatch($user, $notificationType, $rendered, $data);
+            } else {
+                // Add to digest queue
+                $this->addToDigestQueue($user, $notificationType, $rendered, $data, $preferences);
+            }
 
-            // Actual implementation would be:
-            // Mail::to($user->email)->send(new StockAlertMail($alert));
+            return true;
 
-        } catch (Exception $e) {
-            Log::error("Failed to send email notification", [
-                'user_id' => $user->id,
-                'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
-            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to send email notification: " . $e->getMessage());
+            return false;
         }
     }
 
     /**
      * Send SMS notification
      */
-    protected function sendSMSNotification(User $user, StockAlert $alert): void
-    {
+    private function sendSmsNotification(
+        User $user,
+        NotificationType $notificationType,
+        array $rendered,
+        array $data
+    ): bool {
         try {
-            // This would integrate with SMS service like Twilio
-            Log::info("SMS notification sent", [
-                'user_id' => $user->id,
-                'phone' => $user->phone,
-                'alert_id' => $alert->id,
-                'title' => $alert->title,
-            ]);
+            if (empty($user->phone)) {
+                Log::warning("User {$user->id} has no phone number for SMS");
+                return false;
+            }
 
-        } catch (Exception $e) {
-            Log::error("Failed to send SMS notification", [
-                'user_id' => $user->id,
-                'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
+            SendSmsNotificationJob::dispatch($user, $notificationType, $rendered, $data);
+            return true;
 
-    /**
-     * Determine alert recipients
-     */
-    protected function determineRecipients(StockAlert $alert): \Illuminate\Database\Eloquent\Collection
-    {
-        $recipients = collect();
-
-        switch ($alert->alert_type) {
-            case 'transfer_delay':
-            case 'reconciliation_required':
-                // Notify branch managers and admins
-                $recipients = $recipients->merge($this->getBranchManagers($alert->branch_id));
-                if ($alert->severity === 'critical') {
-                    $recipients = $recipients->merge($this->getAdmins());
-                }
-                break;
-
-            case 'query_pending':
-                // Notify admins and assigned users
-                $recipients = $recipients->merge($this->getAdmins());
-                if ($alert->stock_transfer_id) {
-                    $transfer = StockTransfer::find($alert->stock_transfer_id);
-                    if ($transfer) {
-                        $recipients->push($transfer->initiatedBy);
-                    }
-                }
-                break;
-
-            case 'financial_impact':
-                // Notify admins and finance team
-                $recipients = $recipients->merge($this->getAdmins());
-                $recipients = $recipients->merge($this->getFinanceTeam());
-                break;
-
-            case 'quality_issue':
-            case 'expiry_warning':
-                // Notify branch managers, quality team, and admins
-                $recipients = $recipients->merge($this->getBranchManagers($alert->branch_id));
-                $recipients = $recipients->merge($this->getQualityTeam());
-                if ($alert->severity === 'critical') {
-                    $recipients = $recipients->merge($this->getAdmins());
-                }
-                break;
-
-            case 'low_stock':
-                // Notify branch managers and procurement team
-                $recipients = $recipients->merge($this->getBranchManagers($alert->branch_id));
-                $recipients = $recipients->merge($this->getProcurementTeam());
-                break;
-
-            default:
-                // Default to admins for unknown alert types
-                $recipients = $recipients->merge($this->getAdmins());
-                break;
-        }
-
-        return $recipients->unique('id');
-    }
-
-    /**
-     * Check if email should be sent to user
-     */
-    protected function shouldSendEmail(User $user, StockAlert $alert): bool
-    {
-        // This would check user preferences, business hours, etc.
-        // For now, send email for high severity alerts
-        return in_array($alert->severity, ['critical', 'warning']);
-    }
-
-    /**
-     * Get branch managers for a branch
-     */
-    protected function getBranchManagers(int $branchId): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::where('branch_id', $branchId)
-                  ->whereHas('roles', function ($q) {
-                      $q->where('name', 'branch_manager');
-                  })
-                  ->get();
-    }
-
-    /**
-     * Get admin users
-     */
-    protected function getAdmins(): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['admin', 'super_admin']);
-        })->get();
-    }
-
-    /**
-     * Get finance team users
-     */
-    protected function getFinanceTeam(): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::whereHas('roles', function ($q) {
-            $q->where('name', 'finance');
-        })->get();
-    }
-
-    /**
-     * Get quality team users
-     */
-    protected function getQualityTeam(): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::whereHas('roles', function ($q) {
-            $q->where('name', 'quality');
-        })->get();
-    }
-
-    /**
-     * Get procurement team users
-     */
-    protected function getProcurementTeam(): \Illuminate\Database\Eloquent\Collection
-    {
-        return User::whereHas('roles', function ($q) {
-            $q->where('name', 'procurement');
-        })->get();
-    }
-
-    /**
-     * Mark alert as read
-     */
-    public function markAlertAsRead(StockAlert $alert, User $user): bool
-    {
-        try {
-            $result = $alert->update(['is_read' => true]);
-
-            Log::info("Alert marked as read", [
-                'alert_id' => $alert->id,
-                'user_id' => $user->id,
-            ]);
-
-            return $result;
-
-        } catch (Exception $e) {
-            Log::error("Failed to mark alert as read", [
-                'alert_id' => $alert->id,
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to send SMS notification: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Resolve alert
+     * Send WhatsApp notification
      */
-    public function resolveAlert(StockAlert $alert, User $user, ?string $resolution = null): bool
-    {
+    private function sendWhatsAppNotification(
+        User $user,
+        NotificationType $notificationType,
+        array $rendered,
+        array $data
+    ): bool {
         try {
-            $result = $alert->update([
-                'is_resolved' => true,
-                'resolved_at' => now(),
-                'resolution' => $resolution,
-            ]);
+            if (empty($user->phone)) {
+                Log::warning("User {$user->id} has no phone number for WhatsApp");
+                return false;
+            }
 
-            Log::info("Alert resolved", [
-                'alert_id' => $alert->id,
-                'user_id' => $user->id,
-                'resolution' => $resolution,
-            ]);
+            SendWhatsAppNotificationJob::dispatch($user, $notificationType, $rendered, $data);
+            return true;
 
-            return $result;
-
-        } catch (Exception $e) {
-            Log::error("Failed to resolve alert", [
-                'alert_id' => $alert->id,
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to send WhatsApp notification: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Create transfer delay alert
+     * Send push notification
      */
-    public function createTransferDelayAlert(StockTransfer $transfer): void
-    {
-        $this->createAlert([
-            'branch_id' => $transfer->to_branch_id,
-            'stock_transfer_id' => $transfer->id,
-            'alert_type' => 'transfer_delay',
-            'severity' => $transfer->isOverdue() ? 'critical' : 'warning',
-            'title' => 'Transfer Delivery Overdue',
-            'message' => "Transfer {$transfer->transfer_number} to {$transfer->toBranch->name} is overdue for delivery.",
-        ]);
+    private function sendPushNotification(
+        User $user,
+        NotificationType $notificationType,
+        array $rendered,
+        array $data
+    ): bool {
+        try {
+            SendPushNotificationJob::dispatch($user, $notificationType, $rendered, $data);
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send push notification: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
-     * Create query escalation alert
+     * Add notification to digest queue
      */
-    public function createQueryEscalationAlert(StockTransferQuery $query): void
-    {
-        $this->createAlert([
-            'branch_id' => $query->stockTransfer->to_branch_id,
-            'stock_transfer_id' => $query->stock_transfer_id,
-            'alert_type' => 'query_pending',
-            'severity' => 'critical',
-            'title' => 'Query Escalated',
-            'message' => "Query {$query->query_number} has been escalated and requires immediate attention.",
+    private function addToDigestQueue(
+        User $user,
+        NotificationType $notificationType,
+        array $rendered,
+        array $data,
+        UserNotificationPreference $preferences
+    ): void {
+        $frequency = $preferences->getDigestFrequency();
+        
+        if (!$frequency) {
+            return;
+        }
+
+        // Create digest entry
+        $digestDate = $frequency === 'daily' ? now()->toDateString() : now()->startOfWeek()->toDateString();
+        
+        $digest = \App\Models\NotificationDigest::firstOrCreate([
+            'user_id' => $user->id,
+            'frequency' => $frequency,
+            'digest_date' => $digestDate,
         ]);
+
+        // Add notification to digest
+        $notificationIds = $digest->notification_ids ?? [];
+        $notificationIds[] = [
+            'type' => $notificationType->name,
+            'title' => $rendered['subject'] ?? $notificationType->display_name,
+            'body' => $rendered['body'],
+            'data' => $data,
+            'created_at' => now()->toISOString(),
+        ];
+
+        $digest->update(['notification_ids' => $notificationIds]);
     }
 
     /**
-     * Create financial impact alert
+     * Mark notification as read
      */
-    public function createFinancialImpactAlert(int $branchId, float $impactAmount, string $description): void
+    public function markAsRead(int $userId, int $notificationId): bool
     {
-        $severity = $impactAmount > 10000 ? 'critical' : ($impactAmount > 5000 ? 'warning' : 'info');
+        $notification = NotificationHistory::where('user_id', $userId)
+            ->where('id', $notificationId)
+            ->first();
 
-        $this->createAlert([
-            'branch_id' => $branchId,
-            'alert_type' => 'financial_impact',
-            'severity' => $severity,
-            'title' => 'Significant Financial Impact',
-            'message' => "Financial impact of ₹" . number_format($impactAmount, 2) . " detected: {$description}",
-        ]);
+        if (!$notification) {
+            return false;
+        }
+
+        return $notification->markAsRead();
     }
 
     /**
-     * Create quality issue alert
+     * Mark notification as unread
      */
-    public function createQualityIssueAlert(StockTransfer $transfer, string $issueDescription): void
+    public function markAsUnread(int $userId, int $notificationId): bool
     {
-        $this->createAlert([
-            'branch_id' => $transfer->to_branch_id,
-            'stock_transfer_id' => $transfer->id,
-            'alert_type' => 'quality_issue',
-            'severity' => 'warning',
-            'title' => 'Quality Issue Detected',
-            'message' => "Quality issue detected in transfer {$transfer->transfer_number}: {$issueDescription}",
-        ]);
+        $notification = NotificationHistory::where('user_id', $userId)
+            ->where('id', $notificationId)
+            ->first();
+
+        if (!$notification) {
+            return false;
+        }
+
+        return $notification->markAsUnread();
     }
 
     /**
-     * Create expiry warning alert
+     * Mark all notifications as read for user
      */
-    public function createExpiryWarningAlert(int $branchId, int $productId, string $productName, int $daysToExpiry): void
-    {
-        $severity = $daysToExpiry <= 3 ? 'critical' : ($daysToExpiry <= 7 ? 'warning' : 'info');
-
-        $this->createAlert([
-            'branch_id' => $branchId,
-            'product_id' => $productId,
-            'alert_type' => 'expiry_warning',
-            'severity' => $severity,
-            'title' => 'Product Expiry Warning',
-            'message' => "Product {$productName} will expire in {$daysToExpiry} days.",
-        ]);
-    }
-
-    /**
-     * Send daily summary notifications
-     */
-    public function sendDailySummary(): void
+    public function markAllAsRead(int $userId): bool
     {
         try {
-            $branches = Branch::active()->get();
+            NotificationHistory::where('user_id', $userId)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
 
-            foreach ($branches as $branch) {
-                $summary = $this->generateDailySummary($branch);
-                
-                if ($summary['has_activity']) {
-                    $managers = $this->getBranchManagers($branch->id);
-                    
-                    foreach ($managers as $manager) {
-                        $this->sendDailySummaryNotification($manager, $branch, $summary);
-                    }
-                }
-            }
+            return true;
 
-            // Send admin summary
-            $adminSummary = $this->generateAdminDailySummary();
-            $admins = $this->getAdmins();
-            
-            foreach ($admins as $admin) {
-                $this->sendAdminDailySummaryNotification($admin, $adminSummary);
-            }
-
-        } catch (Exception $e) {
-            Log::error("Failed to send daily summary notifications", [
-                'error' => $e->getMessage(),
-            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to mark all notifications as read: " . $e->getMessage());
+            return false;
         }
     }
 
     /**
-     * Generate daily summary for branch
+     * Get unread count for user
      */
-    protected function generateDailySummary(Branch $branch): array
+    public function getUnreadCount(int $userId): int
     {
-        $today = now()->toDateString();
-
-        return [
-            'branch_name' => $branch->name,
-            'transfers_received' => StockTransfer::where('to_branch_id', $branch->id)
-                                               ->whereDate('delivered_date', $today)
-                                               ->count(),
-            'transfers_confirmed' => StockTransfer::where('to_branch_id', $branch->id)
-                                                 ->whereDate('confirmed_date', $today)
-                                                 ->count(),
-            'queries_raised' => StockTransferQuery::whereHas('stockTransfer', function ($q) use ($branch) {
-                                  $q->where('to_branch_id', $branch->id);
-                              })->whereDate('created_at', $today)->count(),
-            'queries_resolved' => StockTransferQuery::whereHas('stockTransfer', function ($q) use ($branch) {
-                                    $q->where('to_branch_id', $branch->id);
-                                })->whereDate('resolved_at', $today)->count(),
-            'pending_receipts' => StockTransfer::where('to_branch_id', $branch->id)
-                                             ->where('status', 'delivered')
-                                             ->count(),
-            'open_queries' => StockTransferQuery::whereHas('stockTransfer', function ($q) use ($branch) {
-                                $q->where('to_branch_id', $branch->id);
-                              })->where('status', 'open')->count(),
-            'has_activity' => false, // Will be set based on above values
-        ];
+        return NotificationHistory::getUnreadCount($userId);
     }
 
     /**
-     * Generate admin daily summary
+     * Get recent notifications for user
      */
-    protected function generateAdminDailySummary(): array
+    public function getRecentNotifications(int $userId, int $limit = 10): \Illuminate\Database\Eloquent\Collection
     {
-        $today = now()->toDateString();
-
-        return [
-            'total_transfers' => StockTransfer::whereDate('created_at', $today)->count(),
-            'total_queries' => StockTransferQuery::whereDate('created_at', $today)->count(),
-            'critical_queries' => StockTransferQuery::where('priority', 'critical')
-                                                   ->where('status', 'open')
-                                                   ->count(),
-            'overdue_transfers' => StockTransfer::where('status', '!=', 'confirmed')
-                                               ->where('status', '!=', 'cancelled')
-                                               ->whereNotNull('expected_delivery')
-                                               ->where('expected_delivery', '<', now())
-                                               ->count(),
-            'financial_impact_today' => \App\Models\StockFinancialImpact::whereDate('impact_date', $today)
-                                                                        ->sum('amount'),
-        ];
+        return NotificationHistory::getRecentForUser($userId, $limit);
     }
 
     /**
-     * Send daily summary notification to branch manager
+     * Update user notification preferences
      */
-    protected function sendDailySummaryNotification(User $manager, Branch $branch, array $summary): void
-    {
-        // This would send actual notification
-        Log::info("Daily summary sent to branch manager", [
-            'manager_id' => $manager->id,
-            'branch_id' => $branch->id,
-            'summary' => $summary,
-        ]);
-    }
-
-    /**
-     * Send admin daily summary notification
-     */
-    protected function sendAdminDailySummaryNotification(User $admin, array $summary): void
-    {
-        // This would send actual notification
-        Log::info("Daily summary sent to admin", [
-            'admin_id' => $admin->id,
-            'summary' => $summary,
-        ]);
-    }
-
-    /**
-     * Check and create automated alerts
-     */
-    public function checkAutomatedAlerts(): void
+    public function updateUserPreferences(int $userId, array $preferences): bool
     {
         try {
-            // Check for overdue transfers
-            $this->checkOverdueTransfers();
-
-            // Check for old unresolved queries
-            $this->checkOldQueries();
-
-            // Check for high financial impacts
-            $this->checkHighFinancialImpacts();
-
-            // Check for expiring products
-            $this->checkExpiringProducts();
-
-        } catch (Exception $e) {
-            Log::error("Failed to check automated alerts", [
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Check for overdue transfers
-     */
-    protected function checkOverdueTransfers(): void
-    {
-        $overdueTransfers = StockTransfer::where('status', '!=', 'confirmed')
-                                       ->where('status', '!=', 'cancelled')
-                                       ->whereNotNull('expected_delivery')
-                                       ->where('expected_delivery', '<', now())
-                                       ->get();
-
-        foreach ($overdueTransfers as $transfer) {
-            // Check if alert already exists
-            $existingAlert = StockAlert::where('stock_transfer_id', $transfer->id)
-                                     ->where('alert_type', 'transfer_delay')
-                                     ->where('is_resolved', false)
-                                     ->first();
-
-            if (!$existingAlert) {
-                $this->createTransferDelayAlert($transfer);
+            foreach ($preferences as $notificationTypeId => $settings) {
+                UserNotificationPreference::createOrUpdate(
+                    $userId,
+                    $notificationTypeId,
+                    $settings
+                );
             }
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error("Failed to update user preferences: " . $e->getMessage());
+            return false;
         }
     }
 
     /**
-     * Check for old unresolved queries
+     * Get user notification preferences
      */
-    protected function checkOldQueries(): void
+    public function getUserPreferences(int $userId): \Illuminate\Database\Eloquent\Collection
     {
-        $oldQueries = StockTransferQuery::where('status', 'open')
-                                       ->where('created_at', '<', now()->subDays(3))
-                                       ->get();
-
-        foreach ($oldQueries as $query) {
-            // Escalate if not already escalated
-            if ($query->priority !== 'critical') {
-                $query->update(['priority' => 'high']);
-                $this->createQueryEscalationAlert($query);
-            }
-        }
-    }
-
-    /**
-     * Check for high financial impacts
-     */
-    protected function checkHighFinancialImpacts(): void
-    {
-        $highImpacts = \App\Models\StockFinancialImpact::where('amount', '>', 5000)
-                                                       ->whereDate('impact_date', today())
-                                                       ->get();
-
-        foreach ($highImpacts as $impact) {
-            $this->createFinancialImpactAlert(
-                $impact->branch_id,
-                $impact->amount,
-                $impact->description
-            );
-        }
-    }
-
-    /**
-     * Check for expiring products
-     */
-    protected function checkExpiringProducts(): void
-    {
-        // This would check product expiry dates
-        // Implementation would depend on your product/inventory structure
-        Log::info("Checking for expiring products");
+        return UserNotificationPreference::where('user_id', $userId)
+            ->with('notificationType')
+            ->get();
     }
 }

@@ -20,6 +20,7 @@
                             <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                             <span class="text-xs sm:text-sm font-medium text-gray-700">Session Active</span>
                             <span class="text-xs sm:text-sm text-gray-500 hidden sm:inline">Terminal: {{ $currentSession->terminal_id }}</span>
+                            <span class="text-xs sm:text-sm text-purple-600 hidden sm:inline">| Handled by: {{ $currentSession->handled_by }}</span>
                         </div>
                         <a href="{{ route('pos.close-session') }}" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 sm:px-4 rounded-lg font-medium text-sm sm:text-base text-center">
                             Close Session
@@ -36,6 +37,38 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         @if($currentSession)
+            <!-- Session Info Panel -->
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white mb-6 shadow-lg">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center space-x-4 mb-3 sm:mb-0">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-user-check text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold">Active POS Session</h3>
+                            <p class="text-purple-100 text-sm">
+                                <i class="fas fa-user mr-1"></i>
+                                Handled by: <span class="font-semibold">{{ $currentSession->handled_by }}</span>
+                            </p>
+                            <p class="text-purple-100 text-sm">
+                                <i class="fas fa-clock mr-1"></i>
+                                Started: {{ $currentSession->started_at->format('M d, Y H:i') }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <div class="text-2xl font-bold">₹{{ number_format($currentSession->total_sales, 2) }}</div>
+                            <div class="text-purple-100 text-sm">Session Sales</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold">{{ $currentSession->total_transactions }}</div>
+                            <div class="text-purple-100 text-sm">Transactions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- POS Interface -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <!-- Left Panel - Product Selection -->
@@ -190,6 +223,8 @@ let activeCategory = '';
 
 // Load products on page load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('POS Terminal loaded');
+    console.log('Current session:', @json($currentSession));
     loadProducts();
     updateCartDisplay();
     
@@ -215,12 +250,16 @@ async function loadProducts() {
         });
         
         const data = await response.json();
+        console.log('Products API response:', data);
         if (data.success) {
             products = data.data;
+            console.log('Products loaded:', products.length);
             categories = [...new Set(products.map(p => p.category))].filter(Boolean).sort();
             renderCategoryTabs();
             displayProducts(products);
             populateCategories();
+        } else {
+            console.error('Failed to load products:', data);
         }
     } catch (error) {
         console.error('Error loading products:', error);

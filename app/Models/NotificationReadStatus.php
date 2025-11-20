@@ -60,3 +60,4 @@ class NotificationReadStatus extends Model
 
 
 
+

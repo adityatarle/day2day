@@ -481,6 +481,7 @@ Route::middleware('auth')->group(function () {
         // POS API routes
         Route::get('/api/pos/products', [PosWebController::class, 'getProducts'])->name('api.pos.products');
         Route::post('/api/pos/process-sale', [PosWebController::class, 'processSale'])->name('api.pos.process-sale');
+        Route::post('/api/pos/generate-upi-qr', [PosController::class, 'generateUpiQr'])->name('api.pos.generate-upi-qr');
     });
 
     // POS Terminal routes (require active session for cashiers)

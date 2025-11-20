@@ -206,6 +206,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pos/products', [PosController::class, 'getProducts']);
         Route::get('/pos/session-history', [PosController::class, 'getSessionHistory']);
         Route::get('/pos/session-summary', [PosController::class, 'getSessionSummary']);
+        Route::post('/pos/generate-upi-qr', [PosController::class, 'generateUpiQr']);
     });
 
     // Advanced Stock Management System

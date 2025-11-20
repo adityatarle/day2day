@@ -172,7 +172,7 @@ class BillingController extends Controller
                            $product->selling_price;
 
                 $actualWeight = $item['actual_weight'] ?? $item['quantity'];
-                $billedWeight = $item['quantity'];
+                $billedWeight = $item['billed_weight'] ?? $item['quantity'];
                 $totalPrice = $billedWeight * $unitPrice;
 
                 $orderItem = OrderItem::create([
@@ -200,10 +200,10 @@ class BillingController extends Controller
                 }
             }
 
-            // Update order totals
+            // Update order totals (no GST)
             $order->subtotal = $subtotal;
-            $order->tax_amount = $order->calculateTaxAmount();
-            $order->total_amount = $subtotal + $order->tax_amount - $order->discount_amount;
+            $order->tax_amount = 0; // No GST
+            $order->total_amount = $subtotal - $order->discount_amount;
             $order->save();
 
             // Create payment record

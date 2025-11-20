@@ -276,13 +276,26 @@ class PosWebController extends Controller
         ->get()
         ->map(function($product) use ($branch) {
             $branchProduct = $product->branches->first();
+            $stock = $branchProduct?->pivot?->current_stock ?? 0;
+            
+            // Convert stock to kg for display
+            $stockInKg = $stock;
+            if ($product->weight_unit === 'gm') {
+                $stockInKg = $stock / 1000;
+            } elseif ($product->weight_unit === 'pcs') {
+                // For pieces, keep as is but show as "pcs"
+                $stockInKg = $stock;
+            }
+            
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'code' => $product->code,
                 'category' => $product->category ?? 'Uncategorized',
                 'selling_price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
-                'current_stock' => $branchProduct?->pivot?->current_stock ?? 0,
+                'current_stock' => $stock,
+                'current_stock_kg' => $stockInKg,
+                'weight_unit' => $product->weight_unit,
                 'city_price' => $branchProduct?->pivot?->selling_price ?? $product->selling_price,
                 'is_available_in_city' => true,
             ];
@@ -356,14 +369,15 @@ class PosWebController extends Controller
         try {
             DB::beginTransaction();
 
-            // Calculate totals
+            // Calculate totals based on weight
             $subtotal = collect($request->items)->sum(function($item) {
-                return $item['quantity'] * $item['price'];
+                $weight = $item['billed_weight'] ?? $item['actual_weight'] ?? $item['quantity'];
+                return $weight * $item['price'];
             });
             
             $discountAmount = $request->discount_amount ?? 0;
-            $taxAmount = $request->tax_amount ?? (($subtotal - $discountAmount) * 0.18);
-            $totalAmount = $subtotal - $discountAmount + $taxAmount;
+            $taxAmount = 0; // No GST
+            $totalAmount = $subtotal - $discountAmount;
 
             // Create order
             $order = Order::create([
@@ -388,12 +402,19 @@ class PosWebController extends Controller
 
             // Create order items and update stock
             foreach ($request->items as $item) {
+                $actualWeight = $item['actual_weight'] ?? $item['quantity'];
+                $billedWeight = $item['billed_weight'] ?? $item['quantity'];
+                $totalPrice = $billedWeight * $item['price'];
+                
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
-                    'total_price' => $item['quantity'] * $item['price'],
+                    'total_price' => $totalPrice,
+                    'actual_weight' => $actualWeight,
+                    'billed_weight' => $billedWeight,
+                    'adjustment_weight' => $actualWeight - $billedWeight,
                 ]);
 
                 // Update product stock

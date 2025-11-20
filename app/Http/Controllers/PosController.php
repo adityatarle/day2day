@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\OrderItem;
 use App\Models\Payment;
+use App\Models\CashDenominationBreakdown;
+use App\Services\UpiQrService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -103,13 +105,27 @@ class PosController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.price' => 'required|numeric|min:0',
+            'items.*.actual_weight' => 'nullable|numeric|min:0',
+            'items.*.billed_weight' => 'nullable|numeric|min:0',
             'payment_method' => 'required|in:cash,card,upi,credit',
             'discount_amount' => 'nullable|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
             'customer_name' => 'nullable|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
             'amount_received' => 'nullable|numeric|min:0',
             'reference_number' => 'nullable|string|max:255',
+            'cash_denominations' => 'nullable|array',
+            'cash_denominations.denomination_2000' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_500' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_200' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_100' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_50' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_20' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_10' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_5' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_2' => 'nullable|numeric|min:0',
+            'cash_denominations.denomination_1' => 'nullable|numeric|min:0',
+            'cash_denominations.coins' => 'nullable|numeric|min:0',
+            'upi_id' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -145,15 +161,17 @@ class PosController extends Controller
                 ]);
             }
 
-            // Calculate totals
+            // Calculate totals based on weight
             $subtotal = 0;
             foreach ($request->items as $item) {
-                $subtotal += $item['quantity'] * $item['price'];
+                // Use billed_weight if provided, otherwise use quantity
+                $weight = $item['billed_weight'] ?? $item['actual_weight'] ?? $item['quantity'];
+                $subtotal += $weight * $item['price'];
             }
 
             $discountAmount = $request->discount_amount ?? 0;
-            $taxAmount = $request->tax_amount ?? ($subtotal * 0.18); // Default 18% GST
-            $totalAmount = $subtotal - $discountAmount + $taxAmount;
+            $taxAmount = 0; // No GST
+            $totalAmount = $subtotal - $discountAmount;
 
             $amountReceived = $request->amount_received ?? $totalAmount;
             // Determine payment status
@@ -189,12 +207,19 @@ class PosController extends Controller
 
             // Create order items
             foreach ($request->items as $item) {
+                $actualWeight = $item['actual_weight'] ?? $item['quantity'];
+                $billedWeight = $item['billed_weight'] ?? $item['quantity'];
+                $totalPrice = $billedWeight * $item['price'];
+                
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
-                    'total_price' => $item['quantity'] * $item['price'],
+                    'total_price' => $totalPrice,
+                    'actual_weight' => $actualWeight,
+                    'billed_weight' => $billedWeight,
+                    'adjustment_weight' => $actualWeight - $billedWeight,
                 ]);
 
                 // Update stock
@@ -208,18 +233,71 @@ class PosController extends Controller
             }
 
             // Create payment record if amount was received
+            $payment = null;
+            $upiQrData = null;
+            
             if ($amountReceived > 0) {
-                Payment::create([
+                // Generate UPI QR code if payment method is UPI
+                if ($request->payment_method === 'upi' && $request->upi_id) {
+                    $upiQrService = new UpiQrService();
+                    $upiQrData = $upiQrService->generateUpiQrData(
+                        $totalAmount,
+                        $request->upi_id,
+                        'Day2Day',
+                        'Order Payment - ' . $order->order_number
+                    );
+                }
+
+                $payment = Payment::create([
                     'type' => 'customer_payment',
                     'payable_id' => $order->id,
                     'payable_type' => Order::class,
+                    'order_id' => $order->id,
+                    'customer_id' => $customer?->id,
+                    'branch_id' => $session->branch_id,
                     'amount' => min($amountReceived, $totalAmount),
                     'payment_method' => $request->payment_method,
+                    'payment_type' => 'order_payment',
+                    'status' => 'completed',
                     'reference_number' => $request->reference_number ?? ('POS-' . Str::upper(Str::random(8))),
+                    'upi_qr_code' => $upiQrData ? $upiQrData['qr_code_svg'] : null,
+                    'cash_denominations' => $request->cash_denominations ?? null,
                     'notes' => 'POS sale payment',
                     'user_id' => auth()->id(),
                     'payment_date' => now(),
                 ]);
+
+                // Create cash denomination breakdown if payment method is cash
+                if ($request->payment_method === 'cash' && $request->cash_denominations) {
+                    $denominations = $request->cash_denominations;
+                    $totalCash = ($denominations['denomination_2000'] ?? 0) * 2000 +
+                                 ($denominations['denomination_500'] ?? 0) * 500 +
+                                 ($denominations['denomination_200'] ?? 0) * 200 +
+                                 ($denominations['denomination_100'] ?? 0) * 100 +
+                                 ($denominations['denomination_50'] ?? 0) * 50 +
+                                 ($denominations['denomination_20'] ?? 0) * 20 +
+                                 ($denominations['denomination_10'] ?? 0) * 10 +
+                                 ($denominations['denomination_5'] ?? 0) * 5 +
+                                 ($denominations['denomination_2'] ?? 0) * 2 +
+                                 ($denominations['denomination_1'] ?? 0) * 1 +
+                                 ($denominations['coins'] ?? 0);
+
+                    CashDenominationBreakdown::create([
+                        'payment_id' => $payment->id,
+                        'denomination_2000' => $denominations['denomination_2000'] ?? 0,
+                        'denomination_500' => $denominations['denomination_500'] ?? 0,
+                        'denomination_200' => $denominations['denomination_200'] ?? 0,
+                        'denomination_100' => $denominations['denomination_100'] ?? 0,
+                        'denomination_50' => $denominations['denomination_50'] ?? 0,
+                        'denomination_20' => $denominations['denomination_20'] ?? 0,
+                        'denomination_10' => $denominations['denomination_10'] ?? 0,
+                        'denomination_5' => $denominations['denomination_5'] ?? 0,
+                        'denomination_2' => $denominations['denomination_2'] ?? 0,
+                        'denomination_1' => $denominations['denomination_1'] ?? 0,
+                        'coins' => $denominations['coins'] ?? 0,
+                        'total_cash' => $totalCash,
+                    ]);
+                }
             }
 
             // Update session statistics
@@ -255,6 +333,8 @@ class PosController extends Controller
                 'data' => [
                     'order' => $order,
                     'session' => $session->fresh(),
+                    'payment' => $payment,
+                    'upi_qr_code' => $upiQrData,
                     'invoice_url' => route('orders.invoice', $order),
                 ],
                 'message' => 'Sale processed successfully'
@@ -386,6 +466,48 @@ class PosController extends Controller
             'data' => $sessions,
             'message' => 'Session history retrieved successfully'
         ]);
+    }
+
+    /**
+     * Generate UPI QR code.
+     */
+    public function generateUpiQr(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:0.01',
+            'upi_id' => 'required|string|max:255',
+            'merchant_name' => 'nullable|string|max:255',
+            'transaction_note' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+                'message' => 'Validation failed'
+            ], 422);
+        }
+
+        try {
+            $upiQrService = new UpiQrService();
+            $qrData = $upiQrService->generateUpiQrData(
+                $request->amount,
+                $request->upi_id,
+                $request->merchant_name ?? 'Day2Day',
+                $request->transaction_note ?? 'POS Payment'
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $qrData,
+                'message' => 'UPI QR code generated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate QR code: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

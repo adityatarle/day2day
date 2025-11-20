@@ -83,11 +83,19 @@
                                      data-product-id="{{ $product['id'] }}"
                                      data-product-name="{{ $product['name'] }}"
                                      data-product-price="{{ $product['selling_price'] }}"
-                                     data-product-stock="{{ $product['current_stock'] }}">
+                                     data-product-stock="{{ $product['current_stock'] }}"
+                                     data-weight-unit="{{ $product['weight_unit'] }}">
                                     <div class="text-sm font-medium text-gray-900 mb-1 truncate" title="{{ $product['name'] }}">{{ $product['name'] }}</div>
                                     <div class="text-xs text-gray-500 mb-2">{{ $product['code'] }}</div>
                                     <div class="text-lg font-bold text-green-600">₹{{ number_format($product['selling_price'], 2) }}</div>
-                                    <div class="text-xs text-gray-400 mt-1">Stock: {{ $product['current_stock'] }}</div>
+                                    <div class="text-xs text-gray-400 mt-1">
+                                        Stock: 
+                                        @if($product['weight_unit'] === 'pcs')
+                                            {{ number_format($product['current_stock_kg'], 2) }} pcs
+                                        @else
+                                            {{ number_format($product['current_stock_kg'], 2) }} kg
+                                        @endif
+                                    </div>
                                     <div class="text-xs text-blue-500">{{ $product['category'] }}</div>
                                 </div>
                             @endforeach
@@ -154,10 +162,6 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="flex justify-between text-sm">
-                                    <span>Tax (18%):</span>
-                                    <span id="tax-amount">₹0.00</span>
-                                </div>
                                 <div class="flex justify-between text-lg font-bold border-t pt-2">
                                     <span>Total:</span>
                                     <span id="total-amount">₹0.00</span>
@@ -196,6 +200,75 @@
                                     <span id="change-amount" class="font-medium text-green-600">₹0.00</span>
                                 </div>
                             </div>
+                            
+                            <!-- Cash Denominations -->
+                            <div id="cash-denominations-wrapper" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Cash Denominations</label>
+                                <div class="grid grid-cols-3 gap-2 text-xs">
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹2000</label>
+                                        <input type="number" id="denom-2000" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹500</label>
+                                        <input type="number" id="denom-500" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹200</label>
+                                        <input type="number" id="denom-200" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹100</label>
+                                        <input type="number" id="denom-100" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹50</label>
+                                        <input type="number" id="denom-50" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹20</label>
+                                        <input type="number" id="denom-20" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹10</label>
+                                        <input type="number" id="denom-10" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹5</label>
+                                        <input type="number" id="denom-5" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹2</label>
+                                        <input type="number" id="denom-2" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">₹1</label>
+                                        <input type="number" id="denom-1" value="0" min="0" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">Coins</label>
+                                        <input type="number" id="denom-coins" value="0" min="0" step="0.01" class="w-full border border-gray-300 rounded px-2 py-1" onchange="calculateCashTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-600 mb-1">Total</label>
+                                        <input type="text" id="cash-total" value="₹0.00" readonly class="w-full border border-gray-300 rounded px-2 py-1 bg-gray-50 font-semibold">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- UPI Details -->
+                            <div id="upi-details-wrapper" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">UPI ID</label>
+                                <input type="text" id="upi-id" placeholder="merchant@paytm or merchant@phonepe"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <button type="button" id="generate-upi-qr" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-qrcode mr-2"></i>Generate QR Code
+                                </button>
+                                <div id="upi-qr-display" class="mt-3 hidden text-center">
+                                    <div id="qr-code-container" class="inline-block p-2 bg-white border rounded"></div>
+                                </div>
+                            </div>
+                            
                             <div id="reference-number-wrapper" class="hidden">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Reference Number</label>
                                 <input type="text" id="reference-number" placeholder="Transaction ID / Reference"
@@ -297,7 +370,8 @@ function initializeEventListeners() {
                 id: parseInt(this.dataset.productId),
                 name: this.dataset.productName,
                 selling_price: parseFloat(this.dataset.productPrice),
-                current_stock: parseInt(this.dataset.productStock)
+                current_stock: parseFloat(this.dataset.productStock),
+                weight_unit: this.dataset.weightUnit || 'kg'
             };
             addToCart(productData);
         });
@@ -347,20 +421,34 @@ function addToCart(product) {
     const existingItem = cart.find(item => item.product_id === product.id);
     const price = parseFloat(product.selling_price);
     
+    // Default weight based on unit
+    let defaultWeight = 1;
+    if (product.weight_unit === 'gm') {
+        defaultWeight = 0.001; // 1 gram = 0.001 kg
+    } else if (product.weight_unit === 'pcs') {
+        defaultWeight = 1; // 1 piece
+    }
+    
     if (existingItem) {
-        if (existingItem.quantity >= product.current_stock) {
-            alert('Cannot add more items. Stock limit reached.');
-            return;
-        }
+        // If item exists, just update quantity (weight will be updated manually)
         existingItem.quantity += 1;
-        existingItem.total = existingItem.quantity * existingItem.price;
+        if (!existingItem.billed_weight) {
+            existingItem.billed_weight = defaultWeight;
+        }
+        if (!existingItem.actual_weight) {
+            existingItem.actual_weight = defaultWeight;
+        }
+        existingItem.total = existingItem.billed_weight * existingItem.price;
     } else {
         cart.push({
             product_id: product.id,
             name: product.name,
             price: price,
             quantity: 1,
-            total: price,
+            weight_unit: product.weight_unit || 'kg',
+            actual_weight: defaultWeight,
+            billed_weight: defaultWeight,
+            total: defaultWeight * price,
             max_stock: product.current_stock
         });
     }
@@ -384,17 +472,37 @@ function updateCartDisplay() {
     
     let cartHTML = '';
     cart.forEach((item, index) => {
+        const weightUnit = item.weight_unit === 'pcs' ? 'pcs' : 'kg';
         cartHTML += `
-            <div class="flex justify-between items-center p-3 border-b border-gray-100">
-                <div class="flex-1">
-                    <div class="font-medium text-sm">${item.name}</div>
-                    <div class="text-xs text-gray-500">₹${item.price.toFixed(2)} each</div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="updateQuantity(${index}, -1)" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold">-</button>
-                    <span class="w-8 text-center text-sm font-medium">${item.quantity}</span>
-                    <button onclick="updateQuantity(${index}, 1)" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold" ${item.quantity >= item.max_stock ? 'disabled' : ''}>+</button>
+            <div class="p-3 border-b border-gray-100">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex-1">
+                        <div class="font-medium text-sm">${item.name}</div>
+                        <div class="text-xs text-gray-500">₹${item.price.toFixed(2)} per ${weightUnit}</div>
+                    </div>
                     <button onclick="removeFromCart(${index})" class="w-6 h-6 bg-red-200 hover:bg-red-300 text-red-600 rounded text-xs font-bold">×</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="block text-gray-600 mb-1">Actual Weight (${weightUnit})</label>
+                        <input type="number" value="${item.actual_weight || ''}" step="0.001" min="0" 
+                               onchange="updateWeight(${index}, 'actual_weight', this.value)"
+                               class="w-full border border-gray-300 rounded px-2 py-1">
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 mb-1">Billed Weight (${weightUnit})</label>
+                        <input type="number" value="${item.billed_weight || ''}" step="0.001" min="0" 
+                               onchange="updateWeight(${index}, 'billed_weight', this.value)"
+                               class="w-full border border-gray-300 rounded px-2 py-1">
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center justify-between">
+                    <span class="text-xs text-gray-500">Total: ₹${item.total ? item.total.toFixed(2) : '0.00'}</span>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="updateQuantity(${index}, -1)" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold">-</button>
+                        <span class="w-8 text-center text-xs font-medium">${item.quantity}</span>
+                        <button onclick="updateQuantity(${index}, 1)" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs font-bold" ${item.quantity >= item.max_stock ? 'disabled' : ''}>+</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -402,6 +510,22 @@ function updateCartDisplay() {
     
     cartContainer.innerHTML = cartHTML;
     document.getElementById('process-sale').disabled = false;
+}
+
+// Update item weight
+function updateWeight(index, type, value) {
+    const item = cart[index];
+    const weight = parseFloat(value) || 0;
+    
+    if (type === 'actual_weight') {
+        item.actual_weight = weight;
+    } else if (type === 'billed_weight') {
+        item.billed_weight = weight;
+        item.total = weight * item.price;
+    }
+    
+    updateCartDisplay();
+    updateTotals();
 }
 
 // Update item quantity
@@ -413,7 +537,12 @@ function updateQuantity(index, change) {
         cart.splice(index, 1);
     } else if (newQuantity <= item.max_stock) {
         item.quantity = newQuantity;
-        item.total = item.quantity * item.price;
+        // Recalculate total based on billed weight
+        if (item.billed_weight) {
+            item.total = item.billed_weight * item.price;
+        } else {
+            item.total = item.quantity * item.price;
+        }
     } else {
         alert('Cannot exceed available stock');
         return;
@@ -432,7 +561,12 @@ function removeFromCart(index) {
 
 // Update totals
 function updateTotals() {
-    const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+    // Calculate subtotal based on billed_weight
+    const subtotal = cart.reduce((sum, item) => {
+        const weight = item.billed_weight || item.actual_weight || item.quantity || 0;
+        return sum + (weight * item.price);
+    }, 0);
+    
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     
     let discountAmount = 0;
@@ -445,13 +579,11 @@ function updateTotals() {
         discountAmount = discountValue;
     }
     
-    const taxableAmount = Math.max(subtotal - discountAmount, 0);
-    const taxAmount = taxableAmount * 0.18;
-    const total = taxableAmount + taxAmount;
+    // No GST
+    const total = Math.max(subtotal - discountAmount, 0);
     
     document.getElementById('total-items').textContent = totalItems;
     document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-    document.getElementById('tax-amount').textContent = `₹${taxAmount.toFixed(2)}`;
     document.getElementById('total-amount').textContent = `₹${total.toFixed(2)}`;
     
     updateChangeToReturn();
@@ -540,20 +672,108 @@ function selectPaymentMethod(method) {
     
     const amountWrapper = document.getElementById('amount-received-wrapper');
     const referenceWrapper = document.getElementById('reference-number-wrapper');
+    const cashDenomWrapper = document.getElementById('cash-denominations-wrapper');
+    const upiDetailsWrapper = document.getElementById('upi-details-wrapper');
+    
+    // Hide all first
+    cashDenomWrapper.classList.add('hidden');
+    upiDetailsWrapper.classList.add('hidden');
+    referenceWrapper.classList.add('hidden');
     
     if (method === 'cash') {
         amountWrapper.style.display = 'block';
-        referenceWrapper.style.display = 'none';
-    } else if (method === 'card' || method === 'upi') {
+        cashDenomWrapper.classList.remove('hidden');
+    } else if (method === 'upi') {
         amountWrapper.style.display = 'block';
-        referenceWrapper.style.display = 'block';
+        upiDetailsWrapper.classList.remove('hidden');
+        referenceWrapper.classList.remove('hidden');
+    } else if (method === 'card') {
+        amountWrapper.style.display = 'block';
+        referenceWrapper.classList.remove('hidden');
     } else if (method === 'credit') {
         amountWrapper.style.display = 'none';
-        referenceWrapper.style.display = 'none';
     }
     
     updateChangeToReturn();
 }
+
+// Calculate cash total from denominations
+function calculateCashTotal() {
+    const denominations = {
+        2000: parseFloat(document.getElementById('denom-2000').value) || 0,
+        500: parseFloat(document.getElementById('denom-500').value) || 0,
+        200: parseFloat(document.getElementById('denom-200').value) || 0,
+        100: parseFloat(document.getElementById('denom-100').value) || 0,
+        50: parseFloat(document.getElementById('denom-50').value) || 0,
+        20: parseFloat(document.getElementById('denom-20').value) || 0,
+        10: parseFloat(document.getElementById('denom-10').value) || 0,
+        5: parseFloat(document.getElementById('denom-5').value) || 0,
+        2: parseFloat(document.getElementById('denom-2').value) || 0,
+        1: parseFloat(document.getElementById('denom-1').value) || 0,
+        coins: parseFloat(document.getElementById('denom-coins').value) || 0
+    };
+    
+    const total = (denominations[2000] * 2000) +
+                  (denominations[500] * 500) +
+                  (denominations[200] * 200) +
+                  (denominations[100] * 100) +
+                  (denominations[50] * 50) +
+                  (denominations[20] * 20) +
+                  (denominations[10] * 10) +
+                  (denominations[5] * 5) +
+                  (denominations[2] * 2) +
+                  (denominations[1] * 1) +
+                  denominations.coins;
+    
+    document.getElementById('cash-total').value = `₹${total.toFixed(2)}`;
+    document.getElementById('amount-received').value = total.toFixed(2);
+    updateChangeToReturn();
+}
+
+// Generate UPI QR Code
+document.getElementById('generate-upi-qr')?.addEventListener('click', async function() {
+    const upiId = document.getElementById('upi-id').value.trim();
+    const totalAmount = parseFloat(document.getElementById('total-amount').textContent.replace('₹', ''));
+    
+    if (!upiId) {
+        alert('Please enter UPI ID');
+        return;
+    }
+    
+    if (totalAmount <= 0) {
+        alert('Total amount must be greater than 0');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/pos/generate-upi-qr', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                amount: totalAmount,
+                upi_id: upiId,
+                merchant_name: 'Day2Day',
+                transaction_note: 'POS Payment'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.data.qr_code_svg) {
+            document.getElementById('qr-code-container').innerHTML = data.data.qr_code_svg;
+            document.getElementById('upi-qr-display').classList.remove('hidden');
+        } else {
+            alert('Error generating QR code: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error generating QR code:', error);
+        alert('Error generating QR code. Please try again.');
+    }
+});
 
 // Update change to return
 function updateChangeToReturn() {
@@ -592,14 +812,42 @@ async function processSale() {
         return;
     }
     
+    // Prepare items with weight data
+    const itemsWithWeight = cart.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+        actual_weight: item.actual_weight || item.quantity,
+        billed_weight: item.billed_weight || item.quantity
+    }));
+    
+    // Get cash denominations if payment is cash
+    let cashDenominations = null;
+    if (paymentMethod === 'cash') {
+        cashDenominations = {
+            denomination_2000: parseFloat(document.getElementById('denom-2000').value) || 0,
+            denomination_500: parseFloat(document.getElementById('denom-500').value) || 0,
+            denomination_200: parseFloat(document.getElementById('denom-200').value) || 0,
+            denomination_100: parseFloat(document.getElementById('denom-100').value) || 0,
+            denomination_50: parseFloat(document.getElementById('denom-50').value) || 0,
+            denomination_20: parseFloat(document.getElementById('denom-20').value) || 0,
+            denomination_10: parseFloat(document.getElementById('denom-10').value) || 0,
+            denomination_5: parseFloat(document.getElementById('denom-5').value) || 0,
+            denomination_2: parseFloat(document.getElementById('denom-2').value) || 0,
+            denomination_1: parseFloat(document.getElementById('denom-1').value) || 0,
+            coins: parseFloat(document.getElementById('denom-coins').value) || 0
+        };
+    }
+    
     const saleData = {
         customer_id: document.getElementById('customer-select').value || null,
-        items: cart,
+        items: itemsWithWeight,
         payment_method: paymentMethod,
         discount_amount: calculateDiscountAmount(),
-        tax_amount: parseFloat(document.getElementById('tax-amount').textContent.replace('₹', '')),
         amount_received: paymentMethod === 'credit' ? totalAmount : amountReceived,
-        reference_number: document.getElementById('reference-number').value || null
+        reference_number: document.getElementById('reference-number').value || null,
+        cash_denominations: cashDenominations,
+        upi_id: paymentMethod === 'upi' ? document.getElementById('upi-id').value.trim() : null
     };
     
     try {

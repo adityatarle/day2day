@@ -15,9 +15,16 @@ class Payment extends Model
         'type',
         'payable_id',
         'payable_type',
+        'order_id',
+        'customer_id',
+        'branch_id',
         'amount',
+        'cash_denominations',
         'payment_method',
+        'payment_type',
+        'status',
         'reference_number',
+        'upi_qr_code',
         'notes',
         'user_id',
         'payment_date',
@@ -25,6 +32,7 @@ class Payment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'cash_denominations' => 'array',
         'payment_date' => 'datetime',
     ];
 
@@ -89,10 +97,43 @@ class Payment extends Model
         return match($this->payment_method) {
             'cash' => 'Cash',
             'bank' => 'Bank Transfer',
+            'bank_transfer' => 'Bank Transfer',
             'upi' => 'UPI',
             'card' => 'Card',
             'credit' => 'Credit',
             default => ucfirst($this->payment_method),
         };
+    }
+
+    /**
+     * Get the order for this payment.
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Get the customer for this payment.
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Get the branch for this payment.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Get the cash denomination breakdown for this payment.
+     */
+    public function cashDenominationBreakdown()
+    {
+        return $this->hasOne(CashDenominationBreakdown::class);
     }
 }

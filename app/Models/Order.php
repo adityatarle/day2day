@@ -233,38 +233,11 @@ class Order extends Model
     }
 
     /**
-     * Calculate tax amount based on GST rates.
+     * Calculate tax amount (no GST - always returns 0).
      */
     public function calculateTaxAmount(): float
     {
-        $taxAmount = 0;
-        
-        // Ensure orderItems are loaded
-        if (!$this->relationLoaded('orderItems')) {
-            $this->load('orderItems.product');
-        }
-        
-        foreach ($this->orderItems as $item) {
-            if (!$item->product) {
-                continue;
-            }
-            
-            $product = $item->product;
-            
-            // Check if product has gstRates relationship and it's loaded
-            if (method_exists($product, 'gstRates')) {
-                if (!$product->relationLoaded('gstRates')) {
-                    $product->load('gstRates');
-                }
-                
-                $gstRate = $product->gstRates->first();
-                if ($gstRate && isset($gstRate->rate)) {
-                    $taxAmount += ($item->total_price * $gstRate->rate) / 100;
-                }
-            }
-        }
-        
-        return round($taxAmount, 2);
+        return 0; // No GST
     }
 
     /**
@@ -273,8 +246,8 @@ class Order extends Model
     public function updateTotals(): void
     {
         $this->subtotal = $this->orderItems->sum('total_price');
-        $this->tax_amount = $this->calculateTaxAmount();
-        $this->total_amount = $this->subtotal + $this->tax_amount - $this->discount_amount;
+        $this->tax_amount = 0; // No GST
+        $this->total_amount = $this->subtotal - $this->discount_amount;
         $this->save();
     }
 

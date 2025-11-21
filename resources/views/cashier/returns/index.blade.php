@@ -39,6 +39,12 @@
                 <div>
                     <p class="text-sm font-medium text-gray-600">Today's Refunds</p>
                     <p class="text-3xl font-bold text-gray-900">₹{{ number_format($stats['today_refunds'], 2) }}</p>
+                    @if($stats['today_cash_refunds'] || $stats['today_upi_refunds'])
+                        <div class="text-xs text-gray-500 mt-1">
+                            Cash: ₹{{ number_format($stats['today_cash_refunds'] ?? 0, 2) }} | 
+                            UPI: ₹{{ number_format($stats['today_upi_refunds'] ?? 0, 2) }}
+                        </div>
+                    @endif
                 </div>
                 <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                     <i class="fas fa-money-bill-wave text-red-600 text-xl"></i>
@@ -65,6 +71,12 @@
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Refunds</p>
                     <p class="text-3xl font-bold text-gray-900">₹{{ number_format($stats['total_refunds'], 2) }}</p>
+                    @if($stats['total_cash_refunds'] || $stats['total_upi_refunds'])
+                        <div class="text-xs text-gray-500 mt-1">
+                            Cash: ₹{{ number_format($stats['total_cash_refunds'] ?? 0, 2) }} | 
+                            UPI: ₹{{ number_format($stats['total_upi_refunds'] ?? 0, 2) }}
+                        </div>
+                    @endif
                 </div>
                 <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                     <i class="fas fa-chart-line text-green-600 text-xl"></i>
@@ -147,6 +159,19 @@
                                 <span class="text-sm text-gray-600">Refund Amount</span>
                                 <span class="text-sm font-bold text-red-600">₹{{ number_format($return->total_amount, 2) }}</span>
                             </div>
+                            @if($return->cash_refund_amount || $return->upi_refund_amount)
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                                <span class="text-xs text-gray-500">Payment Breakdown:</span>
+                                <div class="flex gap-2 text-xs">
+                                    @if($return->cash_refund_amount)
+                                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded">Cash: ₹{{ number_format($return->cash_refund_amount, 2) }}</span>
+                                    @endif
+                                    @if($return->upi_refund_amount)
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded">UPI: ₹{{ number_format($return->upi_refund_amount, 2) }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
                             <div class="flex justify-between">
                                 <span class="text-sm text-gray-600">Date</span>
                                 <span class="text-sm text-gray-900">{{ $return->created_at->format('M d, Y h:i A') }}</span>
@@ -214,6 +239,17 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">₹{{ number_format($return->total_amount, 2) }}</div>
+                                    @if($return->cash_refund_amount || $return->upi_refund_amount)
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            @if($return->cash_refund_amount)
+                                                <span class="text-green-600">Cash: ₹{{ number_format($return->cash_refund_amount, 2) }}</span>
+                                            @endif
+                                            @if($return->cash_refund_amount && $return->upi_refund_amount) | @endif
+                                            @if($return->upi_refund_amount)
+                                                <span class="text-purple-600">UPI: ₹{{ number_format($return->upi_refund_amount, 2) }}</span>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $return->created_at->format('M d, Y') }}</div>

@@ -15,6 +15,7 @@ class CashLedgerEntry extends Model
         'user_id',
         'pos_session_id',
         'entry_type',
+        'purpose',
         'amount',
         'counterparty',
         'reference_number',

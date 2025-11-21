@@ -24,10 +24,19 @@
                     </select>
                 </div>
                 <div class="md:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+                    <select name="purpose" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="">Select Purpose</option>
+                        <option value="food">Food</option>
+                        <option value="miscellaneous">Miscellaneous</option>
+                        <option value="etc">Etc</option>
+                    </select>
+                </div>
+                <div class="md:col-span-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                     <input type="number" step="0.01" min="0.01" name="amount" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
                 </div>
-                <div class="md:col-span-2">
+                <div class="md:col-span-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Counterparty</label>
                     <input type="text" name="counterparty" placeholder="Person or purpose" class="w-full border border-gray-300 rounded-lg px-3 py-2">
                 </div>
@@ -60,6 +69,7 @@
                         <tr class="text-left text-xs uppercase text-gray-500">
                             <th class="py-2">Date</th>
                             <th class="py-2">Type</th>
+                            <th class="py-2">Purpose</th>
                             <th class="py-2">Amount</th>
                             <th class="py-2">Counterparty</th>
                             <th class="py-2">Reference</th>
@@ -75,6 +85,15 @@
                                     {{ ucfirst($entry->entry_type) }}
                                 </span>
                             </td>
+                            <td class="py-2">
+                                @if($entry->purpose)
+                                    <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                                        {{ ucfirst($entry->purpose) }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
                             <td class="py-2 font-semibold {{ $entry->entry_type === 'take' ? 'text-green-600' : 'text-red-600' }}">₹{{ number_format($entry->amount, 2) }}</td>
                             <td class="py-2">{{ $entry->counterparty }}</td>
                             <td class="py-2">{{ $entry->reference_number }}</td>
@@ -82,7 +101,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td class="py-6 text-center text-gray-500" colspan="6">No entries yet</td>
+                            <td class="py-6 text-center text-gray-500" colspan="7">No entries yet</td>
                         </tr>
                         @endforelse
                     </tbody>

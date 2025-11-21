@@ -130,6 +130,27 @@
             @enderror
         </div>
 
+        <!-- Payment Breakdown Info -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Original Payment Breakdown</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-white rounded-lg p-4 border border-blue-100">
+                    <div class="text-sm text-gray-600 mb-1">Total Paid</div>
+                    <div class="text-xl font-bold text-gray-900">₹{{ number_format($paymentBreakdown['total'], 2) }}</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-green-100">
+                    <div class="text-sm text-gray-600 mb-1">Cash Payment</div>
+                    <div class="text-xl font-bold text-green-600">₹{{ number_format($paymentBreakdown['cash'], 2) }}</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ number_format($paymentBreakdown['cash_percentage'], 1) }}%</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-purple-100">
+                    <div class="text-sm text-gray-600 mb-1">UPI Payment</div>
+                    <div class="text-xl font-bold text-purple-600">₹{{ number_format($paymentBreakdown['upi'], 2) }}</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ number_format($paymentBreakdown['upi_percentage'], 1) }}%</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Return Summary -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Return Summary</h3>
@@ -141,6 +162,19 @@
                 <div class="flex justify-between">
                     <span class="text-gray-600">Total Refund Amount:</span>
                     <span id="total_refund" class="text-xl font-bold text-red-600">₹0.00</span>
+                </div>
+                <div class="border-t pt-3 mt-3">
+                    <div class="text-sm font-medium text-gray-700 mb-2">Refund Breakdown (Estimated):</div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                            <div class="text-xs text-gray-600 mb-1">Cash Refund</div>
+                            <div id="cash_refund" class="text-lg font-bold text-green-600">₹0.00</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                            <div class="text-xs text-gray-600 mb-1">UPI Refund</div>
+                            <div id="upi_refund" class="text-lg font-bold text-purple-600">₹0.00</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -207,6 +241,29 @@ function updateTotals() {
     
     document.getElementById('total_items').textContent = totalItems;
     document.getElementById('total_refund').textContent = '₹' + totalRefund.toFixed(2);
+    
+    // Calculate cash and UPI refund amounts based on original payment breakdown
+    const totalPaid = {{ $paymentBreakdown['total'] }};
+    const cashPaid = {{ $paymentBreakdown['cash'] }};
+    const upiPaid = {{ $paymentBreakdown['upi'] }};
+    
+    let cashRefund = 0;
+    let upiRefund = 0;
+    
+    if (totalPaid > 0) {
+        cashRefund = (cashPaid / totalPaid) * totalRefund;
+        upiRefund = (upiPaid / totalPaid) * totalRefund;
+    } else {
+        // Fallback to order payment method
+        @if($order->payment_method === 'cash')
+            cashRefund = totalRefund;
+        @elseif($order->payment_method === 'upi')
+            upiRefund = totalRefund;
+        @endif
+    }
+    
+    document.getElementById('cash_refund').textContent = '₹' + cashRefund.toFixed(2);
+    document.getElementById('upi_refund').textContent = '₹' + upiRefund.toFixed(2);
 }
 
 // Initialize unit prices for calculation

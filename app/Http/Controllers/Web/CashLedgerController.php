@@ -41,6 +41,7 @@ class CashLedgerController extends Controller
     {
         $request->validate([
             'entry_type' => 'required|in:give,take',
+            'purpose' => 'nullable|in:food,miscellaneous,etc',
             'amount' => 'required|numeric|min:0.01',
             'counterparty' => 'nullable|string|max:255',
             'reference_number' => 'nullable|string|max:100',
@@ -55,6 +56,7 @@ class CashLedgerController extends Controller
             'user_id' => $user->id,
             'pos_session_id' => $session?->id,
             'entry_type' => $request->entry_type,
+            'purpose' => $request->purpose,
             'amount' => $request->amount,
             'counterparty' => $request->counterparty,
             'reference_number' => $request->reference_number,

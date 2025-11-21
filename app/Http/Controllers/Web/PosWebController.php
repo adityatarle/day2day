@@ -180,7 +180,33 @@ class PosWebController extends Controller
 
         $expectedCash = $session->calculateExpectedCash();
         
-        return view('pos.close-session', compact('session', 'expectedCash'));
+        // Get cash ledger breakdown
+        $cashSales = $session->orders()
+            ->where('payment_method', 'cash')
+            ->sum('total_amount');
+        
+        $cashTakes = $session->cashLedgerEntries()
+            ->where('entry_type', 'take')
+            ->sum('amount');
+        
+        $cashGives = $session->cashLedgerEntries()
+            ->where('entry_type', 'give')
+            ->sum('amount');
+        
+        // Get recent cash ledger entries for display
+        $cashLedgerEntries = $session->cashLedgerEntries()
+            ->orderBy('entry_date', 'desc')
+            ->get();
+        
+        $breakdown = [
+            'opening_cash' => $session->opening_cash,
+            'cash_sales' => $cashSales,
+            'cash_takes' => $cashTakes,
+            'cash_gives' => $cashGives,
+            'expected_cash' => $expectedCash,
+        ];
+        
+        return view('pos.close-session', compact('session', 'expectedCash', 'breakdown', 'cashLedgerEntries'));
     }
 
     /**

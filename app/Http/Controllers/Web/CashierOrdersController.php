@@ -105,19 +105,23 @@ class CashierOrdersController extends Controller
 
         $returns = $query->latest()->paginate(20);
 
+        $todayReturnsQuery = OrderReturn::whereHas('order', function($q) use ($user) {
+            $q->where('created_by', $user->id);
+        })->whereDate('created_at', Carbon::today());
+        
+        $allReturnsQuery = OrderReturn::whereHas('order', function($q) use ($user) {
+            $q->where('created_by', $user->id);
+        });
+
         $stats = [
-            'today_returns' => OrderReturn::whereHas('order', function($q) use ($user) {
-                $q->where('created_by', $user->id);
-            })->whereDate('created_at', Carbon::today())->count(),
-            'today_refunds' => OrderReturn::whereHas('order', function($q) use ($user) {
-                $q->where('created_by', $user->id);
-            })->whereDate('created_at', Carbon::today())->sum('total_amount'),
-            'total_returns' => OrderReturn::whereHas('order', function($q) use ($user) {
-                $q->where('created_by', $user->id);
-            })->count(),
-            'total_refunds' => OrderReturn::whereHas('order', function($q) use ($user) {
-                $q->where('created_by', $user->id);
-            })->sum('total_amount'),
+            'today_returns' => $todayReturnsQuery->count(),
+            'today_refunds' => $todayReturnsQuery->sum('total_amount'),
+            'today_cash_refunds' => $todayReturnsQuery->sum('cash_refund_amount'),
+            'today_upi_refunds' => $todayReturnsQuery->sum('upi_refund_amount'),
+            'total_returns' => $allReturnsQuery->count(),
+            'total_refunds' => $allReturnsQuery->sum('total_amount'),
+            'total_cash_refunds' => $allReturnsQuery->sum('cash_refund_amount'),
+            'total_upi_refunds' => $allReturnsQuery->sum('upi_refund_amount'),
         ];
 
         return view('cashier.returns.index', compact('returns', 'stats'));
@@ -142,9 +146,24 @@ class CashierOrdersController extends Controller
                 ->with('error', 'Can only create returns for completed orders.');
         }
 
-        $order->load(['orderItems.product']);
+        $order->load(['orderItems.product', 'payments']);
 
-        return view('cashier.returns.create', compact('order'));
+        // Calculate payment breakdown from original order
+        $totalPaid = $order->payments()->where('payment_type', 'order_payment')->sum('amount');
+        $cashPaid = $order->payments()->where('payment_type', 'order_payment')
+            ->where('payment_method', 'cash')->sum('amount');
+        $upiPaid = $order->payments()->where('payment_type', 'order_payment')
+            ->where('payment_method', 'upi')->sum('amount');
+        
+        $paymentBreakdown = [
+            'total' => $totalPaid,
+            'cash' => $cashPaid,
+            'upi' => $upiPaid,
+            'cash_percentage' => $totalPaid > 0 ? ($cashPaid / $totalPaid) * 100 : 0,
+            'upi_percentage' => $totalPaid > 0 ? ($upiPaid / $totalPaid) * 100 : 0,
+        ];
+
+        return view('cashier.returns.create', compact('order', 'paymentBreakdown'));
     }
 
     /**
@@ -198,7 +217,35 @@ class CashierOrdersController extends Controller
             }
         }
 
-        $return->update(['total_amount' => $totalAmount]);
+        // Calculate cash and UPI refund amounts based on original payment breakdown
+        $order->load('payments');
+        $totalPaid = $order->payments()->where('payment_type', 'order_payment')->sum('amount');
+        $cashPaid = $order->payments()->where('payment_type', 'order_payment')
+            ->where('payment_method', 'cash')->sum('amount');
+        $upiPaid = $order->payments()->where('payment_type', 'order_payment')
+            ->where('payment_method', 'upi')->sum('amount');
+
+        $cashRefundAmount = 0;
+        $upiRefundAmount = 0;
+
+        if ($totalPaid > 0) {
+            // Calculate proportional refund amounts
+            $cashRefundAmount = ($cashPaid / $totalPaid) * $totalAmount;
+            $upiRefundAmount = ($upiPaid / $totalPaid) * $totalAmount;
+        } else {
+            // If no payments found, use order payment_method as fallback
+            if ($order->payment_method === 'cash') {
+                $cashRefundAmount = $totalAmount;
+            } elseif ($order->payment_method === 'upi') {
+                $upiRefundAmount = $totalAmount;
+            }
+        }
+
+        $return->update([
+            'total_amount' => $totalAmount,
+            'cash_refund_amount' => round($cashRefundAmount, 2),
+            'upi_refund_amount' => round($upiRefundAmount, 2),
+        ]);
 
         return redirect()->route('cashier.returns.index')
             ->with('success', 'Return created successfully.');

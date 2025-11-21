@@ -22,6 +22,8 @@ class OrderReturn extends Model
         'reason',
         'refund_amount',
         'total_amount',
+        'cash_refund_amount',
+        'upi_refund_amount',
         'refund_method',
         'notes',
         'return_date',
@@ -30,6 +32,8 @@ class OrderReturn extends Model
     protected $casts = [
         'refund_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'cash_refund_amount' => 'decimal:2',
+        'upi_refund_amount' => 'decimal:2',
         'return_date' => 'datetime',
     ];
 

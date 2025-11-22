@@ -421,7 +421,7 @@ class OrderController extends Controller
             foreach ($request->items as $item) {
                 $subtotal += $item['quantity'] * $item['unit_price'];
             }
-            $taxAmount = $subtotal * 0.05; // 5% tax
+            $taxAmount = 0; // No GST
             $totalAmount = $subtotal + $taxAmount;
 
             // Create order

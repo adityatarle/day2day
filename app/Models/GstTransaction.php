@@ -177,20 +177,13 @@ class GstTransaction extends Model
 
     /**
      * Create GST transaction from order
+     * No GST for sales - always 0%
      */
     public static function createFromOrder(Order $order): self
     {
-        $gstRate = $order->gst_rate ?? '18%';
+        $gstRate = '0%'; // No GST for sales
         $taxableValue = $order->subtotal;
-        $gstAmount = $order->tax_amount;
-        
-        // Determine if interstate or intrastate
-        $isInterstate = $order->customer && 
-                       $order->customer->state !== $order->branch->city->state;
-        
-        $cgstAmount = $isInterstate ? 0 : $gstAmount / 2;
-        $sgstAmount = $isInterstate ? 0 : $gstAmount / 2;
-        $igstAmount = $isInterstate ? $gstAmount : 0;
+        $gstAmount = 0; // No GST
         
         return self::create([
             'transaction_type' => 'sale',
@@ -199,10 +192,10 @@ class GstTransaction extends Model
             'customer_id' => $order->customer_id,
             'branch_id' => $order->branch_id,
             'taxable_value' => $taxableValue,
-            'cgst_amount' => $cgstAmount,
-            'sgst_amount' => $sgstAmount,
-            'igst_amount' => $igstAmount,
-            'total_gst' => $gstAmount,
+            'cgst_amount' => 0,
+            'sgst_amount' => 0,
+            'igst_amount' => 0,
+            'total_gst' => 0,
             'total_amount' => $order->total_amount,
             'gst_rate' => $gstRate,
             'place_of_supply' => $order->customer ? $order->customer->state : $order->branch->city->state,

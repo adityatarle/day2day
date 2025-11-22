@@ -47,7 +47,7 @@ class BillingController extends Controller
                     'actual_weight' => $item->actual_weight,
                     'billed_weight' => $item->billed_weight,
                     'adjustment_weight' => $item->adjustment_weight,
-                    'gst_rate' => $item->product->gstRates->first()?->rate ?? 0,
+                    'gst_rate' => 0,
                 ];
             }),
             'totals' => [
@@ -484,46 +484,16 @@ class BillingController extends Controller
 
     /**
      * Calculate tax breakdown for order.
+     * No GST - always returns 0% GST.
      */
     private function calculateTaxBreakdown(Order $order): array
     {
-        $breakdown = [];
-        $totalTaxableAmount = 0;
-        $totalTaxAmount = 0;
-
-        foreach ($order->orderItems as $item) {
-            $product = $item->product;
-            $gstRate = $product->gstRates->first();
-            
-            if ($gstRate) {
-                $taxableAmount = $item->total_price;
-                $taxAmount = ($taxableAmount * $gstRate->rate) / 100;
-                
-                if (!isset($breakdown[$gstRate->rate])) {
-                    $breakdown[$gstRate->rate] = [
-                        'rate' => $gstRate->rate,
-                        'taxable_amount' => 0,
-                        'tax_amount' => 0,
-                        'items' => [],
-                    ];
-                }
-                
-                $breakdown[$gstRate->rate]['taxable_amount'] += $taxableAmount;
-                $breakdown[$gstRate->rate]['tax_amount'] += $taxAmount;
-                $breakdown[$gstRate->rate]['items'][] = [
-                    'product_name' => $product->name,
-                    'amount' => $taxableAmount,
-                ];
-
-                $totalTaxableAmount += $taxableAmount;
-                $totalTaxAmount += $taxAmount;
-            }
-        }
-
+        $totalTaxableAmount = $order->orderItems->sum('total_price');
+        
         return [
-            'breakdown' => array_values($breakdown),
+            'breakdown' => [],
             'total_taxable_amount' => $totalTaxableAmount,
-            'total_tax_amount' => $totalTaxAmount,
+            'total_tax_amount' => 0,
         ];
     }
 

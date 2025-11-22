@@ -79,7 +79,7 @@
                         <!-- Product Grid -->
                         <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
                             @foreach($products as $product)
-                                <div class="product-card border border-gray-200 rounded-lg p-3 hover:shadow-md cursor-pointer transition-shadow" 
+                                <div class="product-card border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow" 
                                      data-product-id="{{ $product['id'] }}"
                                      data-product-name="{{ $product['name'] }}"
                                      data-product-price="{{ $product['selling_price'] }}"
@@ -96,7 +96,38 @@
                                             {{ number_format($product['current_stock_kg'], 2) }} kg
                                         @endif
                                     </div>
-                                    <div class="text-xs text-blue-500">{{ $product['category'] }}</div>
+                                    <div class="text-xs text-blue-500 mb-2">{{ $product['category'] }}</div>
+                                    
+                                    <!-- Quick Add Section -->
+                                    <div class="mt-2 space-y-2 border-t pt-2">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <label class="text-xs text-gray-600">Bill by:</label>
+                                            <select class="product-billing-method flex-1 text-xs border border-gray-300 rounded px-2 py-1" 
+                                                    data-product-id="{{ $product['id'] }}">
+                                                <option value="weight">Weight</option>
+                                                <option value="count">Count</option>
+                                            </select>
+                                        </div>
+                                        <div class="product-weight-inputs hidden">
+                                            <div class="flex items-center space-x-1 mb-1">
+                                                <input type="number" class="product-weight-value w-full text-xs border border-gray-300 rounded px-2 py-1" 
+                                                       step="0.01" min="0" placeholder="0.00" data-product-id="{{ $product['id'] }}">
+                                                <select class="product-weight-unit text-xs border border-gray-300 rounded px-1 py-1" 
+                                                        data-product-id="{{ $product['id'] }}">
+                                                    <option value="kg">kg</option>
+                                                    <option value="gm">gm</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="product-count-inputs hidden">
+                                            <input type="number" class="product-count-value w-full text-xs border border-gray-300 rounded px-2 py-1" 
+                                                   step="1" min="1" value="1" placeholder="1" data-product-id="{{ $product['id'] }}">
+                                        </div>
+                                        <button onclick="addProductToCart({{ $product['id'] }})" 
+                                                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1.5 px-2 rounded">
+                                            Add to Cart
+                                        </button>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -363,18 +394,39 @@ function initializeEventListeners() {
     });
     document.getElementById('quick-add').addEventListener('click', quickAddProduct);
     
-    // Product cards click
+    // Product billing method change handler
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('product-billing-method')) {
+            const productId = e.target.dataset.productId;
+            const billingMethod = e.target.value;
+            const productCard = e.target.closest('.product-card');
+            
+            const weightInputs = productCard.querySelector('.product-weight-inputs');
+            const countInputs = productCard.querySelector('.product-count-inputs');
+            
+            if (billingMethod === 'weight') {
+                weightInputs.classList.remove('hidden');
+                countInputs.classList.add('hidden');
+            } else {
+                weightInputs.classList.add('hidden');
+                countInputs.classList.remove('hidden');
+            }
+        }
+    });
+    
+    // Initialize product cards - show weight inputs by default
     document.querySelectorAll('.product-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const productData = {
-                id: parseInt(this.dataset.productId),
-                name: this.dataset.productName,
-                selling_price: parseFloat(this.dataset.productPrice),
-                current_stock: parseFloat(this.dataset.productStock),
-                weight_unit: this.dataset.weightUnit || 'kg'
-            };
-            addToCart(productData);
-        });
+        const billingMethod = card.querySelector('.product-billing-method').value;
+        const weightInputs = card.querySelector('.product-weight-inputs');
+        const countInputs = card.querySelector('.product-count-inputs');
+        
+        if (billingMethod === 'weight') {
+            weightInputs.classList.remove('hidden');
+            countInputs.classList.add('hidden');
+        } else {
+            weightInputs.classList.add('hidden');
+            countInputs.classList.remove('hidden');
+        }
     });
     
     // Cart and payment
@@ -411,47 +463,88 @@ function quickAddProduct() {
     }
 }
 
-// Add product to cart
-function addToCart(product) {
-    if (product.current_stock <= 0) {
+// Add product to cart with inline selection
+function addProductToCart(productId) {
+    const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+    if (!productCard) return;
+    
+    const product = products.find(p => p.id == productId);
+    if (!product || product.current_stock <= 0) {
         alert('Product is out of stock');
         return;
     }
     
-    const existingItem = cart.find(item => item.product_id === product.id);
+    const billingMethod = productCard.querySelector('.product-billing-method').value;
     const price = parseFloat(product.selling_price);
+    const weightUnit = product.weight_unit || 'kg';
     
-    // Default weight based on unit
-    let defaultWeight = 1;
-    if (product.weight_unit === 'gm') {
-        defaultWeight = 0.001; // 1 gram = 0.001 kg
-    } else if (product.weight_unit === 'pcs') {
-        defaultWeight = 1; // 1 piece
+    const cartItem = {
+        product_id: product.id,
+        name: product.name,
+        price: price,
+        quantity: 1,
+        weight_unit: weightUnit,
+        max_stock: product.current_stock,
+        billing_method: billingMethod
+    };
+    
+    if (billingMethod === 'weight') {
+        const weightValue = parseFloat(productCard.querySelector('.product-weight-value').value) || 0;
+        const weightUnitSelected = productCard.querySelector('.product-weight-unit').value;
+        
+        if (weightValue <= 0) {
+            alert('Please enter a valid weight');
+            return;
+        }
+        
+        // Convert to kg for storage
+        let weightInKg = weightValue;
+        if (weightUnitSelected === 'gm') {
+            weightInKg = weightValue / 1000; // Convert grams to kg
+        }
+        
+        cartItem.actual_weight = weightInKg;
+        cartItem.billed_weight = weightInKg;
+        cartItem.weight_unit_display = weightUnitSelected; // Store display unit
+        cartItem.weight_value_display = weightValue; // Store display value
+        cartItem.total = weightInKg * price;
+    } else {
+        const countValue = parseInt(productCard.querySelector('.product-count-value').value) || 1;
+        
+        if (countValue <= 0) {
+            alert('Please enter a valid count');
+            return;
+        }
+        
+        cartItem.actual_count = countValue;
+        cartItem.billed_count = countValue;
+        cartItem.total = countValue * price;
     }
+    
+    // Check if item already exists with same billing method
+    const existingItem = cart.find(item => item.product_id === product.id && 
+                                          item.billing_method === billingMethod);
     
     if (existingItem) {
-        // If item exists, just update quantity (weight will be updated manually)
         existingItem.quantity += 1;
-        if (!existingItem.billed_weight) {
-            existingItem.billed_weight = defaultWeight;
+        if (billingMethod === 'weight') {
+            existingItem.actual_weight = cartItem.actual_weight;
+            existingItem.billed_weight = cartItem.billed_weight;
+            existingItem.weight_unit_display = cartItem.weight_unit_display;
+            existingItem.weight_value_display = cartItem.weight_value_display;
+            existingItem.total = cartItem.billed_weight * price;
+        } else {
+            existingItem.actual_count = cartItem.actual_count;
+            existingItem.billed_count = cartItem.billed_count;
+            existingItem.total = cartItem.billed_count * price;
         }
-        if (!existingItem.actual_weight) {
-            existingItem.actual_weight = defaultWeight;
-        }
-        existingItem.total = existingItem.billed_weight * existingItem.price;
     } else {
-        cart.push({
-            product_id: product.id,
-            name: product.name,
-            price: price,
-            quantity: 1,
-            weight_unit: product.weight_unit || 'kg',
-            actual_weight: defaultWeight,
-            billed_weight: defaultWeight,
-            total: defaultWeight * price,
-            max_stock: product.current_stock
-        });
+        cart.push(cartItem);
     }
+    
+    // Reset inputs
+    productCard.querySelector('.product-weight-value').value = '';
+    productCard.querySelector('.product-count-value').value = '1';
     
     updateCartDisplay();
     updateTotals();
@@ -472,30 +565,51 @@ function updateCartDisplay() {
     
     let cartHTML = '';
     cart.forEach((item, index) => {
-        const weightUnit = item.weight_unit === 'pcs' ? 'pcs' : 'kg';
+        const billingMethod = item.billing_method || 'weight';
+        const isCountBased = billingMethod === 'count';
+        
         cartHTML += `
             <div class="p-3 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-2">
                     <div class="flex-1">
                         <div class="font-medium text-sm">${item.name}</div>
-                        <div class="text-xs text-gray-500">₹${item.price.toFixed(2)} per ${weightUnit}</div>
+                        <div class="text-xs text-gray-500">
+                            ₹${item.price.toFixed(2)} per ${isCountBased ? 'pcs' : (item.weight_unit_display || 'kg')}
+                        </div>
                     </div>
                     <button onclick="removeFromCart(${index})" class="w-6 h-6 bg-red-200 hover:bg-red-300 text-red-600 rounded text-xs font-bold">×</button>
                 </div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                        <label class="block text-gray-600 mb-1">Actual Weight (${weightUnit})</label>
-                        <input type="number" value="${item.actual_weight || ''}" step="0.001" min="0" 
-                               onchange="updateWeight(${index}, 'actual_weight', this.value)"
-                               class="w-full border border-gray-300 rounded px-2 py-1">
+                ${isCountBased ? `
+                    <!-- Count-based product -->
+                    <div class="mb-2">
+                        <label class="block text-xs text-gray-600 mb-1">Count (pcs)</label>
+                        <input type="number" value="${item.billed_count || item.actual_count || 1}" step="1" min="1" 
+                               onchange="updateCartItemValue(${index}, 'count', this.value)"
+                               class="w-full border border-gray-300 rounded px-2 py-1 text-sm">
                     </div>
-                    <div>
-                        <label class="block text-gray-600 mb-1">Billed Weight (${weightUnit})</label>
-                        <input type="number" value="${item.billed_weight || ''}" step="0.001" min="0" 
-                               onchange="updateWeight(${index}, 'billed_weight', this.value)"
-                               class="w-full border border-gray-300 rounded px-2 py-1">
+                ` : `
+                    <!-- Weight-based product -->
+                    <div class="mb-2">
+                        <label class="block text-xs text-gray-600 mb-1">Weight</label>
+                        <div class="flex items-center space-x-1 mb-1">
+                            <input type="number" value="${item.weight_value_display || (item.billed_weight ? (item.weight_unit_display === 'gm' ? (item.billed_weight * 1000).toFixed(0) : item.billed_weight.toFixed(2)) : '')}" 
+                                   step="${item.weight_unit_display === 'gm' ? '1' : '0.01'}" min="0" 
+                                   onchange="updateCartItemValue(${index}, 'weight', this.value)"
+                                   class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm">
+                            <select onchange="updateCartItemUnit(${index}, this.value)" 
+                                    class="text-xs border border-gray-300 rounded px-2 py-1">
+                                <option value="kg" ${(item.weight_unit_display || 'kg') === 'kg' ? 'selected' : ''}>kg</option>
+                                <option value="gm" ${item.weight_unit_display === 'gm' ? 'selected' : ''}>gm</option>
+                            </select>
+                        </div>
+                        ${item.billed_weight ? `
+                            <div class="text-xs text-gray-500">
+                                <span class="font-medium">${item.billed_weight.toFixed(3)} kg</span> 
+                                <span class="text-gray-400">(${(item.billed_weight * 1000).toFixed(0)} gm)</span>
+                            </div>
+                        ` : ''}
                     </div>
-                </div>
+                `}
                 <div class="mt-2 flex items-center justify-between">
                     <span class="text-xs text-gray-500">Total: ₹${item.total ? item.total.toFixed(2) : '0.00'}</span>
                     <div class="flex items-center space-x-1">
@@ -512,36 +626,100 @@ function updateCartDisplay() {
     document.getElementById('process-sale').disabled = false;
 }
 
-// Update item weight
-function updateWeight(index, type, value) {
+// Update cart item value (weight or count)
+function updateCartItemValue(index, type, value) {
     const item = cart[index];
-    const weight = parseFloat(value) || 0;
     
-    if (type === 'actual_weight') {
-        item.actual_weight = weight;
-    } else if (type === 'billed_weight') {
-        item.billed_weight = weight;
-        item.total = weight * item.price;
+    if (type === 'weight') {
+        const weightValue = parseFloat(value) || 0;
+        const unit = item.weight_unit_display || 'kg';
+        
+        if (weightValue <= 0) {
+            alert('Please enter a valid weight');
+            return;
+        }
+        
+        // Convert to kg for storage
+        let weightInKg = weightValue;
+        if (unit === 'gm') {
+            weightInKg = weightValue / 1000;
+        }
+        
+        item.actual_weight = weightInKg;
+        item.billed_weight = weightInKg;
+        item.weight_value_display = weightValue;
+        item.weight_unit_display = unit;
+        item.total = weightInKg * item.price;
+    } else if (type === 'count') {
+        const count = parseInt(value) || 1;
+        
+        if (count <= 0) {
+            alert('Please enter a valid count');
+            return;
+        }
+        
+        item.actual_count = count;
+        item.billed_count = count;
+        item.total = count * item.price;
     }
     
     updateCartDisplay();
     updateTotals();
 }
 
+// Update cart item unit (kg/gm)
+function updateCartItemUnit(index, unit) {
+    const item = cart[index];
+    const oldUnit = item.weight_unit_display || 'kg';
+    item.weight_unit_display = unit;
+    
+    // Convert display value based on unit change
+    if (item.billed_weight) {
+        if (oldUnit === 'kg' && unit === 'gm') {
+            // Convert from kg to gm
+            item.weight_value_display = item.billed_weight * 1000;
+        } else if (oldUnit === 'gm' && unit === 'kg') {
+            // Convert from gm to kg
+            item.weight_value_display = item.billed_weight;
+        } else {
+            // Keep current display value
+            if (unit === 'gm') {
+                item.weight_value_display = item.billed_weight * 1000;
+            } else {
+                item.weight_value_display = item.billed_weight;
+            }
+        }
+    }
+    
+    updateCartDisplay();
+}
+
 // Update item quantity
 function updateQuantity(index, change) {
     const item = cart[index];
     const newQuantity = item.quantity + change;
+    const billingMethod = item.billing_method || (item.weight_unit === 'pcs' ? 'count' : 'weight');
     
     if (newQuantity <= 0) {
         cart.splice(index, 1);
     } else if (newQuantity <= item.max_stock) {
         item.quantity = newQuantity;
-        // Recalculate total based on billed weight
-        if (item.billed_weight) {
-            item.total = item.billed_weight * item.price;
+        // Recalculate total based on billing method
+        if (billingMethod === 'count') {
+            // For count-based billing, use billed_count
+            if (item.billed_count) {
+                item.total = item.billed_count * item.price;
+            } else {
+                item.billed_count = newQuantity;
+                item.total = newQuantity * item.price;
+            }
         } else {
-            item.total = item.quantity * item.price;
+            // For weight-based billing, use billed_weight
+            if (item.billed_weight) {
+                item.total = item.billed_weight * item.price;
+            } else {
+                item.total = item.quantity * item.price;
+            }
         }
     } else {
         alert('Cannot exceed available stock');
@@ -561,10 +739,20 @@ function removeFromCart(index) {
 
 // Update totals
 function updateTotals() {
-    // Calculate subtotal based on billed_weight
+    // Calculate subtotal based on billing method (weight or count)
     const subtotal = cart.reduce((sum, item) => {
-        const weight = item.billed_weight || item.actual_weight || item.quantity || 0;
-        return sum + (weight * item.price);
+        const billingMethod = item.billing_method || (item.weight_unit === 'pcs' ? 'count' : 'weight');
+        let value = 0;
+        
+        if (billingMethod === 'count') {
+            // For count-based billing, use billed_count
+            value = item.billed_count || item.actual_count || item.quantity || 0;
+        } else {
+            // For weight-based billing, use billed_weight
+            value = item.billed_weight || item.actual_weight || item.quantity || 0;
+        }
+        
+        return sum + (value * item.price);
     }, 0);
     
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -797,6 +985,28 @@ async function processSale() {
         return;
     }
     
+    // Prepare items with proper weight/count handling based on billing method
+    const items = cart.map(item => {
+        const billingMethod = item.billing_method || (item.weight_unit === 'pcs' ? 'count' : 'weight');
+        const itemData = {
+            product_id: item.product_id,
+            price: item.price,
+            quantity: item.quantity
+        };
+        
+        if (billingMethod === 'count') {
+            // For count-based billing
+            itemData.actual_weight = item.actual_count || item.quantity || 1;
+            itemData.billed_weight = item.billed_count || item.quantity || 1;
+        } else {
+            // For weight-based billing
+            itemData.actual_weight = item.actual_weight || item.quantity || 1;
+            itemData.billed_weight = item.billed_weight || item.quantity || 1;
+        }
+        
+        return itemData;
+    });
+    
     const paymentMethod = document.getElementById('payment-method').value;
     const totalAmount = parseFloat(document.getElementById('total-amount').textContent.replace('₹', ''));
     const amountReceived = parseFloat(document.getElementById('amount-received').value) || 0;
@@ -812,14 +1022,8 @@ async function processSale() {
         return;
     }
     
-    // Prepare items with weight data
-    const itemsWithWeight = cart.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-        actual_weight: item.actual_weight || item.quantity,
-        billed_weight: item.billed_weight || item.quantity
-    }));
+    // Use the items array prepared above (already handles both weight and count)
+    const itemsWithWeight = items;
     
     // Get cash denominations if payment is cash
     let cashDenominations = null;
@@ -920,5 +1124,6 @@ function updateSessionStats(session) {
     transform: translateY(-2px);
 }
 </style>
+
 @endif
 @endsection

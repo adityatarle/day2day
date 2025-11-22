@@ -225,9 +225,15 @@ class PosController extends Controller
                 // Update stock
                 $product = Product::find($item['product_id']);
                 if ($product) {
+                    // For count-based products (pcs), decrement by quantity
+                    // For weight-based products (kg/gm), decrement by billed_weight
+                    $stockDecrement = ($product->weight_unit === 'pcs') 
+                        ? $item['quantity'] 
+                        : ($item['billed_weight'] ?? $item['quantity']);
+                    
                     // Update branch-specific stock
                     $product->branches()->updateExistingPivot($session->branch_id, [
-                        'current_stock' => DB::raw('current_stock - ' . $item['quantity'])
+                        'current_stock' => DB::raw('current_stock - ' . $stockDecrement)
                     ]);
                 }
             }

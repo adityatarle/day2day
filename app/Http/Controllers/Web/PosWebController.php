@@ -444,16 +444,25 @@ class PosWebController extends Controller
                 ]);
 
                 // Update product stock
-                $productBranch = DB::table('product_branches')
-                    ->where('product_id', $item['product_id'])
-                    ->where('branch_id', $user->branch_id)
-                    ->first();
-
-                if ($productBranch) {
-                    DB::table('product_branches')
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $productBranch = DB::table('product_branches')
                         ->where('product_id', $item['product_id'])
                         ->where('branch_id', $user->branch_id)
-                        ->decrement('current_stock', $item['quantity']);
+                        ->first();
+
+                    if ($productBranch) {
+                        // For count-based products (pcs), decrement by quantity
+                        // For weight-based products (kg/gm), decrement by billed_weight
+                        $stockDecrement = ($product->weight_unit === 'pcs') 
+                            ? $item['quantity'] 
+                            : ($item['billed_weight'] ?? $item['quantity']);
+                        
+                        DB::table('product_branches')
+                            ->where('product_id', $item['product_id'])
+                            ->where('branch_id', $user->branch_id)
+                            ->decrement('current_stock', $stockDecrement);
+                    }
                 }
             }
 

@@ -126,7 +126,7 @@
                                        class="w-16 sm:w-20 text-right border border-gray-300 rounded px-1 sm:px-2 py-1 text-xs sm:text-sm">
                             </div>
                             <div class="flex justify-between text-xs sm:text-sm mb-1 sm:mb-2">
-                                <span>Tax (18%):</span>
+                                <span>Tax:</span>
                                 <span id="tax-amount">₹0.00</span>
                             </div>
                             <div class="flex justify-between text-sm sm:text-lg font-bold border-t pt-1 sm:pt-2">
@@ -635,7 +635,7 @@ function updateTotals() {
     }, 0);
     
     const discount = parseFloat(document.getElementById('discount-amount').value) || 0;
-    const taxAmount = (subtotal - discount) * 0.18;
+    const taxAmount = 0; // No GST
     const total = subtotal - discount + taxAmount;
     
     document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;

@@ -1,5 +1,5 @@
 <!-- Cashier Navigation -->
-<nav class="p-6 space-y-2">
+<nav class="p-4 space-y-2">
     <a href="{{ route('dashboard.cashier') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('dashboard.cashier') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-cash-register"></i>

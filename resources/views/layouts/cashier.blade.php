@@ -134,9 +134,9 @@
     <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-1000 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white z-50 flex flex-col">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-64 text-white z-50 flex flex-col">
         <!-- Logo Section -->
-        <div class="p-6 text-center border-b border-white/20">
+        <div class="p-4 text-center border-b border-white/20">
             <div class="logo-icon w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
                 <i class="fas fa-cash-register text-2xl text-white"></i>
             </div>
@@ -152,7 +152,7 @@
         @php
             $currentSession = auth()->user()->currentPosSession();
         @endphp
-        <div class="mx-6 mt-4 p-4 rounded-lg session-info">
+        <div class="mx-4 mt-4 p-3 rounded-lg session-info">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-semibold text-purple-800">
@@ -183,7 +183,7 @@
         </div>
         
         <!-- User Profile -->
-        <div class="mt-auto p-6 border-t border-white/20 bg-black/30">
+        <div class="mt-auto p-4 border-t border-white/20 bg-black/30">
             <div class="flex items-center space-x-3">
                 <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
                     <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'C', 0, 1)) }}</span>
@@ -205,7 +205,7 @@
     </div>
     
     <!-- Main Content -->
-    <div class="main-content ml-0 lg:ml-80">
+    <div class="main-content ml-0 lg:ml-64">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-40">
             <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -266,7 +266,7 @@
                     <!-- Current Time -->
                     <div class="hidden sm:flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border shadow-sm">
                         <i class="fas fa-clock text-purple-500"></i>
-                        <span class="text-sm font-medium text-gray-700" id="current-time">{{ now()->format('H:i') }}</span>
+                        <span class="text-sm font-medium text-gray-700" id="current-time">{{ now('Asia/Kolkata')->format('H:i') }}</span>
                     </div>
                 </div>
             </div>
@@ -287,19 +287,22 @@
             overlay.classList.toggle('hidden');
         }
 
-        // Update current time every minute
+        // Update current time in IST every minute
         function updateTime() {
             const timeElement = document.getElementById('current-time');
             if (timeElement) {
+                // Get current time in IST (UTC+5:30)
                 const now = new Date();
-                timeElement.textContent = now.toLocaleTimeString('en-US', { 
-                    hour12: false, 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
+                const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+                const ist = new Date(utc + (5.5 * 3600000)); // IST is UTC+5:30
+                
+                const hours = String(ist.getHours()).padStart(2, '0');
+                const minutes = String(ist.getMinutes()).padStart(2, '0');
+                timeElement.textContent = `${hours}:${minutes}`;
             }
         }
         
+        updateTime(); // Update immediately
         setInterval(updateTime, 60000); // Update every minute
 
         function startSession() {

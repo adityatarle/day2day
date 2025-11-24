@@ -12,6 +12,7 @@ use App\Http\Controllers\OutletController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\Auth\OutletAuthController;
+use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\Api\SystemMonitoringController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\WholesaleController;
@@ -39,6 +40,12 @@ Route::post('/v1/login', [AuthController::class, 'login']);
 Route::post('/outlet/login', [OutletAuthController::class, 'outletLogin']);
 Route::get('/outlet/{outletCode}/info', [OutletAuthController::class, 'getOutletInfo']);
 
+// Customer/Dealer authentication (mobile number login)
+Route::post('/customer/login', [CustomerAuthController::class, 'login']);
+Route::post('/customer/register', [CustomerAuthController::class, 'register']);
+Route::post('/customer/password-reset/request', [CustomerAuthController::class, 'requestPasswordReset']);
+Route::post('/customer/password-reset/verify', [CustomerAuthController::class, 'resetPassword']);
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -50,6 +57,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Outlet authentication routes
     Route::post('/outlet/logout', [OutletAuthController::class, 'outletLogout']);
     Route::post('/outlet/change-password', [OutletAuthController::class, 'changePassword']);
+    
+    // Customer/Dealer authentication routes
+    Route::post('/customer/logout', [CustomerAuthController::class, 'logout']);
+    Route::get('/customer/profile', [CustomerAuthController::class, 'profile']);
+    Route::post('/customer/change-password', [CustomerAuthController::class, 'changePassword']);
     
     // User management routes (Admin only)
     Route::middleware('role:admin')->group(function () {

@@ -3,29 +3,40 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Customer extends Model
+class Customer extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable, HasApiTokens;
 
     protected $fillable = [
         'name',
         'phone',
         'email',
+        'password',
         'address',
         'type',
         'customer_type',
         'credit_limit',
         'credit_days',
         'is_active',
+        'last_login_at',
+        'last_login_ip',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
         'credit_limit' => 'decimal:2',
         'credit_days' => 'integer',
         'is_active' => 'boolean',
+        'last_login_at' => 'datetime',
     ];
 
     /**

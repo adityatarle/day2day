@@ -70,6 +70,123 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
+        // If limit parameter is provided, treat as API request and return JSON
+        if ($request->has('limit') || $request->wantsJson() || $request->expectsJson()) {
+            try {
+                $limit = $request->get('limit', 10);
+                $userId = auth()->id();
+                
+                if (!$userId) {
+                    return response()->json([
+                        'notifications' => [],
+                        'unread_count' => 0
+                    ]);
+                }
+
+                $notifications = NotificationHistory::where('user_id', $userId)
+                    ->with(['notificationType', 'actions'])
+                    ->orderBy('created_at', 'desc')
+                    ->limit($limit)
+                    ->get();
+
+                $unreadCount = 0;
+                try {
+                    if (method_exists($this->notificationService, 'getUnreadCount')) {
+                        $unreadCount = $this->notificationService->getUnreadCount($userId);
+                    } else {
+                        // Fallback to direct count if service method doesn't exist
+                        $unreadCount = NotificationHistory::where('user_id', $userId)
+                            ->whereNull('read_at')
+                            ->count();
+                    }
+                } catch (\Exception $e) {
+                    // Fallback to direct count if service fails
+                    try {
+                        $unreadCount = NotificationHistory::where('user_id', $userId)
+                            ->whereNull('read_at')
+                            ->count();
+                    } catch (\Exception $e2) {
+                        $unreadCount = 0;
+                    }
+                }
+
+            return response()->json([
+                'notifications' => $notifications->map(function ($notification) {
+                    // Safely get icon and color
+                    $icon = 'fa-bell';
+                    $color = 'blue';
+                    if ($notification->notificationType) {
+                        $icon = $notification->notificationType->icon ?? 'fa-bell';
+                        $color = $notification->notificationType->color ?? 'blue';
+                    }
+                    
+                    // Safely get actions
+                    $actions = [];
+                    try {
+                        // Use the relationship directly instead of accessor
+                        $notificationActions = $notification->actions;
+                        if ($notificationActions) {
+                            $actions = $notificationActions->map(function ($action) {
+                                try {
+                                    return [
+                                        'type' => $action->action_type ?? '',
+                                        'label' => $action->action_label ?? '',
+                                        'url' => $action->getUrlWithParams() ?? '#',
+                                        'icon' => $action->icon ?? 'fa-arrow-right',
+                                        'button_class' => $action->button_class ?? 'btn-primary',
+                                        'is_primary' => $action->is_primary ?? false,
+                                    ];
+                                } catch (\Exception $e) {
+                                    return null;
+                                }
+                            })->filter()->values()->toArray();
+                        }
+                    } catch (\Exception $e) {
+                        // If actions fail, just use empty array
+                        $actions = [];
+                    }
+                    
+                    return [
+                        'id' => $notification->id,
+                        'title' => $notification->title ?? 'Notification',
+                        'message' => $notification->body ?? '',
+                        'body' => $notification->body ?? '',
+                        'icon' => $icon,
+                        'color' => $color,
+                        'is_read' => $notification->isRead(),
+                        'read_at' => $notification->read_at ? $notification->read_at->toISOString() : null,
+                        'created_at' => $notification->created_at ? $notification->created_at->toISOString() : null,
+                        'formatted_time' => $notification->created_at ? $notification->created_at->diffForHumans() : 'Just now',
+                        'actions' => $actions,
+                    ];
+                }),
+                'unread_count' => $unreadCount
+            ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Database errors (table doesn't exist, connection issues, etc.)
+                \Log::warning('Notification API Database Error: ' . $e->getMessage());
+                return response()->json([
+                    'notifications' => [],
+                    'unread_count' => 0
+                ]);
+            } catch (\Exception $e) {
+                // Log the error for debugging
+                \Log::error('Notification API Error: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString(),
+                    'user_id' => auth()->id(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+                
+                // Return empty response instead of error page
+                return response()->json([
+                    'notifications' => [],
+                    'unread_count' => 0
+                ]);
+            }
+        }
+
+        // Otherwise return view for web requests
         $notifications = NotificationHistory::where('user_id', auth()->id())
             ->with(['notificationType', 'actions'])
             ->orderBy('created_at', 'desc')
@@ -81,15 +198,21 @@ class NotificationController extends Controller
     /**
      * Mark notification as read
      */
-    public function markAsRead(Request $request): JsonResponse
+    public function markAsRead(Request $request, $id = null): JsonResponse
     {
-        $request->validate([
-            'notification_id' => 'required|integer|exists:notification_history,id'
-        ]);
+        // Support both route parameter and request body
+        $notificationId = $id ?? $request->input('notification_id');
+        
+        if (!$notificationId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification ID is required'
+            ], 400);
+        }
 
         $success = $this->notificationService->markAsRead(
             auth()->id(),
-            $request->notification_id
+            $notificationId
         );
 
         if ($success) {
@@ -154,6 +277,14 @@ class NotificationController extends Controller
             'success' => false,
             'message' => 'Failed to mark all notifications as read'
         ], 400);
+    }
+
+    /**
+     * Alias for markAllAsRead (for API route compatibility)
+     */
+    public function markAllRead(): JsonResponse
+    {
+        return $this->markAllAsRead();
     }
 
     /**

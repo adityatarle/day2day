@@ -43,16 +43,18 @@
                     @endif
                     <div class="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                         <i class="fas fa-map-marker-alt text-cyan-200"></i>
-                        <span class="text-sm font-medium">{{ Str::limit($branch_info['address'], 20) }}</span>
+                        <span class="text-sm font-medium">{{ $branch_info['address'] ?? 'Address not available' }}</span>
                     </div>
                 </div>
             </div>
             <div class="hidden md:block">
                 <div class="text-right space-y-2">
-                    <div class="text-3xl font-bold bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent">
-                        {{ Carbon\Carbon::now()->format('H:i') }}
+                    <div class="text-3xl font-bold bg-gradient-to-r from-white to-cyan-100 bg-clip-text text-transparent" id="ist-time">
+                        {{ Carbon\Carbon::now('Asia/Kolkata')->format('H:i') }}
                     </div>
-                    <div class="text-cyan-200 text-lg font-medium">{{ Carbon\Carbon::now()->format('M d, Y') }}</div>
+                    <div class="text-cyan-200 text-lg font-medium" id="ist-date">
+                        {{ Carbon\Carbon::now('Asia/Kolkata')->format('M d, Y') }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -314,4 +316,37 @@
     animation: float 3s ease-in-out infinite;
 }
 </style>
+
+<script>
+// Update IST time every second
+function updateISTTime() {
+    const timeElement = document.getElementById('ist-time');
+    const dateElement = document.getElementById('ist-date');
+    
+    if (timeElement || dateElement) {
+        // Get current time in IST (UTC+5:30)
+        const now = new Date();
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const ist = new Date(utc + (5.5 * 3600000)); // IST is UTC+5:30
+        
+        if (timeElement) {
+            const hours = String(ist.getHours()).padStart(2, '0');
+            const minutes = String(ist.getMinutes()).padStart(2, '0');
+            timeElement.textContent = `${hours}:${minutes}`;
+        }
+        
+        if (dateElement) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const month = months[ist.getMonth()];
+            const day = ist.getDate();
+            const year = ist.getFullYear();
+            dateElement.textContent = `${month} ${day}, ${year}`;
+        }
+    }
+}
+
+// Update immediately and then every second
+updateISTTime();
+setInterval(updateISTTime, 1000);
+</script>
 @endsection

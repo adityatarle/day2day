@@ -436,6 +436,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/cashier/returns', [CashierOrdersController::class, 'returns'])->name('cashier.returns.index');
         Route::get('/cashier/orders/{order}/return', [CashierOrdersController::class, 'createReturn'])->name('cashier.returns.create');
         Route::post('/cashier/orders/{order}/return', [CashierOrdersController::class, 'storeReturn'])->name('cashier.returns.store');
+        Route::get('/cashier/returns/{return}', [CashierOrdersController::class, 'showReturn'])->name('cashier.returns.show');
         
         // Cashier specific views
         Route::get('/cashier/inventory/view', [InventoryController::class, 'cashierView'])->name('cashier.inventory.view');
@@ -475,19 +476,29 @@ Route::middleware('auth')->group(function () {
         Route::get('/pos/session-manager', [PosWebController::class, 'sessionManager'])->name('pos.session-manager');
         Route::get('/pos/close-session', [PosWebController::class, 'closeSession'])->name('pos.close-session');
         Route::post('/pos/close-session', [PosWebController::class, 'processCloseSession'])->name('pos.process-close-session');
-        Route::get('/pos/sales', [PosWebController::class, 'sales'])->name('pos.sales');
+        // Redirect old sales route to unified POS
+        Route::get('/pos/sales', function() {
+            return redirect()->route('pos.index');
+        })->name('pos.sales');
         Route::get('/pos/history', [PosWebController::class, 'sessionHistory'])->name('pos.history');
         
         // POS API routes
         Route::get('/api/pos/products', [PosWebController::class, 'getProducts'])->name('api.pos.products');
+        Route::post('/api/pos/prepare-order', [PosWebController::class, 'prepareOrder'])->name('api.pos.prepare-order');
         Route::post('/api/pos/process-sale', [PosWebController::class, 'processSale'])->name('api.pos.process-sale');
+        Route::post('/api/pos/process-payment', [PosWebController::class, 'processPayment'])->name('api.pos.process-payment');
         Route::post('/api/pos/generate-upi-qr', [PosController::class, 'generateUpiQr'])->name('api.pos.generate-upi-qr');
     });
 
     // POS Terminal routes (require active session for cashiers)
+    // Unified POS page - Main POS interface
     Route::middleware(['role:super_admin,admin,branch_manager,cashier', 'require.active.pos.session'])->group(function () {
         Route::get('/pos', [PosWebController::class, 'index'])->name('pos.index');
-        Route::get('/pos/sale', [PosWebController::class, 'sale'])->name('pos.sale');
+        Route::get('/pos/payment', [PosWebController::class, 'payment'])->name('pos.payment');
+        // Redirect old sale route to unified POS
+        Route::get('/pos/sale', function() {
+            return redirect()->route('pos.index');
+        })->name('pos.sale');
     });
     
     // User Management (Super Admin and Branch Manager)

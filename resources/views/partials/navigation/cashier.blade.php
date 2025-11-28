@@ -19,12 +19,11 @@
         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">POS Operations</p>
     </div>
     
-    <a href="{{ route('pos.sale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.sale') ? 'active text-white' : '' }}">
+    <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.index') || request()->routeIs('pos.sale') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-shopping-cart"></i>
         </div>
-        <span class="font-medium">New Sale</span>
-        <span class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded-full">Quick</span>
+        <span class="font-medium">Main POS</span>
     </a>
     
     <a href="{{ route('billing.quickSale') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('billing.*') ? 'active text-white' : '' }}">

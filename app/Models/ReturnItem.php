@@ -28,7 +28,7 @@ class ReturnItem extends Model
      */
     public function return(): BelongsTo
     {
-        return $this->belongsTo(OrderReturn::class);
+        return $this->belongsTo(OrderReturn::class, 'return_id');
     }
 
     /**
@@ -40,19 +40,19 @@ class ReturnItem extends Model
     }
 
     /**
-     * Get the product for this return item.
+     * Get the product for this return item (accessor, not a relationship).
      */
-    public function product(): BelongsTo
+    public function getProductAttribute()
     {
-        return $this->orderItem->product;
+        return $this->orderItem?->product;
     }
 
     /**
-     * Get the branch for this return item.
+     * Get the branch for this return item (accessor, not a relationship).
      */
-    public function branch(): BelongsTo
+    public function getBranchAttribute()
     {
-        return $this->orderItem->order->branch;
+        return $this->orderItem?->order?->branch;
     }
 
     /**

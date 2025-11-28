@@ -183,9 +183,9 @@
                         </div>
                         
                         <div class="flex space-x-2 mt-4">
-                            <button class="flex-1 bg-blue-50 text-blue-700 text-center py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors" onclick="alert('Return details view not implemented yet')">
+                            <a href="{{ route('cashier.returns.show', $return) }}" class="flex-1 bg-blue-50 text-blue-700 text-center py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
                                 <i class="fas fa-eye mr-1"></i>View
-                            </button>
+                            </a>
                         </div>
                     </div>
                 @endforeach
@@ -256,9 +256,9 @@
                                     <div class="text-sm text-gray-500">{{ $return->created_at->format('h:i A') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-blue-600 hover:text-blue-900 transition-colors" onclick="alert('Return details view not implemented yet')">
+                                    <a href="{{ route('cashier.returns.show', $return) }}" class="text-blue-600 hover:text-blue-900 transition-colors">
                                         <i class="fas fa-eye mr-1"></i>View
-                                    </button>
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

@@ -9,8 +9,10 @@ use App\Models\Customer;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Events\BranchSaleProcessed;
 use App\Events\BranchStockUpdated;
 use App\Notifications\OrderCreated;
@@ -39,12 +41,46 @@ class PosWebController extends Controller
         }
 
         $currentSession = PosSession::where('user_id', $user->id)->active()->first();
+        
+        if (!$currentSession) {
+            return redirect()->route('pos.start-session')
+                ->with('error', 'Please start a POS session first');
+        }
+        
         $customers = Customer::active()->get();
+        
+        // Get available products for this branch with proper unit information
+        $products = Product::whereHas('branches', function($query) use ($branch) {
+            $query->where('branch_id', $branch->id);
+        })
+        ->where('is_active', true)
+        ->with(['branches' => function($query) use ($branch) {
+            $query->where('branch_id', $branch->id);
+        }])
+        ->get()
+        ->map(function($product) use ($branch) {
+            $branchProduct = $product->branches->first();
+            $stock = $branchProduct?->pivot?->current_stock ?? 0;
+            
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'category' => $product->category ?? 'Uncategorized',
+                'selling_price' => (float)($branchProduct?->pivot?->selling_price ?? $product->selling_price),
+                'current_stock' => (float)$stock,
+                'weight_unit' => $product->weight_unit ?? 'kg',
+                'bill_by' => $product->bill_by ?? 'weight',
+                'selectedUnit' => $product->weight_unit ?? 'kg',
+                'quantity' => 0,
+            ];
+        });
         
         // Debug: Log session status
         \Log::info('POS Index - User: ' . $user->id . ', Session: ' . ($currentSession ? $currentSession->id : 'None'));
         
-        return view('pos.index', compact('branch', 'currentSession', 'customers'));
+        // Use unified POS view
+        return view('pos.unified', compact('branch', 'currentSession', 'customers', 'products'));
     }
 
     /**
@@ -368,22 +404,334 @@ class PosWebController extends Controller
     }
 
     /**
+     * Prepare order and store in session for payment.
+     */
+    public function prepareOrder(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric|min:0.01',
+                'items.*.unit_price' => 'nullable|numeric|min:0',
+                'items.*.price' => 'nullable|numeric|min:0',
+                'items.*.total_price' => 'nullable|numeric|min:0',
+                'items.*.unit' => 'nullable|string',
+                'subtotal' => 'nullable|numeric|min:0',
+                'discount' => 'nullable|numeric|min:0',
+                'tax' => 'nullable|numeric|min:0',
+                'total' => 'required|numeric|min:0.01',
+                'amount_received' => 'nullable|numeric|min:0',
+                'return_amount' => 'nullable|numeric|min:0',
+                'customer_id' => 'nullable|exists:customers,id',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        // Generate order token
+        $orderToken = \Str::random(32);
+        
+        // Store order data in session
+        session(['pending_order_' . $orderToken => [
+            'order_data' => $validated,
+            'created_at' => now(),
+            'user_id' => auth()->id(),
+        ]]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'order_token' => $orderToken,
+                'total' => $validated['total']
+            ]
+        ]);
+    }
+
+    /**
+     * Show payment page.
+     */
+    public function payment(Request $request)
+    {
+        $orderToken = $request->query('order_token');
+        
+        if (!$orderToken) {
+            return redirect()->route('pos.index')
+                ->with('error', 'Invalid payment link');
+        }
+
+        $orderData = session('pending_order_' . $orderToken);
+        
+        if (!$orderData || $orderData['user_id'] !== auth()->id()) {
+            return redirect()->route('pos.index')
+                ->with('error', 'Order session expired or invalid');
+        }
+
+        $user = auth()->user();
+        $branch = $user->branch;
+        $customer = $orderData['order_data']['customer_id'] 
+            ? \App\Models\Customer::find($orderData['order_data']['customer_id'])
+            : null;
+
+        return view('pos.payment', [
+            'orderToken' => $orderToken,
+            'orderData' => $orderData['order_data'],
+            'customer' => $customer,
+            'branch' => $branch,
+            'currentSession' => $user->currentPosSession(),
+        ]);
+    }
+
+    /**
+     * Process payment and create order.
+     */
+    public function processPayment(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'order_token' => 'required|string',
+                'payment_method' => 'required|in:cash,card,upi,credit',
+                'amount_received' => 'required|numeric|min:0',
+                'upi_id' => 'required_if:payment_method,upi|nullable|string|max:255',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $errorMessage = 'Validation failed: ';
+            foreach ($errors as $field => $messages) {
+                $errorMessage .= $field . ': ' . implode(', ', $messages) . ' ';
+            }
+            return response()->json([
+                'success' => false,
+                'message' => trim($errorMessage),
+                'errors' => $errors
+            ], 422);
+        }
+
+        $orderToken = $validated['order_token'];
+        $sessionData = session('pending_order_' . $orderToken);
+        
+        if (!$sessionData || $sessionData['user_id'] !== auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order session expired or invalid. Please try again from the POS page.'
+            ], 400);
+        }
+
+        // Enforce customer for credit payments
+        $storedOrderData = $sessionData['order_data'];
+        if ($validated['payment_method'] === 'credit' && empty($storedOrderData['customer_id'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer is required for credit payments.'
+            ], 422);
+        }
+
+        // Merge payment data with order data
+        $orderData = array_merge($storedOrderData, [
+            'payment_method' => $validated['payment_method'],
+            'amount_received' => $validated['amount_received'],
+            'return_amount' => max($validated['amount_received'] - $storedOrderData['total'], 0),
+            'upi_id' => $validated['upi_id'] ?? null,
+        ]);
+
+        try {
+            $user = auth()->user();
+            $session = PosSession::where('user_id', $user->id)->active()->first();
+            
+            if (!$session) {
+                return response()->json(['success' => false, 'message' => 'No active POS session'], 400);
+            }
+
+            DB::beginTransaction();
+
+            $subtotal = $orderData['subtotal'] ?? collect($orderData['items'])->sum(function($item) {
+                return $item['total_price'] ?? ($item['quantity'] * ($item['unit_price'] ?? $item['price'] ?? 0));
+            });
+            
+            $discountAmount = $orderData['discount'] ?? 0;
+            $taxAmount = $orderData['tax'] ?? 0;
+            $totalAmount = $orderData['total'] ?? ($subtotal - $discountAmount + $taxAmount);
+
+            // Create order
+            $order = Order::create([
+                'order_number' => 'POS-' . time() . '-' . rand(1000, 9999),
+                'customer_id' => $orderData['customer_id'] ?? null,
+                'branch_id' => $user->branch_id,
+                'pos_session_id' => $session->id,
+                'user_id' => $user->id,
+                'created_by' => $user->id,
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'payment_method' => $orderData['payment_method'] ?? 'cash',
+                'payment_status' => ($orderData['payment_method'] ?? 'cash') === 'credit' ? 'pending' : 'paid',
+                'amount_received' => ($orderData['payment_method'] ?? 'cash') === 'credit' 
+                    ? ($orderData['amount_received'] ?? 0) 
+                    : ($orderData['amount_received'] ?? $totalAmount),
+                'change_amount' => $orderData['return_amount'] ?? 0,
+                'status' => 'completed',
+                'order_date' => now(),
+            ]);
+
+            // Create order items and update stock (simplified vs API)
+            foreach ($orderData['items'] as $item) {
+                $quantity = $item['quantity'] ?? 0;
+                $unit = $item['unit'] ?? 'kg';
+                $unitPrice = $item['unit_price'] ?? $item['price'] ?? 0;
+                $totalPrice = $item['total_price'] ?? ($quantity * $unitPrice);
+                
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $quantity,
+                    'unit' => $unit,
+                    'unit_price' => $unitPrice,
+                    'total_price' => $totalPrice,
+                ]);
+
+                // Update product stock
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $stockDecrement = $quantity;
+                    if ($product->bill_by === 'weight') {
+                        if ($unit === 'gram') {
+                            $stockDecrement = $quantity / 1000;
+                        }
+                    } else {
+                        if ($unit === 'dozen') {
+                            $stockDecrement = $quantity * 12;
+                        }
+                    }
+                    
+                    DB::table('product_branches')
+                        ->where('product_id', $item['product_id'])
+                        ->where('branch_id', $user->branch_id)
+                        ->decrement('current_stock', $stockDecrement);
+                }
+            }
+
+            // Create payment record if amount received > 0 or method is credit
+            $amountReceived = $orderData['amount_received'] ?? 0;
+            $customerId = $orderData['customer_id'] ?? null;
+            $payment = null;
+
+            if ($amountReceived > 0 || ($orderData['payment_method'] ?? 'cash') === 'credit') {
+                $payment = Payment::create([
+                    'type' => 'customer_payment',
+                    'payable_id' => $order->id,
+                    'payable_type' => Order::class,
+                    'order_id' => $order->id,
+                    'customer_id' => $customerId,
+                    'branch_id' => $session->branch_id,
+                    'amount' => min($amountReceived, $totalAmount),
+                    'payment_method' => $orderData['payment_method'],
+                    'payment_type' => 'order_payment',
+                    'status' => ($orderData['payment_method'] ?? 'cash') === 'credit' ? 'pending' : 'completed',
+                    'reference_number' => 'POS-' . Str::upper(Str::random(8)),
+                    'upi_qr_code' => null,
+                    'cash_denominations' => null,
+                    'notes' => 'POS sale payment',
+                    'user_id' => auth()->id(),
+                    'payment_date' => now(),
+                ]);
+            }
+
+            // Update session stats
+            $session->increment('total_transactions');
+            $session->increment('total_sales', $totalAmount);
+
+            // Prepare stock change payload
+            $stockChanges = [
+                'type' => 'decrement',
+                'items' => array_map(function ($i) use ($user) {
+                    return [
+                        'product_id' => $i['product_id'],
+                        'quantity' => $i['quantity'],
+                        'branch_id' => $user->branch_id,
+                    ];
+                }, $orderData['items']),
+            ];
+
+            DB::commit();
+
+            // Clear session
+            session()->forget('pending_order_' . $orderToken);
+
+            // Broadcast events and notifications (same style as API)
+            $freshSession = $session->fresh();
+            event(new BranchSaleProcessed($order, $freshSession->branch_id, [
+                'total_sales' => $freshSession->total_sales,
+                'total_transactions' => $freshSession->total_transactions,
+            ]));
+            event(new BranchStockUpdated($freshSession->branch_id, $stockChanges));
+
+            $recipients = \App\Models\User::where('branch_id', $freshSession->branch_id)
+                ->whereHas('role', function ($q) {
+                    $q->whereIn('name', ['branch_manager', 'cashier']);
+                })
+                ->get();
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new OrderCreated($order));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment processed successfully',
+                'data' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'total_amount' => $totalAmount,
+                    'invoice_url' => route('orders.invoice', $order->id)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing payment: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Process a sale (API endpoint).
      */
     public function processSale(Request $request)
     {
-        $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.price' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:cash,card,upi,credit',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'tax_amount' => 'nullable|numeric|min:0',
-            'amount_received' => 'nullable|numeric|min:0',
-            'customer_id' => 'nullable|exists:customers,id',
-            'reference_number' => 'nullable|string|max:100',
-        ]);
+        try {
+            $validated = $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric|min:0.01',
+                'items.*.unit_price' => 'nullable|numeric|min:0',
+                'items.*.price' => 'nullable|numeric|min:0',
+                'items.*.total_price' => 'nullable|numeric|min:0',
+                'items.*.unit' => 'nullable|string',
+                'payment_method' => 'required|in:cash,card,upi,credit',
+                'discount' => 'nullable|numeric|min:0',
+                'discount_amount' => 'nullable|numeric|min:0',
+                'tax' => 'nullable|numeric|min:0',
+                'tax_amount' => 'nullable|numeric|min:0',
+                'subtotal' => 'nullable|numeric|min:0',
+                'total' => 'nullable|numeric|min:0',
+                'amount_received' => 'nullable|numeric|min:0',
+                'return_amount' => 'nullable|numeric|min:0',
+                'customer_id' => 'nullable|exists:customers,id',
+                'reference_number' => 'nullable|string|max:100',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $user = auth()->user();
         $session = PosSession::where('user_id', $user->id)->active()->first();
@@ -395,15 +743,28 @@ class PosWebController extends Controller
         try {
             DB::beginTransaction();
 
-            // Calculate totals based on weight
-            $subtotal = collect($request->items)->sum(function($item) {
-                $weight = $item['billed_weight'] ?? $item['actual_weight'] ?? $item['quantity'];
-                return $weight * $item['price'];
+            // Use provided totals or calculate from items
+            $subtotal = $request->input('subtotal') ?? collect($request->items)->sum(function($item) {
+                return $item['total_price'] ?? ($item['quantity'] * ($item['unit_price'] ?? $item['price'] ?? 0));
             });
             
-            $discountAmount = $request->discount_amount ?? 0;
-            $taxAmount = 0; // No GST
-            $totalAmount = $subtotal - $discountAmount;
+            // Handle discount (can be fixed amount or percentage)
+            $discountAmount = 0;
+            if ($request->has('discount')) {
+                $discountAmount = is_numeric($request->discount) ? $request->discount : 0;
+            } elseif ($request->has('discount_amount')) {
+                $discountAmount = $request->discount_amount ?? 0;
+            }
+            
+            // Handle tax (can be fixed amount or percentage)
+            $taxAmount = 0;
+            if ($request->has('tax')) {
+                $taxAmount = is_numeric($request->tax) ? $request->tax : 0;
+            } elseif ($request->has('tax_amount')) {
+                $taxAmount = $request->tax_amount ?? 0;
+            }
+            
+            $totalAmount = $request->input('total') ?? ($subtotal - $discountAmount + $taxAmount);
 
             // Create order
             $order = Order::create([
@@ -417,10 +778,10 @@ class PosWebController extends Controller
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
                 'total_amount' => $totalAmount,
-                'payment_method' => $request->payment_method,
-                'payment_status' => $request->payment_method === 'credit' ? 'pending' : 'paid',
+                'payment_method' => $request->payment_method ?? 'cash',
+                'payment_status' => ($request->payment_method ?? 'cash') === 'credit' ? 'pending' : 'paid',
                 'amount_received' => $request->amount_received ?? $totalAmount,
-                'change_amount' => max(($request->amount_received ?? $totalAmount) - $totalAmount, 0),
+                'change_amount' => $request->return_amount ?? max(($request->amount_received ?? $totalAmount) - $totalAmount, 0),
                 'reference_number' => $request->reference_number,
                 'status' => 'completed',
                 'order_date' => now(),
@@ -428,15 +789,21 @@ class PosWebController extends Controller
 
             // Create order items and update stock
             foreach ($request->items as $item) {
-                $actualWeight = $item['actual_weight'] ?? $item['quantity'];
-                $billedWeight = $item['billed_weight'] ?? $item['quantity'];
-                $totalPrice = $billedWeight * $item['price'];
+                $quantity = $item['quantity'] ?? 0;
+                $unit = $item['unit'] ?? 'kg';
+                $unitPrice = $item['unit_price'] ?? $item['price'] ?? 0;
+                $totalPrice = $item['total_price'] ?? ($quantity * $unitPrice);
+                
+                // For weight-based items, use quantity as weight
+                $actualWeight = $item['actual_weight'] ?? $quantity;
+                $billedWeight = $item['billed_weight'] ?? $quantity;
                 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['price'],
+                    'quantity' => $quantity,
+                    'unit' => $unit,
+                    'unit_price' => $unitPrice,
                     'total_price' => $totalPrice,
                     'actual_weight' => $actualWeight,
                     'billed_weight' => $billedWeight,
@@ -452,11 +819,29 @@ class PosWebController extends Controller
                         ->first();
 
                     if ($productBranch) {
-                        // For count-based products (pcs), decrement by quantity
-                        // For weight-based products (kg/gm), decrement by billed_weight
-                        $stockDecrement = ($product->weight_unit === 'pcs') 
-                            ? $item['quantity'] 
-                            : ($item['billed_weight'] ?? $item['quantity']);
+                        // Convert quantity to base unit for stock decrement
+                        $quantity = $item['quantity'] ?? 0;
+                        $unit = $item['unit'] ?? $product->weight_unit;
+                        
+                        // Convert to base unit (kg for weight, piece for count)
+                        $stockDecrement = $quantity;
+                        if ($product->bill_by === 'weight') {
+                            // Convert to kg
+                            if ($unit === 'gram') {
+                                $stockDecrement = $quantity / 1000;
+                            } elseif ($unit === 'dozen') {
+                                // For weight products, dozen might not apply, but handle it
+                                $stockDecrement = $quantity;
+                            }
+                        } else {
+                            // Count-based: convert to pieces
+                            if ($unit === 'dozen') {
+                                $stockDecrement = $quantity * 12;
+                            } elseif ($unit === 'packet' || $unit === 'box') {
+                                // Assume 1 packet/box = 1 piece for now (can be configured)
+                                $stockDecrement = $quantity;
+                            }
+                        }
                         
                         DB::table('product_branches')
                             ->where('product_id', $item['product_id'])

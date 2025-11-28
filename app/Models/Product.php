@@ -19,6 +19,7 @@ class Product extends Model
         'category',
         'subcategory',
         'weight_unit',
+        'bill_by',
         'purchase_price',
         'mrp',
         'selling_price',

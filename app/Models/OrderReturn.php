@@ -58,7 +58,7 @@ class OrderReturn extends Model
      */
     public function returnItems(): HasMany
     {
-        return $this->hasMany(ReturnItem::class);
+        return $this->hasMany(ReturnItem::class, 'return_id');
     }
 
     /**

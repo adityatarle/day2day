@@ -92,7 +92,7 @@ class CashierOrdersController extends Controller
 
         $query = OrderReturn::whereHas('order', function($q) use ($user) {
             $q->where('created_by', $user->id);
-        })->with(['order.customer', 'returnItems.product']);
+        })->with(['order.customer', 'returnItems.orderItem.product']);
 
         // Filter by date range
         if ($request->has('date_from') && $request->date_from) {
@@ -187,17 +187,10 @@ class CashierOrdersController extends Controller
             'items.*.reason' => 'nullable|string|max:255',
         ]);
 
-        // Create return
-        $return = OrderReturn::create([
-            'order_id' => $order->id,
-            'reason' => $validated['reason'],
-            'status' => 'pending',
-            'created_by' => $user->id,
-        ]);
-
+        // Calculate total refund amount first
         $totalAmount = 0;
+        $returnItemsData = [];
 
-        // Create return items
         foreach ($validated['items'] as $item) {
             $orderItem = $order->orderItems()
                 ->where('product_id', $item['product_id'])
@@ -205,16 +198,33 @@ class CashierOrdersController extends Controller
 
             if ($orderItem && $item['quantity'] <= $orderItem->quantity) {
                 $subtotal = $orderItem->unit_price * $item['quantity'];
+                $totalAmount += $subtotal;
                 
-                $returnItem = $return->returnItems()->create([
+                $returnItemsData[] = [
                     'order_item_id' => $orderItem->id,
                     'returned_quantity' => $item['quantity'],
                     'refund_amount' => $subtotal,
                     'condition_notes' => $item['reason'] ?? null,
-                ]);
-
-                $totalAmount += $subtotal;
+                ];
             }
+        }
+
+        // Create return with all required fields
+        $return = OrderReturn::create([
+            'order_id' => $order->id,
+            // Store reason in both legacy 'return_reason' and new 'reason' columns
+            'return_reason' => $validated['reason'],
+            'reason' => $validated['reason'],
+            'refund_amount' => $totalAmount,
+            'refund_method' => 'cash', // Default to cash for cashier in-store returns
+            'return_date' => now(),
+            'status' => 'pending',
+            'created_by' => $user->id,
+        ]);
+
+        // Create return items
+        foreach ($returnItemsData as $itemData) {
+            $return->returnItems()->create($itemData);
         }
 
         // Calculate cash and UPI refund amounts based on original payment breakdown
@@ -249,5 +259,27 @@ class CashierOrdersController extends Controller
 
         return redirect()->route('cashier.returns.index')
             ->with('success', 'Return created successfully.');
+    }
+
+    /**
+     * Show return details.
+     */
+    public function showReturn(OrderReturn $return)
+    {
+        $user = auth()->user();
+
+        // Ensure the return belongs to this cashier
+        if ($return->order->created_by !== $user->id) {
+            return redirect()->route('cashier.returns.index')
+                ->with('error', 'Return not found.');
+        }
+
+        $return->load([
+            'order.customer',
+            'order.payments',
+            'returnItems.orderItem.product'
+        ]);
+
+        return view('cashier.returns.show', compact('return'));
     }
 }

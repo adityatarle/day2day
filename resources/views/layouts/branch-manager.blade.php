@@ -22,97 +22,149 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* Branch Manager Theme - Green & Teal */
+        /* Professional Modern Sidebar - Branch Manager Theme */
         .sidebar {
-            background: linear-gradient(180deg, #065f46 0%, #047857 50%, #059669 100%);
-            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
         }
 
         .nav-link {
-            transition: all 0.3s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: linear-gradient(180deg, #34d399, #10b981);
+            transform: scaleY(0);
+            transition: transform 0.25s ease;
         }
 
         .nav-link:hover {
-            background: rgba(16, 185, 129, 0.15);
-            transform: translateX(8px);
+            background: rgba(16, 185, 129, 0.1);
+            padding-left: 1rem;
+        }
+
+        .nav-link:hover::before {
+            transform: scaleY(1);
         }
 
         .nav-link.active {
-            background: linear-gradient(135deg, #10b981, #059669);
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.15);
+            border-left: 3px solid #34d399;
+            padding-left: calc(0.75rem - 3px);
         }
 
         .nav-icon {
-            width: 2.5rem;
-            height: 2.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            width: 2.25rem;
+            height: 2.25rem;
+            background: rgba(16, 185, 129, 0.1);
+            transition: all 0.25s ease;
         }
 
-        .nav-link:hover .nav-icon,
+        .nav-link:hover .nav-icon {
+            background: rgba(16, 185, 129, 0.2);
+            transform: scale(1.05);
+        }
+
         .nav-link.active .nav-icon {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.1);
+            background: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
         }
 
-        /* Logo Animation */
+        /* Logo Styling */
         .logo-icon {
-            background: linear-gradient(135deg, #10b981, #059669);
-            animation: logoFloat 6s ease-in-out infinite;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        @keyframes logoFloat {
-
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
-
-            50% {
-                transform: translateY(-8px);
-            }
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
         }
 
         /* Main Content */
         .main-content {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            background: #f8fafc;
             min-height: 100vh;
         }
 
         .top-nav {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            border-bottom: 2px solid rgba(16, 185, 129, 0.2);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Branch Manager specific styles */
-        .branch-manager-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-            border: 2px solid #10b981;
-            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.2);
-        }
-
-        .branch-manager-badge {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         /* Branch Info Box */
         .branch-info {
-            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-            border: 1px solid #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 0.75rem;
+        }
+
+        .branch-info:hover {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Role Badge */
+        .role-badge {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Section Dividers */
+        .section-divider {
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0 0.75rem;
+        }
+
+        /* Scrollbar Styling - Hidden by default, show on hover */
+        .sidebar {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+            opacity: 0;
+        }
+        
+        .sidebar:hover::-webkit-scrollbar {
+            opacity: 1;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.3);
+            border-radius: 3px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.5);
+        }
+        
+        /* Show scrollbar on hover for webkit browsers */
+        .sidebar:hover {
+            scrollbar-width: thin; /* Firefox */
         }
 
         /* Responsive Design */
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
-                transition: transform 0.3s ease;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 position: fixed;
                 z-index: 1001;
             }
@@ -125,27 +177,6 @@
                 margin-left: 0;
             }
         }
-
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-            /* Hide scrollbar by default for WebKit browsers */
-        }
-
-        .scrollbar-auto::-webkit-scrollbar {
-            display: block;
-            /* Show scrollbar on hover */
-        }
-
-        /* For Firefox */
-        .scrollbar-hide {
-            scrollbar-width: none;
-            /* Hide scrollbar by default */
-        }
-
-        .scrollbar-auto {
-            scrollbar-width: auto;
-            /* Show scrollbar on hover */
-        }
     </style>
 </head>
 
@@ -154,67 +185,69 @@
     <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-1000 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
 
     <!-- Sidebar -->
-    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-80 text-white z-50 flex flex-col">
+    <div id="sidebar" class="sidebar fixed left-0 top-0 h-full w-72 text-white z-50 flex flex-col overflow-y-auto">
         <!-- Logo Section -->
-        <div class="p-5 text-center border-b border-white/20">
-            <div class="logo-icon w-5 h-5 pt-5 mx-auto mb-4 rounded-2xl flex items-center justify-center">
-                <i class="fas fa-store text-2xl text-white"></i>
+        <div class="p-6 border-b border-slate-700/50">
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="logo-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-store text-xl text-white"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-xl font-bold text-white">FoodCo</h1>
+                    <p class="text-xs text-slate-400">Branch Manager</p>
+                </div>
             </div>
-            <div class="flex justify-center items-baseline gap-1">
-                <h1 class="text-2xl font-bold text-white">FoodCo</h1>
-                <p class="text-sm text-green-100">Branch Manager</p>
-            </div>
-            <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs branch-manager-badge">
-                <i class="fas fa-user-tie mr-1"></i>
-                {{ auth()->user()->branch->name ?? 'Branch Manager' }}
+            <div class="role-badge inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold text-white w-full justify-center">
+                <i class="fas fa-user-tie mr-2 text-sm"></i>
+                <span>Branch Manager</span>
             </div>
         </div>
 
         <!-- Branch Info -->
         @if(auth()->user()->branch)
-        <div class="mx-6 mt-4 p-4 rounded-lg branch-info">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-semibold text-green-800">{{ auth()->user()->branch->name }}</p>
-                    <p class="text-xs text-green-600">{{ auth()->user()->branch->code }}</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-green-600">Today's Sales</p>
-                    <p class="text-sm font-bold text-green-800">₹{{ number_format(auth()->user()->branch->todaySales(), 2) }}</p>
+        <div class="px-4 pt-4">
+            <div class="branch-info p-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-200 truncate">{{ auth()->user()->branch->name }}</p>
+                        <p class="text-xs text-slate-400">{{ auth()->user()->branch->code }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-400">Today's Sales</p>
+                        <p class="text-sm font-bold text-white">₹{{ number_format(auth()->user()->branch->todaySales(), 2) }}</p>
+                    </div>
                 </div>
             </div>
         </div>
         @endif
 
         <!-- Navigation -->
-        <div class="flex-1 min-h-0 overflow-y-auto scrollbar-hide hover:scrollbar-auto">
+        <div class="flex-1">
             @include('partials.navigation.branch-manager')
         </div>
 
         <!-- User Profile -->
-        <div class="mt-auto p-3 border-t border-white/20 bg-black/10">
+        <div class="mt-auto p-4 border-t border-slate-700/50 bg-slate-900/50">
             <div class="flex items-center space-x-3">
-                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500  rounded-xl flex items-center justify-center shadow-lg">
-                    <span class="text-white font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'BM', 0, 2)) }}</span>
+                <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-white font-semibold text-sm">{{ strtoupper(substr(auth()->user()->name ?? 'BM', 0, 2)) }}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name ?? 'Branch Manager' }}</p>
-                    <p class="text-xs text-green-200">Branch Manager</p>
+                    <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name ?? 'Branch Manager' }}</p>
+                    <p class="text-xs text-slate-400">Branch Manager</p>
                 </div>
-                <div class="flex flex-col space-y-1">
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="text-xs text-gray-300 hover:text-white transition-colors">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
-                    </form>
-                </div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt text-sm"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="main-content ml-0 lg:ml-80">
+    <div class="main-content ml-0 lg:ml-72">
         <!-- Top Navigation -->
         <div class="top-nav sticky top-0 z-40">
             <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 sm:py-4">

@@ -1,5 +1,5 @@
 <!-- Branch Manager Navigation -->
-<nav class="p-6 space-y-2">
+<nav class="p-4 space-y-1">
     <a href="{{ route('dashboard.branch_manager') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('dashboard.branch_manager') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-tachometer-alt"></i>
@@ -8,9 +8,7 @@
     </a>
 
     <!-- Stock -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Stock</p>
-    </div>
+    <div class="section-divider">Stock</div>
     <a href="{{ route('branch.inventory.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.inventory.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-warehouse"></i>
@@ -19,9 +17,7 @@
     </a>
 
     <!-- Inventory -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Inventory</p>
-    </div>
+    <div class="section-divider">Inventory</div>
     <div class="space-y-1">
         <a href="{{ route('inventory.addStockForm') }}" class="nav-link flex items-center p-2.5 rounded-lg text-gray-300 ml-12 {{ request()->routeIs('inventory.addStockForm') ? 'active text-white' : '' }}">
             <i class="fas fa-circle-arrow-down mr-3"></i>
@@ -54,9 +50,7 @@
     </div>
 
     <!-- Order Products -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Order Products</p>
-    </div>
+    <div class="section-divider">Order Products</div>
     <a href="{{ route('branch.product-orders.create') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.product-orders.create') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-cart-plus"></i>
@@ -71,9 +65,7 @@
     </a>
 
     <!-- Purchase Entries -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Purchase Entries</p>
-    </div>
+    <div class="section-divider">Purchase Entries</div>
     <a href="{{ route('branch.purchase-entries.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.purchase-entries.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-truck"></i>
@@ -82,9 +74,7 @@
     </a>
 
     <!-- Local Purchases -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Local Purchases</p>
-    </div>
+    <div class="section-divider">Local Purchases</div>
     <a href="{{ route('branch.local-purchases.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.local-purchases.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-shopping-basket"></i>
@@ -93,9 +83,7 @@
     </a>
 
     <!-- POS -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">POS</p>
-    </div>
+    <div class="section-divider">POS</div>
     <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-cash-register"></i>
@@ -104,9 +92,7 @@
     </a>
 
     <!-- Staff Management -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Staff Management</p>
-    </div>
+    <div class="section-divider">Staff Management</div>
     <a href="{{ route('branch.staff.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.staff.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-users"></i>
@@ -115,9 +101,7 @@
     </a>
 
     <!-- Reports (Optional) -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Reports & Analytics</p>
-    </div>
+    <div class="section-divider">Reports & Analytics</div>
     <a href="{{ route('branch.reports.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('branch.reports.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-chart-bar"></i>

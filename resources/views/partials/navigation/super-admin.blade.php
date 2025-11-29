@@ -1,9 +1,7 @@
 <!-- Super Admin / Admin Navigation -->
-<nav class="p-4 sm:p-6 space-y-2">
+<nav class="p-4 space-y-1">
     <!-- Main Menu -->
-    <div class="pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Main Menu</p>
-    </div>
+    <div class="section-divider">Main Menu</div>
 
     <!-- Dashboard -->
     <a href="{{ route(\Illuminate\Support\Facades\Route::has('admin.dashboard') ? 'admin.dashboard' : (\Illuminate\Support\Facades\Route::has('dashboard.admin') ? 'dashboard.admin' : 'dashboard.super_admin')) }}" class="nav-link flex items-center p-3 sm:p-3 rounded-xl text-gray-300 touch-target min-h-[48px] {{ request()->routeIs('admin.dashboard') || request()->routeIs('dashboard.admin') || request()->routeIs('dashboard.super_admin') ? 'active text-white' : '' }}">
@@ -121,9 +119,7 @@
 
     @if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
     <!-- Optional: Additional Management -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Management</p>
-    </div>
+    <div class="section-divider">Management</div>
 
     <a href="{{ route('admin.users.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('admin.users.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">

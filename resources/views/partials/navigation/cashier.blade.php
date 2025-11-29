@@ -1,5 +1,5 @@
 <!-- Cashier Navigation -->
-<nav class="p-4 space-y-2">
+<nav class="p-4 space-y-1">
     <a href="{{ route('dashboard.cashier') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('dashboard.cashier') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
             <i class="fas fa-cash-register"></i>
@@ -15,9 +15,7 @@
     </a>
 
     <!-- POS Operations -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">POS Operations</p>
-    </div>
+    <div class="section-divider">POS Operations</div>
     
     <a href="{{ route('pos.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.index') || request()->routeIs('pos.sale') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -34,9 +32,7 @@
     </a>
 
     <!-- Session Management -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Session Management</p>
-    </div>
+    <div class="section-divider">Session Management</div>
     
     <a href="{{ route('pos.session.current') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('pos.session.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -68,9 +64,7 @@
     </a>
 
     <!-- Orders & Sales -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Orders & Sales</p>
-    </div>
+    <div class="section-divider">Orders & Sales</div>
     
     <a href="{{ route('cashier.orders.index') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('cashier.orders.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -87,9 +81,7 @@
     </a>
 
     <!-- Inventory (Read-only) -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Inventory</p>
-    </div>
+    <div class="section-divider">Inventory</div>
     
     <a href="{{ route('cashier.inventory.view') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('cashier.inventory.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">
@@ -100,9 +92,7 @@
     </a>
 
     <!-- Quick Actions -->
-    <div class="pt-4 pb-2">
-        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Quick Actions</p>
-    </div>
+    <div class="section-divider">Quick Actions</div>
     
     <a href="{{ route('cashier.customers.search') }}" class="nav-link flex items-center p-3 rounded-xl text-gray-300 {{ request()->routeIs('cashier.customers.*') ? 'active text-white' : '' }}">
         <div class="nav-icon rounded-lg flex items-center justify-center mr-3">

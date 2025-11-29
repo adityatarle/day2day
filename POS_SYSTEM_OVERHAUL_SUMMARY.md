@@ -179,3 +179,4 @@
 - Unit conversions are handled automatically based on product type
 - Cart state is managed entirely in JavaScript (no server round-trips for updates)
 
+

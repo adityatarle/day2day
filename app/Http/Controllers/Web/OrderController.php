@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Branch;
+use App\Models\PosSession;
 use App\Services\InventoryService;
 use App\Services\OrderWorkflowService;
 use App\Services\OrderNotificationService;
@@ -364,7 +365,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Show the quick sale form.
+     * Show the quick sale form - uses unified POS interface.
      */
     public function quickSaleForm()
     {
@@ -375,25 +376,44 @@ class OrderController extends Controller
             return redirect()->route('dashboard')
                 ->with('error', 'No branch assigned to your account.');
         }
-        
-        // Get products for the user's branch
-        $products = Product::with(['branches' => function($query) use ($branch) {
-                $query->where('branches.id', $branch->id)
-                      ->where('current_stock', '>', 0);
-            }])
-            ->whereHas('branches', function($query) use ($branch) {
-                $query->where('branch_id', $branch->id)
-                      ->where('current_stock', '>', 0);
-            })
-            ->active()
-            ->get();
-        
-        // Get customers - show all customers for cashiers
-        $customers = Customer::active()
-            ->orderBy('name')
-            ->get();
 
-        return view('billing.quick-sale', compact('products', 'customers', 'branch'));
+        $currentSession = PosSession::where('user_id', $user->id)->active()->first();
+        
+        if (!$currentSession) {
+            return redirect()->route('pos.start-session')
+                ->with('error', 'Please start a POS session first');
+        }
+        
+        $customers = Customer::active()->get();
+        
+        // Get available products for this branch with proper unit information
+        $products = Product::whereHas('branches', function($query) use ($branch) {
+            $query->where('branch_id', $branch->id);
+        })
+        ->where('is_active', true)
+        ->with(['branches' => function($query) use ($branch) {
+            $query->where('branch_id', $branch->id);
+        }])
+        ->get()
+        ->map(function($product) use ($branch) {
+            $branchProduct = $product->branches->first();
+            $stock = $branchProduct?->pivot?->current_stock ?? 0;
+            
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'category' => $product->category ?? 'Uncategorized',
+                'selling_price' => (float)($branchProduct?->pivot?->selling_price ?? $product->selling_price),
+                'current_stock' => (float)$stock,
+                'weight_unit' => $product->weight_unit ?? 'kg',
+                'bill_by' => $product->bill_by ?? 'weight',
+                'selectedUnit' => $product->weight_unit ?? 'kg',
+                'quantity' => 0,
+            ];
+        });
+
+        return view('pos.unified', compact('branch', 'currentSession', 'customers', 'products'));
     }
     
     /**

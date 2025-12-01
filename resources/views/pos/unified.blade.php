@@ -227,12 +227,12 @@
                                 >
                                     <template x-if="item.billBy === 'weight'">
                                         <template x-for="unit in ['kg', 'gram', 'piece', 'dozen']" :key="unit">
-                                            <option :value="unit" x-text="unit"></option>
+                                            <option :value="unit" :selected="item.unit === unit" x-text="unit"></option>
                                         </template>
                                     </template>
                                     <template x-if="item.billBy === 'count'">
                                         <template x-for="unit in ['piece', 'packet', 'box', 'dozen']" :key="unit">
-                                            <option :value="unit" x-text="unit"></option>
+                                            <option :value="unit" :selected="item.unit === unit" x-text="unit"></option>
                                         </template>
                                     </template>
                                 </select>
@@ -617,6 +617,7 @@ function posSystem() {
             try {
                 const response = await fetch('/api/pos/prepare-order', {
                     method: 'POST',
+                    credentials: 'same-origin', // Include cookies/session
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
@@ -635,6 +636,9 @@ function posSystem() {
                 const result = await response.json();
                 
                 if (result.success) {
+                    // Small delay to ensure session is saved before redirect
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     // Redirect to payment page
                     window.location.href = '/pos/payment?order_token=' + result.data.order_token;
                 } else {

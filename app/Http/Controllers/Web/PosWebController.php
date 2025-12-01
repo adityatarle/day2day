@@ -12,7 +12,9 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 use App\Events\BranchSaleProcessed;
 use App\Events\BranchStockUpdated;
 use App\Notifications\OrderCreated;
@@ -436,12 +438,21 @@ class PosWebController extends Controller
         // Generate order token
         $orderToken = \Str::random(32);
         
-        // Store order data in session
-        session(['pending_order_' . $orderToken => [
+        // Store order data in cache (more reliable than session)
+        $orderData = [
             'order_data' => $validated,
-            'created_at' => now(),
+            'created_at' => now()->toDateTimeString(),
             'user_id' => auth()->id(),
-        ]]);
+        ];
+        
+        // Store in cache for 30 minutes (1800 seconds)
+        Cache::put('pending_order_' . $orderToken, $orderData, now()->addMinutes(30));
+        
+        \Log::info('Order session created in cache', [
+            'token' => $orderToken,
+            'user_id' => auth()->id(),
+            'total' => $validated['total'],
+        ]);
 
         return response()->json([
             'success' => true,
@@ -464,12 +475,30 @@ class PosWebController extends Controller
                 ->with('error', 'Invalid payment link');
         }
 
-        $orderData = session('pending_order_' . $orderToken);
+        // Get order data from cache
+        $orderData = Cache::get('pending_order_' . $orderToken);
+        
+        \Log::info('Payment page access', [
+            'token' => $orderToken,
+            'user_id' => auth()->id(),
+            'cache_exists' => $orderData !== null,
+            'cache_user_id' => $orderData['user_id'] ?? null,
+        ]);
         
         if (!$orderData || $orderData['user_id'] !== auth()->id()) {
+            \Log::warning('Order session invalid on payment page', [
+                'token' => $orderToken,
+                'user_id' => auth()->id(),
+                'cache_exists' => $orderData !== null,
+                'cache_user_id' => $orderData['user_id'] ?? null,
+            ]);
+            
             return redirect()->route('pos.index')
-                ->with('error', 'Order session expired or invalid');
+                ->with('error', 'Order session expired or invalid. Please create a new order from the POS page.');
         }
+        
+        // Refresh cache to extend its lifetime when accessing payment page
+        Cache::put('pending_order_' . $orderToken, $orderData, now()->addMinutes(30));
 
         $user = auth()->user();
         $branch = $user->branch;
@@ -512,9 +541,17 @@ class PosWebController extends Controller
         }
 
         $orderToken = $validated['order_token'];
-        $sessionData = session('pending_order_' . $orderToken);
+        $sessionData = Cache::get('pending_order_' . $orderToken);
         
         if (!$sessionData || $sessionData['user_id'] !== auth()->id()) {
+            // Log for debugging
+            \Log::warning('Payment processing - Order session invalid', [
+                'token' => $orderToken,
+                'user_id' => auth()->id(),
+                'cache_exists' => $sessionData !== null,
+                'cache_user_id' => $sessionData['user_id'] ?? null,
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Order session expired or invalid. Please try again from the POS page.'
@@ -659,8 +696,8 @@ class PosWebController extends Controller
 
             DB::commit();
 
-            // Clear session
-            session()->forget('pending_order_' . $orderToken);
+            // Clear cache
+            Cache::forget('pending_order_' . $orderToken);
 
             // Broadcast events and notifications (same style as API)
             $freshSession = $session->fresh();
@@ -686,6 +723,9 @@ class PosWebController extends Controller
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
                     'total_amount' => $totalAmount,
+                    'payment_method' => $orderData['payment_method'] ?? 'cash',
+                    'amount_received' => $orderData['amount_received'] ?? $totalAmount,
+                    'return_amount' => $orderData['return_amount'] ?? 0,
                     'invoice_url' => route('orders.invoice', $order->id)
                 ]
             ]);

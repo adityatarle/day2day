@@ -267,6 +267,7 @@
 </div>
 
 <!-- Close Session Modal -->
+@if($hasActiveSession && $currentSession)
 <div id="close-session-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
@@ -278,8 +279,9 @@
                     </button>
                 </div>
                 
-                <form id="close-session-form">
+                <form id="close-session-form" data-session-id="{{ $currentSession->id ?? '' }}">
                     @csrf
+                    <input type="hidden" id="session-id" value="{{ $currentSession->id ?? '' }}">
                     <div class="space-y-4">
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h4 class="font-medium text-gray-900 mb-2">Session Summary</h4>
@@ -345,6 +347,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <script>
 // Modal functions
@@ -359,13 +362,25 @@ function closeStartSessionModal() {
 }
 
 function showCloseSessionModal() {
-    document.getElementById('close-session-modal').classList.remove('hidden');
-    document.getElementById('closing-cash').focus();
+    const modal = document.getElementById('close-session-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        const closingCashInput = document.getElementById('closing-cash');
+        if (closingCashInput) {
+            closingCashInput.focus();
+        }
+    }
 }
 
 function closeCloseSessionModal() {
-    document.getElementById('close-session-modal').classList.add('hidden');
-    document.getElementById('close-session-form').reset();
+    const modal = document.getElementById('close-session-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const form = document.getElementById('close-session-form');
+        if (form) {
+            form.reset();
+        }
+    }
 }
 
 // Start session form submission
@@ -422,7 +437,10 @@ document.getElementById('start-session-form').addEventListener('submit', functio
 });
 
 // Close session form submission
-document.getElementById('close-session-form').addEventListener('submit', function(e) {
+@if($hasActiveSession && $currentSession)
+const closeSessionForm = document.getElementById('close-session-form');
+if (closeSessionForm) {
+    closeSessionForm.addEventListener('submit', function(e) {
     e.preventDefault();
     
     const closingCash = document.getElementById('closing-cash').value;
@@ -433,12 +451,22 @@ document.getElementById('close-session-form').addEventListener('submit', functio
         return;
     }
     
+    const sessionId = document.getElementById('session-id').value;
+    
+    if (!sessionId) {
+        alert('No active session found. Please refresh the page.');
+        return;
+    }
+    
     const formData = {
         closing_cash: parseInt(closingCash),
         closing_notes: closingNotes
     };
     
-    fetch('{{ route("pos.sessions.close", $currentSession) }}', {
+    // Build the URL manually to avoid route helper issues
+    const closeUrl = `/pos/sessions/${sessionId}/close`;
+    
+    fetch(closeUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -469,7 +497,9 @@ document.getElementById('close-session-form').addEventListener('submit', functio
         console.error('Error:', error);
         alert('Error closing session. Please try again.');
     });
-});
+    });
+}
+@endif
 
 // Close modals when clicking outside
 document.getElementById('start-session-modal').addEventListener('click', function(e) {

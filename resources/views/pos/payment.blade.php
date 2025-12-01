@@ -3,7 +3,7 @@
 @section('title', 'Payment - POS System')
 
 @section('content')
-<div x-data="paymentSystem()" class="min-h-screen bg-gray-50">
+<div x-data="paymentSystem()" x-init="init()" class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="bg-white shadow-sm border-b">
         <div class="px-4 sm:px-6 lg:px-8 py-4">
@@ -140,10 +140,14 @@
                         </div>
                         <button 
                             @click="processPayment()"
-                            :disabled="amountReceived < total"
+                            :disabled="processing || (paymentMethod === 'cash' && amountReceived < total)"
                             class="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors"
+                            type="button"
                         >
-                            Process Payment
+                            <span x-show="!processing">Process Payment</span>
+                            <span x-show="processing" class="flex items-center justify-center">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+                            </span>
                         </button>
                     </div>
 
@@ -170,9 +174,13 @@
                         </div>
                         <button 
                             @click="processPayment()"
-                            class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-lg transition-colors"
+                            :disabled="processing"
+                            class="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors"
                         >
-                            Process Credit Payment
+                            <span x-show="!processing">Process Credit Payment</span>
+                            <span x-show="processing" class="flex items-center justify-center">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+                            </span>
                         </button>
                     </div>
 
@@ -201,9 +209,13 @@
                             <p class="text-sm text-gray-600 mb-2">Scan to pay ₹<span x-text="formatPrice(total)"></span></p>
                             <button 
                                 @click="processPayment()"
-                                class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition-colors"
+                                :disabled="processing"
+                                class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-colors"
                             >
-                                Payment Received
+                                <span x-show="!processing">Payment Received</span>
+                                <span x-show="processing" class="flex items-center justify-center">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -224,9 +236,13 @@
                         </div>
                         <button 
                             @click="processPayment()"
-                            class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-lg transition-colors"
+                            :disabled="processing"
+                            class="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 rounded-lg transition-colors"
                         >
-                            Process Payment
+                            <span x-show="!processing">Process Payment</span>
+                            <span x-show="processing" class="flex items-center justify-center">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -246,6 +262,7 @@ function paymentSystem() {
         returnAmount: 0,
         orderToken: '{{ $orderToken }}',
         processing: false,
+        orderData: null,
 
         selectPaymentMethod(method) {
             this.paymentMethod = method;
@@ -265,6 +282,11 @@ function paymentSystem() {
             } else {
                 this.returnAmount = 0;
             }
+        },
+
+        init() {
+            // Initialize return amount calculation
+            this.calculateReturn();
         },
 
         formatPrice(price) {
@@ -306,9 +328,11 @@ function paymentSystem() {
             }
         },
 
+
         async processPayment() {
             if (this.processing) return;
             
+            // Validate payment method requirements
             if (this.paymentMethod === 'cash' && this.amountReceived < this.total) {
                 alert('Amount received is less than total amount');
                 return;
@@ -323,12 +347,13 @@ function paymentSystem() {
                 alert('Amount received cannot be greater than total amount');
                 return;
             }
-
+            
             this.processing = true;
 
             try {
                 const response = await fetch('/api/pos/process-payment', {
                     method: 'POST',
+                    credentials: 'same-origin', // Include cookies/session
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
@@ -345,9 +370,18 @@ function paymentSystem() {
                 if (!response.ok) {
                     const errorText = await response.text();
                     let errorMessage = 'Failed to process payment';
+                    let shouldRedirect = false;
+                    
                     try {
                         const errorJson = JSON.parse(errorText);
                         errorMessage = errorJson.message || errorMessage;
+                        
+                        // Check if it's a session expiration error
+                        if (errorMessage.includes('session expired') || errorMessage.includes('session invalid')) {
+                            shouldRedirect = true;
+                            errorMessage = 'Your order session has expired. You will be redirected to the POS page to create a new order.';
+                        }
+                        
                         if (errorJson.errors) {
                             const errorDetails = Object.values(errorJson.errors).flat().join(', ');
                             errorMessage += ': ' + errorDetails;
@@ -355,16 +389,23 @@ function paymentSystem() {
                     } catch (e) {
                         errorMessage += ' (Status: ' + response.status + ')';
                     }
+                    
                     alert(errorMessage);
                     this.processing = false;
+                    
+                    if (shouldRedirect) {
+                        setTimeout(() => {
+                            window.location.href = '{{ route("pos.index") }}';
+                        }, 2000);
+                    }
                     return;
                 }
 
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Redirect to invoice
-                    window.location.href = result.data.invoice_url;
+                    // Redirect to orders page after successful payment
+                    window.location.href = '{{ route("orders.index") }}';
                 } else {
                     alert('Error: ' + (result.message || 'Failed to process payment'));
                     this.processing = false;
@@ -374,9 +415,11 @@ function paymentSystem() {
                 alert('Failed to process payment: ' + error.message);
                 this.processing = false;
             }
-        }
+        },
+
     }
 }
 </script>
+
 @endsection
 

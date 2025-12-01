@@ -183,8 +183,9 @@ class CashierOrdersController extends Controller
             'reason' => 'required|string|max:500',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.reason' => 'nullable|string|max:255',
+            'refund_method' => 'required|in:cash,upi',
         ]);
 
         // Calculate total refund amount first
@@ -196,38 +197,39 @@ class CashierOrdersController extends Controller
                 ->where('product_id', $item['product_id'])
                 ->first();
 
-            if ($orderItem && $item['quantity'] <= $orderItem->quantity) {
-                $subtotal = $orderItem->unit_price * $item['quantity'];
+            if ($orderItem) {
+                // Get the product to check if it's weight-based or count-based
+                $product = $orderItem->product;
+                $returnQuantity = (float)$item['quantity'];
+                $originalQuantity = (float)$orderItem->quantity;
+                
+                // Validate return quantity doesn't exceed original quantity
+                if ($returnQuantity > $originalQuantity) {
+                    continue; // Skip invalid items
+                }
+                
+                // Calculate refund using proportional method based on original total price paid
+                // This handles unit conversion correctly (grams vs kg, etc.)
+                // Formula: (return_quantity / original_quantity) * original_total_price
+                if ($originalQuantity > 0) {
+                    $proportion = $returnQuantity / $originalQuantity;
+                    $subtotal = $proportion * $orderItem->total_price;
+                } else {
+                    $subtotal = 0;
+                }
+                
                 $totalAmount += $subtotal;
                 
                 $returnItemsData[] = [
                     'order_item_id' => $orderItem->id,
-                    'returned_quantity' => $item['quantity'],
+                    'returned_quantity' => $returnQuantity,
                     'refund_amount' => $subtotal,
                     'condition_notes' => $item['reason'] ?? null,
                 ];
             }
         }
 
-        // Create return with all required fields
-        $return = OrderReturn::create([
-            'order_id' => $order->id,
-            // Store reason in both legacy 'return_reason' and new 'reason' columns
-            'return_reason' => $validated['reason'],
-            'reason' => $validated['reason'],
-            'refund_amount' => $totalAmount,
-            'refund_method' => 'cash', // Default to cash for cashier in-store returns
-            'return_date' => now(),
-            'status' => 'pending',
-            'created_by' => $user->id,
-        ]);
-
-        // Create return items
-        foreach ($returnItemsData as $itemData) {
-            $return->returnItems()->create($itemData);
-        }
-
-        // Calculate cash and UPI refund amounts based on original payment breakdown
+        // Calculate cash and UPI refund amounts based on selected refund method
         $order->load('payments');
         $totalPaid = $order->payments()->where('payment_type', 'order_payment')->sum('amount');
         $cashPaid = $order->payments()->where('payment_type', 'order_payment')
@@ -237,25 +239,37 @@ class CashierOrdersController extends Controller
 
         $cashRefundAmount = 0;
         $upiRefundAmount = 0;
+        $refundMethod = $validated['refund_method'];
 
-        if ($totalPaid > 0) {
-            // Calculate proportional refund amounts
-            $cashRefundAmount = ($cashPaid / $totalPaid) * $totalAmount;
-            $upiRefundAmount = ($upiPaid / $totalPaid) * $totalAmount;
+        // Based on selected refund method, allocate the refund
+        if ($refundMethod === 'cash') {
+            $cashRefundAmount = $totalAmount;
+            $upiRefundAmount = 0;
         } else {
-            // If no payments found, use order payment_method as fallback
-            if ($order->payment_method === 'cash') {
-                $cashRefundAmount = $totalAmount;
-            } elseif ($order->payment_method === 'upi') {
-                $upiRefundAmount = $totalAmount;
-            }
+            $cashRefundAmount = 0;
+            $upiRefundAmount = $totalAmount;
         }
 
-        $return->update([
+        // Create return with all required fields
+        $return = OrderReturn::create([
+            'order_id' => $order->id,
+            // Store reason in both legacy 'return_reason' and new 'reason' columns
+            'return_reason' => $validated['reason'],
+            'reason' => $validated['reason'],
+            'refund_amount' => $totalAmount,
             'total_amount' => $totalAmount,
+            'refund_method' => $refundMethod,
             'cash_refund_amount' => round($cashRefundAmount, 2),
             'upi_refund_amount' => round($upiRefundAmount, 2),
+            'return_date' => now(),
+            'status' => 'processed', // Status enum: pending, approved, rejected, processed
+            'created_by' => $user->id,
         ]);
+
+        // Create return items
+        foreach ($returnItemsData as $itemData) {
+            $return->returnItems()->create($itemData);
+        }
 
         return redirect()->route('cashier.returns.index')
             ->with('success', 'Return created successfully.');

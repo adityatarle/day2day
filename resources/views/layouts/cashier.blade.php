@@ -21,6 +21,9 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
+        /* Alpine.js x-cloak support */
+        [x-cloak] { display: none !important; }
+        
         /* Professional Modern Sidebar - Cashier Theme */
         .sidebar {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);

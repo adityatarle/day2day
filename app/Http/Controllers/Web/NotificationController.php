@@ -74,13 +74,22 @@ class NotificationController extends Controller
         if ($request->has('limit') || $request->wantsJson() || $request->expectsJson()) {
             try {
                 $limit = $request->get('limit', 10);
+                
+                // Check if user is authenticated
+                if (!auth()->check()) {
+                    return response()->json([
+                        'notifications' => [],
+                        'unread_count' => 0
+                    ], 200);
+                }
+                
                 $userId = auth()->id();
                 
                 if (!$userId) {
                     return response()->json([
                         'notifications' => [],
                         'unread_count' => 0
-                    ]);
+                    ], 200);
                 }
 
                 $notifications = NotificationHistory::where('user_id', $userId)

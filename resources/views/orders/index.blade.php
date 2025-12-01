@@ -33,6 +33,7 @@
                     @endforeach
                 </select>
             </div>
+            @if(auth()->user() && (auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('admin')) && $branches->count() > 1)
             <div>
                 <label for="branch_id" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Branch</label>
                 <select name="branch_id" id="branch_id" class="form-input touch-target text-sm">
@@ -44,6 +45,14 @@
                     @endforeach
                 </select>
             </div>
+            @else
+            <div>
+                <label for="branch_display" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Branch</label>
+                <input type="text" id="branch_display" value="{{ $branches->first()->name ?? 'N/A' }}" 
+                       class="form-input touch-target text-sm bg-gray-100" readonly>
+                <input type="hidden" name="branch_id" value="{{ $branches->first()->id ?? '' }}">
+            </div>
+            @endif
             <div class="flex items-end space-x-2 sm:col-span-2 lg:col-span-1">
                 <button type="submit" class="btn-primary flex-1 text-sm touch-target">
                     <i class="fas fa-search mr-1 sm:mr-2"></i>
@@ -82,13 +91,13 @@
                     <div class="mobile-table-row">
                         <span class="mobile-table-label">Customer</span>
                         <div class="text-right">
-                            <div class="mobile-table-value">{{ $order->customer->name }}</div>
-                            <div class="text-xs text-gray-500">{{ $order->customer->phone }}</div>
+                            <div class="mobile-table-value">{{ $order->customer ? $order->customer->name : 'Walk-in Customer' }}</div>
+                            <div class="text-xs text-gray-500">{{ $order->customer ? $order->customer->phone : 'N/A' }}</div>
                         </div>
                     </div>
                     <div class="mobile-table-row">
                         <span class="mobile-table-label">Branch</span>
-                        <span class="mobile-table-value">{{ $order->branch->name }}</span>
+                        <span class="mobile-table-value">{{ $order->branch ? $order->branch->name : 'N/A' }}</span>
                     </div>
                     <div class="mobile-table-row">
                         <span class="mobile-table-label">Total</span>
@@ -152,11 +161,11 @@
                                 <div class="text-sm text-gray-500">{{ $order->id }}</div>
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $order->customer->name }}</div>
-                                <div class="text-sm text-gray-500">{{ $order->customer->phone }}</div>
+                                <div class="text-sm font-medium text-gray-900">{{ $order->customer ? $order->customer->name : 'Walk-in Customer' }}</div>
+                                <div class="text-sm text-gray-500">{{ $order->customer ? $order->customer->phone : 'N/A' }}</div>
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $order->branch->name }}</div>
+                                <div class="text-sm text-gray-900">{{ $order->branch ? $order->branch->name : 'N/A' }}</div>
                             </td>
                             <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-medium rounded-full 

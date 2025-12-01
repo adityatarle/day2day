@@ -104,11 +104,18 @@
 
                 <div>
                     <label for="branch_id" class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-                    <select id="branch_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
+                    @if(auth()->user() && auth()->user()->branch_id && (auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager')))
+                        <input type="text" value="{{ auth()->user()->branch->name }}" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700" readonly>
+                        <input type="hidden" id="branch_id" value="{{ auth()->user()->branch_id }}">
+                    @else
+                        <select id="branch_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ (auth()->user() && auth()->user()->branch_id == $branch->id) ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
             </div>
 

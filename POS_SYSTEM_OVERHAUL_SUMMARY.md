@@ -180,3 +180,4 @@
 - Cart state is managed entirely in JavaScript (no server round-trips for updates)
 
 
+

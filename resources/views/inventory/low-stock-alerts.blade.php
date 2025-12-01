@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->user()->hasRole('cashier') ? 'layouts.cashier' : (auth()->user()->hasRole('branch_manager') ? 'layouts.branch-manager' : (auth()->user()->hasRole('super_admin') ? 'layouts.super-admin' : 'layouts.app')))
 
 @section('title', 'Low Stock Alerts')
 
@@ -8,18 +8,40 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Low Stock Alerts</h1>
-                <p class="text-gray-600 mt-1">Products that need immediate restocking to maintain optimal inventory levels.</p>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    @if(auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager'))
+                        Branch Low Stock Alerts
+                    @else
+                        Low Stock Alerts
+                    @endif
+                </h1>
+                <p class="text-gray-600 mt-1">
+                    @if(auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager'))
+                        <span class="inline-flex items-center">
+                            <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span class="font-medium text-gray-700">{{ auth()->user()->branch->name ?? 'N/A' }}</span>
+                            <span class="mx-2">•</span>
+                            <span class="text-gray-600">Products in your branch that need restocking</span>
+                        </span>
+                    @else
+                        Products that need immediate restocking to maintain optimal inventory levels.
+                    @endif
+                </p>
             </div>
             <div class="flex items-center space-x-3">
+                @if(!auth()->user()->hasRole('cashier'))
                 <a href="{{ route('inventory.addStockForm') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     Add Stock
                 </a>
+                @endif
                 @if(auth()->user()->hasRole('branch_manager') || auth()->user()->hasRole('cashier'))
-                    <a href="{{ route('branch.inventory.index') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    <a href="{{ route('cashier.inventory.view') }}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>Back to Inventory
                     </a>
                 @else

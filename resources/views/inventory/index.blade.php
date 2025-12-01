@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->user()->hasRole('cashier') ? 'layouts.cashier' : (auth()->user()->hasRole('branch_manager') ? 'layouts.branch-manager' : (auth()->user()->hasRole('super_admin') ? 'layouts.super-admin' : 'layouts.app')))
 
 @section('title', 'Inventory Management')
 
@@ -8,9 +8,34 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Inventory Management</h1>
-                <p class="text-gray-600 mt-1">Monitor stock levels, track losses, and manage inventory across all branches.</p>
+                <h1 class="text-3xl font-bold text-gray-900">
+                    @if(auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager'))
+                        Branch Inventory
+                    @else
+                        Inventory Management
+                    @endif
+                </h1>
+                <p class="text-gray-600 mt-1">
+                    @if(auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager'))
+                        @if($branches->first())
+                            <span class="inline-flex items-center">
+                                <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="font-medium text-gray-700">{{ $branches->first()->name }}</span>
+                                <span class="mx-2">•</span>
+                                <span class="text-gray-600">Code: {{ $branches->first()->code }}</span>
+                            </span>
+                        @else
+                            View stock levels for your branch
+                        @endif
+                    @else
+                        Monitor stock levels, track losses, and manage inventory across all branches.
+                    @endif
+                </p>
             </div>
+            @if(!auth()->user()->hasRole('cashier'))
             <div class="flex items-center space-x-3">
                 <a href="{{ route('inventory.addStockForm') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,6 +50,7 @@
                     Record Loss
                 </a>
             </div>
+            @endif
         </div>
     </div>
 
@@ -88,6 +114,7 @@
     </div>
 
     <!-- Quick Actions -->
+    @if(!auth()->user()->hasRole('cashier'))
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <a href="{{ route('inventory.batches') }}" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover-lift transition-all group">
             <div class="flex items-center">
@@ -145,6 +172,24 @@
             </div>
         </a>
     </div>
+    @else
+    <!-- Cashier Info Banner -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-sm font-medium text-blue-900">Read-Only Inventory View</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>You are viewing inventory for your assigned branch. This is a read-only view showing current stock levels and product details.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <!-- Inventory Table -->
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
@@ -157,7 +202,9 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        @if(!auth()->user()->hasRole('cashier') && !auth()->user()->hasRole('branch_manager'))
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        @endif
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threshold</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price</th>
@@ -182,9 +229,11 @@
                                         {{ ucfirst($product->category) }}
                                     </span>
                                 </td>
+                                @if(!auth()->user()->hasRole('cashier') && !auth()->user()->hasRole('branch_manager'))
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $branch->name }}</div>
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">{{ $branch->pivot->current_stock }}</div>
                                     <div class="text-xs text-gray-500">{{ $product->weight_unit }}</div>
@@ -214,13 +263,19 @@
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
+                            <td colspan="@if(auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager')) 6 @else 7 @endif" class="px-6 py-12 text-center">
                                 <div class="text-gray-500">
                                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                     </svg>
                                     <h3 class="mt-2 text-sm font-medium text-gray-900">No inventory found</h3>
-                                    <p class="mt-1 text-sm text-gray-500">Add some products to get started.</p>
+                                    <p class="mt-1 text-sm text-gray-500">
+                                        @if(auth()->user()->hasRole('cashier') || auth()->user()->hasRole('branch_manager'))
+                                            No products available in your branch inventory.
+                                        @else
+                                            Add some products to get started.
+                                        @endif
+                                    </p>
                                 </div>
                             </td>
                         </tr>

@@ -23,16 +23,31 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = Order::with(['customer', 'orderItems.product', 'branch']);
+
+        // Auto-filter by branch for cashiers and branch managers
+        if ($user && $user->branch_id) {
+            // Check if user is cashier or branch manager
+            if ($user->hasRole('cashier') || $user->hasRole('branch_manager')) {
+                // Force filter to only show their branch's orders
+                $query->where('branch_id', $user->branch_id);
+            } else {
+                // For super admin and admin, allow branch filter
+                if ($request->has('branch_id')) {
+                    $query->where('branch_id', $request->branch_id);
+                }
+            }
+        } else {
+            // If no user branch, use request filter (for super admin)
+            if ($request->has('branch_id')) {
+                $query->where('branch_id', $request->branch_id);
+            }
+        }
 
         // Filter by status
         if ($request->has('status')) {
             $query->where('status', $request->status);
-        }
-
-        // Filter by branch
-        if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
         }
 
         // Search by order number or customer name
@@ -47,7 +62,14 @@ class OrderController extends Controller
         }
 
         $orders = $query->latest()->paginate(20);
-        $branches = Branch::all();
+        
+        // Limit branches dropdown for cashiers and branch managers
+        if ($user && $user->branch_id && ($user->hasRole('cashier') || $user->hasRole('branch_manager'))) {
+            $branches = Branch::where('id', $user->branch_id)->get();
+        } else {
+            $branches = Branch::all();
+        }
+        
         $statuses = ['pending', 'processing', 'completed', 'cancelled'];
 
         return view('orders.index', compact('orders', 'branches', 'statuses'));
@@ -58,9 +80,16 @@ class OrderController extends Controller
      */
     public function create()
     {
+        $user = auth()->user();
         $products = Product::with(['branches'])->active()->get();
         $customers = Customer::all();
-        $branches = Branch::all();
+        
+        // Limit branches for cashiers and branch managers
+        if ($user && $user->branch_id && ($user->hasRole('cashier') || $user->hasRole('branch_manager'))) {
+            $branches = Branch::where('id', $user->branch_id)->get();
+        } else {
+            $branches = Branch::all();
+        }
 
         return view('orders.create', compact('products', 'customers', 'branches'));
     }
@@ -310,9 +339,16 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
+        $user = auth()->user();
         $products = Product::with(['branches'])->active()->get();
         $customers = Customer::all();
-        $branches = Branch::all();
+        
+        // Limit branches for cashiers and branch managers
+        if ($user && $user->branch_id && ($user->hasRole('cashier') || $user->hasRole('branch_manager'))) {
+            $branches = Branch::where('id', $user->branch_id)->get();
+        } else {
+            $branches = Branch::all();
+        }
 
         return view('orders.edit', compact('order', 'products', 'customers', 'branches'));
     }
@@ -531,8 +567,15 @@ class OrderController extends Controller
      */
     public function wholesaleForm()
     {
+        $user = auth()->user();
         $products = Product::with(['branches'])->active()->get();
-        $branches = Branch::all();
+        
+        // Limit branches for cashiers and branch managers
+        if ($user && $user->branch_id && ($user->hasRole('cashier') || $user->hasRole('branch_manager'))) {
+            $branches = Branch::where('id', $user->branch_id)->get();
+        } else {
+            $branches = Branch::all();
+        }
 
         return view('billing.wholesale', compact('products', 'branches'));
     }

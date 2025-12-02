@@ -480,7 +480,8 @@ if (closeSessionForm) {
         if (data.success) {
             alert('POS Session closed successfully!');
             closeCloseSessionModal();
-            location.reload();
+            // Redirect to start session page instead of reloading
+            window.location.href = '{{ route("pos.start-session") }}';
         } else {
             if (data.errors) {
                 let errorMessage = 'Please fix the following errors:\n';

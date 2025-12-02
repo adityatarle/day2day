@@ -26,9 +26,9 @@ class RequireActivePosSession
         $currentSession = $user->currentPosSession();
         
         if (!$currentSession) {
-            // If accessing POS terminal without active session, redirect to session handler
+            // If accessing POS terminal without active session, redirect to start session page
             if ($request->routeIs('pos.index') || $request->routeIs('pos.sale')) {
-                return redirect()->route('pos.session-handler')
+                return redirect()->route('pos.start-session')
                     ->with('warning', 'You need to start a POS session before accessing the terminal.');
             }
         }

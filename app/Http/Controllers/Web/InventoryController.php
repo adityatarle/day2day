@@ -338,12 +338,44 @@ class InventoryController extends Controller
         $products = Product::active()->get();
         $branches = Branch::all();
         
-        // Statistics
+        // Statistics - use the same filtered query base for consistency
+        $statsQuery = \App\Models\LossTracking::query();
+        
+        // Apply the same branch filter for branch managers and cashiers
+        if ($user->hasRole('branch_manager') || $user->hasRole('cashier')) {
+            $branch = $user->branch;
+            if ($branch) {
+                $statsQuery->where('branch_id', $branch->id);
+            }
+        }
+        
+        // Apply the same filters as the main query
+        if ($request->has('loss_type') && $request->loss_type !== '') {
+            $statsQuery->where('loss_type', $request->loss_type);
+        }
+        
+        if ($request->has('branch_id') && $request->branch_id !== '' && !($user->hasRole('branch_manager') || $user->hasRole('cashier'))) {
+            $statsQuery->where('branch_id', $request->branch_id);
+        }
+        
+        if ($request->has('product_id') && $request->product_id !== '') {
+            $statsQuery->where('product_id', $request->product_id);
+        }
+        
+        if ($request->has('date_from') && $request->date_from !== '') {
+            $statsQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+        
+        if ($request->has('date_to') && $request->date_to !== '') {
+            $statsQuery->whereDate('created_at', '<=', $request->date_to);
+        }
+        
+        // Calculate stats from filtered query
         $stats = [
-            'total_losses' => \App\Models\LossTracking::count(),
-            'weight_losses' => \App\Models\LossTracking::where('loss_type', 'weight_loss')->count(),
-            'total_financial_loss' => \App\Models\LossTracking::sum('financial_loss'),
-            'avg_loss_per_incident' => \App\Models\LossTracking::avg('financial_loss'),
+            'total_losses' => $statsQuery->count(),
+            'weight_losses' => (clone $statsQuery)->where('loss_type', 'weight_loss')->count(),
+            'total_financial_loss' => $statsQuery->sum('financial_loss'),
+            'avg_loss_per_incident' => $statsQuery->count() > 0 ? $statsQuery->avg('financial_loss') : 0,
         ];
 
         return view('inventory.loss-tracking', compact('losses', 'products', 'branches', 'stats'));

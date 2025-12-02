@@ -133,62 +133,9 @@
 
     <!-- Product Orders Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
- cursor/fetch-product-orders-from-local-server-fa27
         @if($productOrders->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Order Number</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Items</th>
-                            <th>Expected Delivery</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($productOrders as $order)
-                            <tr class="hover:bg-gray-50">
-                                <td>
-                                    <a href="{{ route('branch.product-orders.show', $order) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
-                                        {{ $order->po_number }}
-                                    </a>
-                                </td>
-                                <td>{{ $order->created_at->format('M d, Y') }}</td>
-                                <td>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        {{ $order->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
-                                           ($order->status === 'sent' ? 'bg-blue-100 text-blue-800' : 
-                                           ($order->status === 'fulfilled' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')) }}">
-                                        {{ ucfirst($order->status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                        {{ $order->priority === 'urgent' ? 'bg-red-100 text-red-800' : 
-                                           ($order->priority === 'high' ? 'bg-orange-100 text-orange-800' : 
-                                           ($order->priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')) }}">
-                                        {{ ucfirst($order->priority) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="text-gray-900 font-medium">{{ $order->purchase_order_items_count }}</span>
-                                    <span class="text-gray-500 text-sm">items</span>
-                                </td>
-                                <td>
-                                    @if($order->expected_delivery_date)
-                                        <span class="text-gray-900">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
-                                        @if($order->expected_delivery_date->isPast() && $order->status !== 'fulfilled')
-                                            <span class="block text-xs text-red-600 font-medium">Overdue</span>
-                                        @endif
-                                    @else
-                                        <span class="text-gray-500">-</span>
-
-    @if($productOrders->count() > 0)
-        <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
-            <table class="min-w-full table-auto border-collapse" style="min-width: 600px;">
+            <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                <table class="min-w-full table-auto border-collapse" style="min-width: 600px;">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Order Number</th>
@@ -236,7 +183,6 @@
                                     <span class="text-gray-900 text-xs sm:text-sm">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
                                     @if($order->expected_delivery_date->isPast() && $order->status !== 'fulfilled')
                                         <span class="block text-[10px] sm:text-xs text-red-600 font-medium">Overdue</span>
-main
                                     @endif
                                 @else
                                     <span class="text-gray-500 text-xs sm:text-sm">-</span>
@@ -257,15 +203,15 @@ main
                         </tr>
                     @endforeach
                 </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        @if($productOrders->hasPages())
-            <div class="p-4 sm:p-6 border-t border-gray-200">
-                {{ $productOrders->appends(request()->query())->links() }}
+                </table>
             </div>
-        @endif
+
+            <!-- Pagination -->
+            @if($productOrders->hasPages())
+                <div class="p-4 sm:p-6 border-t border-gray-200">
+                    {{ $productOrders->appends(request()->query())->links() }}
+                </div>
+            @endif
     @else
         <div class="text-center py-8 sm:py-12">
             <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -757,6 +757,9 @@
                 @elseif(auth()->user()->isCashier())
                     <i class="fas fa-user-check mr-2 text-sm"></i>
                     <span>Cashier</span>
+                @elseif(auth()->user()->isDeliveryBoy())
+                    <i class="fas fa-motorcycle mr-2 text-sm"></i>
+                    <span>Delivery Staff</span>
                 @else
                     <i class="fas fa-user mr-2 text-sm"></i>
                     <span>{{ auth()->user()->role->display_name ?? 'User' }}</span>
@@ -770,6 +773,8 @@
                 @include('partials.navigation.branch-manager')
             @elseif(auth()->check() && auth()->user()->hasRole('cashier'))
                 @include('partials.navigation.cashier')
+            @elseif(auth()->check() && auth()->user()->hasRole('delivery_boy'))
+                @include('partials.navigation.delivery-boy')
             @else
                 @include('partials.navigation.super-admin')
             @endif

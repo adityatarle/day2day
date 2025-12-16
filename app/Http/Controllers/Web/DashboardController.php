@@ -42,6 +42,8 @@ class DashboardController extends Controller
             return redirect()->route('dashboard.branch_manager');
         } elseif ($user->isCashier()) {
             return redirect()->route('dashboard.cashier');
+        } elseif ($user->isDeliveryBoy()) {
+            return redirect()->route('delivery.dashboard');
         }
         
         // Fallback to default dashboard for other roles

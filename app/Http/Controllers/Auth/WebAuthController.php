@@ -48,6 +48,8 @@ class WebAuthController extends Controller
                 return $this->handleBranchLogin($request);
             case 'outlet':
                 return $this->handleOutletLogin($request);
+            case 'delivery_boy':
+                return $this->handleDeliveryBoyLogin($request);
             default:
                 return $this->handleGeneralLogin($request);
         }
@@ -190,6 +192,45 @@ class WebAuthController extends Controller
         } else {
             return redirect()->intended('/dashboard');
         }
+    }
+
+    /**
+     * Handle delivery boy login
+     */
+    protected function handleDeliveryBoyLogin(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+        $remember = $request->boolean('remember');
+
+        // Find delivery boy
+        $user = User::where('email', $request->email)
+                   ->whereHas('role', function($query) {
+                       $query->where('name', 'delivery_boy');
+                   })
+                   ->where('is_active', true)
+                   ->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid delivery boy credentials or account is inactive.'],
+            ]);
+        }
+
+        Auth::login($user, $remember);
+        $request->session()->regenerate();
+
+        // Update last login
+        $user->update(['last_login_at' => now()]);
+
+        // Log delivery boy login
+        \Log::info('Delivery boy login successful', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent()
+        ]);
+
+        return redirect()->intended('/delivery/dashboard');
     }
 
     /**

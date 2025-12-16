@@ -210,6 +210,15 @@
                 <h3 class="text-xl font-bold text-white mb-2">Cashier</h3>
                 <p class="text-slate-400 text-sm">POS & sales</p>
             </div>
+
+            <!-- Delivery Boy -->
+            <div class="role-card rounded-xl p-6 text-center sm:col-span-2 lg:col-span-1" onclick="selectRole('delivery_boy')" role="button" tabindex="0" aria-label="Select Delivery Boy Login">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl mb-4">
+                    <i class="fas fa-motorcycle text-white text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Delivery Boy</h3>
+                <p class="text-slate-400 text-sm">Order deliveries</p>
+            </div>
         </div>
 
         <!-- Login Forms Container -->
@@ -443,6 +452,66 @@
                 </form>
             </div>
 
+            <!-- Delivery Boy Login Form -->
+            <div id="delivery_boy-form" class="login-form">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl mb-4">
+                        <i class="fas fa-motorcycle text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Delivery Boy Login</h3>
+                    <p class="text-slate-400">Manage order deliveries</p>
+                </div>
+                
+                <form method="POST" action="{{ route('login') }}" class="space-y-6" onsubmit="return handleSubmit(this)">
+                    @csrf
+                    <input type="hidden" name="login_type" value="delivery_boy">
+                    
+                    <div>
+                        <label for="delivery_boy_email" class="block text-sm font-medium text-slate-300 mb-2">
+                            <i class="fas fa-envelope mr-2"></i>Email Address
+                        </label>
+                        <input id="delivery_boy_email" type="email" name="email" value="{{ old('email') }}" required
+                               autocomplete="email"
+                               class="form-input w-full px-4 py-3 rounded-lg text-base"
+                               placeholder="delivery@example.com"
+                               aria-label="Delivery boy email">
+                    </div>
+
+                    <div class="relative">
+                        <label for="delivery_boy_password" class="block text-sm font-medium text-slate-300 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Password
+                        </label>
+                        <input id="delivery_boy_password" type="password" name="password" required
+                               autocomplete="current-password"
+                               class="form-input w-full px-4 py-3 pr-12 rounded-lg text-base"
+                               placeholder="Enter your password"
+                               aria-label="Delivery boy password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('delivery_boy_password')" aria-label="Toggle password visibility">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-purple-500 focus:ring-purple-500 focus:ring-offset-slate-800">
+                            <span class="ml-2 text-slate-300">Remember me</span>
+                        </label>
+                        <a href="#" class="text-purple-400 hover:text-purple-300 transition-colors">Need help?</a>
+                    </div>
+
+                    <button type="submit" class="btn-login w-full text-white font-semibold py-3 px-6 rounded-lg text-base" aria-label="Sign in as Delivery Boy">
+                        <span class="btn-text">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Sign In as Delivery Boy
+                        </span>
+                        <span class="btn-loading hidden">
+                            <span class="spinner inline-block mr-2"></span>
+                            Signing in...
+                        </span>
+                    </button>
+                </form>
+            </div>
+
             <!-- Back Button -->
             <div class="mt-6 text-center">
                 <button onclick="resetRoleSelection()" class="btn-secondary text-slate-300 px-6 py-2 rounded-lg text-sm hover:text-white transition-colors">
@@ -484,7 +553,7 @@
             
             // Focus on email input
             setTimeout(() => {
-                const emailInput = document.querySelector(`#${role}_email, #${role}-form input[type="email"]`);
+                const emailInput = document.querySelector(`#${role}_email, #${role === 'delivery_boy' ? 'delivery_boy_email' : role + '_email'}, #${role}-form input[type="email"]`);
                 if (emailInput) emailInput.focus();
             }, 300);
         }

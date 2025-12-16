@@ -27,6 +27,7 @@ use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\BranchManagementController;
 use App\Http\Controllers\Web\PosSessionController;
 use App\Http\Controllers\Web\CashLedgerController;
+use App\Http\Controllers\Web\DeliveryBoyDashboardController;
 use App\Http\Controllers\Auth\OutletAuthController;
 use App\Http\Controllers\Day2Day\AdminDashboardController as Day2DayAdminController;
 use App\Http\Controllers\Day2Day\BranchDashboardController as Day2DayBranchController;
@@ -76,6 +77,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/cashier', [CashierDashboardController::class, 'index'])
         ->name('dashboard.cashier')
         ->middleware('role:cashier');
+    
+    // Delivery Boy Routes
+    Route::middleware('role:delivery_boy')->group(function () {
+        Route::get('/delivery/dashboard', [DeliveryBoyDashboardController::class, 'index'])
+            ->name('delivery.dashboard');
+        Route::get('/delivery/assigned', [DeliveryBoyDashboardController::class, 'assignedDeliveries'])
+            ->name('delivery.assigned');
+        Route::get('/delivery/history', [DeliveryBoyDashboardController::class, 'deliveryHistory'])
+            ->name('delivery.history');
+    });
     
     // Cashier POS data endpoint
     Route::get('/api/cashier/pos-data', [CashierDashboardController::class, 'getPosData'])

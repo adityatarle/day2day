@@ -96,6 +96,23 @@
                             <p class="text-sm text-gray-600 mt-1">{{ $posSession->closing_notes }}</p>
                         </div>
                     @endif
+
+                    @if($posSession->closing_cash_breakdown)
+                        <div class="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-sm font-semibold text-gray-900">Cash Breakdown</span>
+                                <span class="text-xs text-gray-500">Totals entered at closing time</span>
+                            </div>
+                            <div class="space-y-2">
+                                @foreach($posSession->closing_cash_breakdown as $row)
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-gray-600">{{ $row['count'] ?? 0 }} x ₹{{ number_format($row['denomination'] ?? 0) }}</span>
+                                        <span class="font-semibold text-gray-900">₹{{ number_format($row['amount'] ?? 0, 2) }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 

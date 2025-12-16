@@ -165,6 +165,7 @@ class PosSessionController extends Controller
         $validator = Validator::make($request->all(), [
             'closing_cash' => 'required|integer|min:0',
             'closing_notes' => 'nullable|string|max:500',
+            'cash_breakdown' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -180,6 +181,7 @@ class PosSessionController extends Controller
             'expected_cash' => $expectedCash,
             'cash_difference' => $request->closing_cash - $expectedCash,
             'session_notes' => array_merge($posSession->session_notes ?? [], $request->closing_notes ? [$request->closing_notes] : []),
+            'closing_cash_breakdown' => PosSession::normalizeCashBreakdown($request->input('cash_breakdown')),
             'status' => 'closed',
         ]);
 

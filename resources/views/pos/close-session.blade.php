@@ -167,6 +167,11 @@
                     </div>
                 </div>
 
+                @include('pos.components.cash-breakdown-input', [
+                    'context' => 'close-page',
+                    'targetInputId' => 'closing_cash'
+                ])
+
                 <div class="mb-6">
                     <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
                         Notes (optional)
@@ -190,6 +195,78 @@
 </div>
 
 <script>
+function setupCashBreakdownWidgets() {
+    const containers = document.querySelectorAll('[data-cash-breakdown]');
+
+    const formatAmount = (amount) => '₹' + amount.toLocaleString('en-IN');
+
+    containers.forEach(container => {
+        const targetInputId = container.dataset.targetInput;
+        const targetInput = targetInputId ? document.getElementById(targetInputId) : null;
+        const applyButton = container.querySelector('[data-apply-breakdown]');
+        const summaryEl = container.querySelector('[data-breakdown-summary]');
+        const totalDisplays = container.querySelectorAll('[data-total-display]');
+
+        const recalc = () => {
+            let total = 0;
+
+            container.querySelectorAll('.denomination-input').forEach(input => {
+                const denomination = parseFloat(input.dataset.denomination);
+                const count = parseInt(input.value || 0, 10);
+                const amount = denomination * (isNaN(count) ? 0 : count);
+                const lineTotalEl = input.parentElement.querySelector('[data-line-total]');
+
+                if (lineTotalEl) {
+                    lineTotalEl.textContent = amount > 0 ? formatAmount(amount) : '₹0';
+                }
+
+                if (!isNaN(count) && count > 0) {
+                    total += amount;
+                }
+            });
+
+            totalDisplays.forEach(display => {
+                display.textContent = formatAmount(total);
+            });
+
+            if (summaryEl) {
+                const summaryParts = [];
+                container.querySelectorAll('.denomination-input').forEach(input => {
+                    const denomination = parseFloat(input.dataset.denomination);
+                    const count = parseInt(input.value || 0, 10);
+                    if (!isNaN(count) && count > 0) {
+                        summaryParts.push(`${count} x ₹${denomination}`);
+                    }
+                });
+
+                summaryEl.textContent = summaryParts.length
+                    ? summaryParts.join(', ')
+                    : 'No denominations entered yet.';
+            }
+
+            container.dataset.breakdownTotal = total;
+        };
+
+        container.addEventListener('input', event => {
+            if (event.target.classList.contains('denomination-input')) {
+                recalc();
+            }
+        });
+
+        if (applyButton && targetInput) {
+            applyButton.addEventListener('click', () => {
+                const total = parseFloat(container.dataset.breakdownTotal || 0);
+                if (total > 0) {
+                    targetInput.value = Math.round(total);
+                    targetInput.dispatchEvent(new Event('input'));
+                }
+            });
+        }
+
+        recalc();
+    });
+}
+
 function updateCashDifference() {
     const closingCash = parseFloat(document.getElementById('closing_cash').value) || 0;
     const expectedCash = {{ $expectedCash }};
@@ -219,8 +296,8 @@ function updateCashDifference() {
     }
 }
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    setupCashBreakdownWidgets();
     updateCashDifference();
 });
 </script>

@@ -26,6 +26,7 @@ class PosSession extends Model
         'ended_at',
         'status',
         'session_notes',
+        'closing_cash_breakdown',
     ];
 
     protected $casts = [
@@ -37,6 +38,7 @@ class PosSession extends Model
         'started_at' => 'datetime',
         'ended_at' => 'datetime',
         'session_notes' => 'array',
+        'closing_cash_breakdown' => 'array',
     ];
 
     /**
@@ -105,7 +107,7 @@ class PosSession extends Model
     /**
      * Close the session with final counts.
      */
-    public function closeSession($closingCash, $notes = null)
+    public function closeSession($closingCash, $notes = null, $breakdown = null)
     {
         $this->update([
             'closing_cash' => $closingCash,
@@ -114,6 +116,52 @@ class PosSession extends Model
             'ended_at' => now(),
             'status' => 'closed',
             'session_notes' => array_merge($this->session_notes ?? [], $notes ?? []),
+            'closing_cash_breakdown' => $breakdown,
         ]);
+    }
+
+    /**
+     * Normalize cash breakdown payloads coming from forms or JSON.
+     */
+    public static function normalizeCashBreakdown($raw): ?array
+    {
+        if (!$raw) {
+            return null;
+        }
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $raw = $decoded;
+            }
+        }
+
+        if (!is_array($raw)) {
+            return null;
+        }
+
+        $normalized = [];
+
+        foreach ($raw as $key => $value) {
+            if (is_array($value) && isset($value['denomination'])) {
+                $denomination = (float) $value['denomination'];
+                $count = isset($value['count']) ? (int) $value['count'] : 0;
+            } else {
+                $denomination = (float) $key;
+                $count = (int) $value;
+            }
+
+            if ($denomination <= 0 || $count <= 0) {
+                continue;
+            }
+
+            $normalized[] = [
+                'denomination' => $denomination,
+                'count' => $count,
+                'amount' => $denomination * $count,
+            ];
+        }
+
+        return $normalized ?: null;
     }
 }

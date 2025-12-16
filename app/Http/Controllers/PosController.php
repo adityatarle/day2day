@@ -363,6 +363,7 @@ class PosController extends Controller
         $validator = Validator::make($request->all(), [
             'closing_cash' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
+            'cash_breakdown' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -383,7 +384,8 @@ class PosController extends Controller
         }
 
         $notes = $request->notes ? [$request->notes] : [];
-        $session->closeSession($request->closing_cash, $notes);
+        $normalizedBreakdown = PosSession::normalizeCashBreakdown($request->input('cash_breakdown'));
+        $session->closeSession($request->closing_cash, $notes, $normalizedBreakdown);
 
         return response()->json([
             'success' => true,

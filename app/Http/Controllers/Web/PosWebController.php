@@ -255,6 +255,7 @@ class PosWebController extends Controller
         $request->validate([
             'closing_cash' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
+            'cash_breakdown' => 'nullable',
         ]);
 
         $session = PosSession::where('user_id', auth()->id())->active()->first();
@@ -265,7 +266,11 @@ class PosWebController extends Controller
         }
 
         $notes = $request->notes ? [$request->notes] : [];
-        $session->closeSession($request->closing_cash, $notes);
+        $session->closeSession(
+            $request->closing_cash,
+            $notes,
+            PosSession::normalizeCashBreakdown($request->input('cash_breakdown'))
+        );
 
         return redirect()->route('pos.index')
             ->with('success', 'POS session closed successfully');

@@ -320,6 +320,11 @@
                             <p class="text-sm text-gray-500 mt-1">Enter the actual cash count in the register</p>
                         </div>
 
+                        @include('pos.components.cash-breakdown-input', [
+                            'context' => 'modal',
+                            'targetInputId' => 'closing-cash'
+                        ])
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Closing Notes (Optional)
@@ -350,6 +355,93 @@
 @endif
 
 <script>
+// Cash breakdown helpers
+function initializeCashBreakdown(container) {
+    if (!container) return;
+
+    const targetInputId = container.dataset.targetInput;
+    const targetInput = targetInputId ? document.getElementById(targetInputId) : null;
+    const applyButton = container.querySelector('[data-apply-breakdown]');
+    const summaryEl = container.querySelector('[data-breakdown-summary]');
+    const totalDisplays = container.querySelectorAll('[data-total-display]');
+
+    function formatAmount(amount) {
+        return '₹' + amount.toLocaleString('en-IN');
+    }
+
+    function recalcBreakdown() {
+        let total = 0;
+        const breakdown = [];
+
+        container.querySelectorAll('.denomination-input').forEach(input => {
+            const denomination = parseFloat(input.dataset.denomination);
+            const count = parseInt(input.value || 0, 10);
+            const amount = denomination * (isNaN(count) ? 0 : count);
+            const lineTotalEl = input.parentElement.querySelector('[data-line-total]');
+
+            if (lineTotalEl) {
+                lineTotalEl.textContent = amount > 0 ? formatAmount(amount) : '₹0';
+            }
+
+            if (!isNaN(count) && count > 0) {
+                breakdown.push({
+                    denomination,
+                    count,
+                    amount,
+                });
+                total += amount;
+            }
+        });
+
+        container.dataset.breakdownJson = breakdown.length ? JSON.stringify(breakdown) : '';
+        container.dataset.breakdownTotal = total;
+
+        totalDisplays.forEach(el => {
+            el.textContent = formatAmount(total);
+        });
+
+        if (summaryEl) {
+            summaryEl.textContent = breakdown.length
+                ? breakdown.map(item => `${item.count} x ₹${item.denomination}`).join(', ')
+                : 'No denominations entered yet.';
+        }
+    }
+
+    container.addEventListener('input', function (event) {
+        if (event.target.classList.contains('denomination-input')) {
+            recalcBreakdown();
+        }
+    });
+
+    if (applyButton && targetInput) {
+        applyButton.addEventListener('click', function () {
+            const total = parseFloat(container.dataset.breakdownTotal || 0);
+            if (total > 0) {
+                targetInput.value = Math.round(total);
+                targetInput.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+
+    recalcBreakdown();
+}
+
+function getBreakdownData(scope) {
+    const container = document.querySelector(`[data-cash-breakdown="${scope}"]`);
+    if (!container) {
+        return [];
+    }
+
+    try {
+        return container.dataset.breakdownJson ? JSON.parse(container.dataset.breakdownJson) : [];
+    } catch (error) {
+        console.warn('Failed to parse cash breakdown data', error);
+        return [];
+    }
+}
+
+document.querySelectorAll('[data-cash-breakdown]').forEach(initializeCashBreakdown);
+
 // Modal functions
 function showStartSessionModal() {
     document.getElementById('start-session-modal').classList.remove('hidden');
@@ -446,7 +538,7 @@ if (closeSessionForm) {
     const closingCash = document.getElementById('closing-cash').value;
     const closingNotes = document.getElementById('closing-notes').value;
     
-    if (!closingCash || parseInt(closingCash) < 0) {
+    if (!closingCash || parseFloat(closingCash) < 0) {
         alert('Please enter a valid closing cash amount');
         return;
     }
@@ -459,8 +551,9 @@ if (closeSessionForm) {
     }
     
     const formData = {
-        closing_cash: parseInt(closingCash),
-        closing_notes: closingNotes
+        closing_cash: parseFloat(closingCash),
+        closing_notes: closingNotes,
+        cash_breakdown: getBreakdownData('modal')
     };
     
     // Build the URL manually to avoid route helper issues
@@ -523,11 +616,14 @@ document.getElementById('opening-cash').addEventListener('input', function(e) {
     }
 });
 
-document.getElementById('closing-cash').addEventListener('input', function(e) {
-    let value = parseInt(e.target.value);
-    if (!isNaN(value)) {
-        e.target.value = value;
-    }
-});
+const closingCashInputField = document.getElementById('closing-cash');
+if (closingCashInputField) {
+    closingCashInputField.addEventListener('input', function(e) {
+        let value = parseInt(e.target.value);
+        if (!isNaN(value)) {
+            e.target.value = value;
+        }
+    });
+}
 </script>
 @endsection

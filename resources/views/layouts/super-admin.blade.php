@@ -145,6 +145,45 @@
             scrollbar-width: thin; /* Firefox */
         }
         
+        /* Data table styles (ERP-style with comfortable spacing) */
+        .table-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #f8fafc, #eef2ff);
+            padding: 0.85rem 1.25rem; /* taller + more horizontal padding */
+            text-align: left;
+            font-weight: 600;
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 0.7rem 1.25rem; /* more horizontal padding */
+            border-bottom: 1px solid #f1f5f9;
+            color: #374151;
+            vertical-align: top;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Make badges and inline meta have breathing room */
+        .data-table .inline-flex.items-center > * + * {
+            margin-left: 0.35rem;
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
             .sidebar {

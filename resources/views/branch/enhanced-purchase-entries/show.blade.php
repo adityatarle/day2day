@@ -169,12 +169,12 @@
     </div>
 
     <!-- Item-wise Tracking -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">Item-wise Quantity Tracking</h3>
         </div>
-        <div class="overflow-x-auto">
-            <table class="table">
+        <div class="table-container overflow-x-auto px-4 py-3 md:px-6 md:py-4">
+            <table class="data-table min-w-max w-full text-sm">
                 <thead>
                     <tr>
                         <th>Product</th>
@@ -191,7 +191,7 @@
                 </thead>
                 <tbody>
                     @foreach($itemTracking as $tracking)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 align-top">
                             <td>
                                 <div>
                                     <div class="font-medium text-gray-900">{{ $tracking['item']->product->name }}</div>
@@ -263,12 +263,12 @@
 
     <!-- Receipt History -->
     @if($purchaseOrder->purchaseEntries->count() > 0)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900">Receipt History</h3>
             </div>
-            <div class="overflow-x-auto">
-                <table class="table">
+            <div class="table-container overflow-x-auto px-4 py-3 md:px-6 md:py-4">
+                <table class="data-table min-w-max w-full text-sm">
                     <thead>
                         <tr>
                             <th>Entry Number</th>
@@ -283,7 +283,7 @@
                     </thead>
                     <tbody>
                         @foreach($purchaseOrder->purchaseEntries as $entry)
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 align-top">
                                 <td>
                                     <a href="{{ route('enhanced-purchase-entries.entry', $entry) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
                                         {{ $entry->entry_number }}

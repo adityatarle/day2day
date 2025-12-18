@@ -194,3 +194,4 @@ class DeliveryBoyDashboardController extends Controller
         return view('delivery.history', compact('deliveries', 'stats'));
     }
 }
+

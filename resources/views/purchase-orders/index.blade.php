@@ -182,59 +182,39 @@
     <!-- Purchase Orders Table -->
     <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
     @if($purchaseOrders->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="table-container overflow-x-auto px-4 py-3 md:px-6 md:py-4">
+            <table class="data-table min-w-max w-full text-sm">
+                <thead>
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            PO Number
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Vendor
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Branch
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Date
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Receive Status
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Items
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Amount
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Expected Delivery
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Actions
-                        </th>
+                        <th>PO Number</th>
+                        <th>Vendor</th>
+                        <th>Branch</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Receive Status</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Expected Delivery</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-100">
+                <tbody>
                     @foreach($purchaseOrders as $order)
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
-                            <td class="px-4 py-3">
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 align-top">
+                            <td>
                                 <a href="{{ route('purchase-orders.show', $order) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
                                     {{ $order->po_number }}
                                 </a>
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 <div>
                                     <p class="font-medium text-gray-900">{{ $order->vendor->name }}</p>
                                     <p class="text-sm text-gray-500">{{ $order->vendor->code }}</p>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-gray-700">{{ $order->branch->name }}</td>
-                            <td class="px-4 py-3 text-gray-700">{{ $order->created_at->format('M d, Y') }}</td>
-                            <td class="px-4 py-3">
+                            <td class="text-gray-700">{{ $order->branch->name }}</td>
+                            <td class="text-gray-700">{{ $order->created_at->format('M d, Y') }}</td>
+                            <td>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     @if($order->status === 'confirmed') bg-green-100 text-green-800 
                                     @elseif($order->status === 'draft') bg-yellow-100 text-yellow-800
@@ -243,7 +223,7 @@
                                     {{ ucfirst($order->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 @if($order->status === 'confirmed' || $order->status === 'received')
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $order->getReceiveStatusBadgeClass() }}">
                                         {{ $order->getReceiveStatusDisplayText() }}
@@ -257,14 +237,14 @@
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 <span class="text-gray-900 font-medium">{{ $order->purchase_order_items_count }}</span>
                                 <span class="text-gray-500 text-sm">items</span>
                             </td>
-                            <td class="px-4 py-3 font-semibold text-gray-900">
+                            <td class="font-semibold text-gray-900">
                                 ₹{{ number_format($order->total_amount, 2) }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 @if($order->expected_delivery_date)
                                     <span class="text-gray-900">{{ $order->expected_delivery_date->format('M d, Y') }}</span>
                                     @if($order->expected_delivery_date->isPast() && !$order->isReceived())
@@ -274,7 +254,7 @@
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3">
+                            <td>
                                 <div class="flex gap-3">
                                     <a href="{{ route('purchase-orders.show', $order) }}" 
                                        class="text-blue-600 hover:text-blue-800 text-sm font-medium">

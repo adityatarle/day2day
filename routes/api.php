@@ -21,6 +21,11 @@ use App\Http\Controllers\DeliveryAdjustmentController;
 use App\Http\Controllers\InventoryDashboardController;
 use App\Http\Controllers\Admin\StockTransferController;
 use App\Http\Controllers\Branch\StockReceiptController;
+use App\Http\Controllers\Api\CustomerApiController;
+use App\Http\Controllers\Api\BranchApiController;
+use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\Api\CustomerOrderApiController;
+use App\Http\Controllers\Api\StoreLocationApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +40,14 @@ use App\Http\Controllers\Branch\StockReceiptController;
 
 // Public routes (no authentication required)
 Route::post('/v1/login', [AuthController::class, 'login']);
+
+// Customer-facing public APIs
+Route::get('/stores', [StoreLocationApiController::class, 'index']);
+Route::get('/stores/nearest', [StoreLocationApiController::class, 'nearest']);
+Route::get('/stores/{branch}', [StoreLocationApiController::class, 'show']);
+Route::post('/customer/orders', [CustomerOrderApiController::class, 'store']);
+Route::get('/customer/orders', [CustomerOrderApiController::class, 'index']);
+Route::get('/customer/orders/{order}', [CustomerOrderApiController::class, 'show']);
 
 // Outlet-specific authentication
 Route::post('/outlet/login', [OutletAuthController::class, 'outletLogin']);
@@ -72,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy']);
         Route::get('/roles', [UserController::class, 'getRoles']);
         Route::get('/branches', [UserController::class, 'getBranches']);
+        Route::get('/branches/all', [BranchApiController::class, 'index']);
         
         // Expense categories
         Route::get('/expense-categories', [ExpenseController::class, 'getCategories']);
@@ -111,6 +125,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders/{order}/invoice', [OrderController::class, 'generateInvoice']);
         Route::get('/orders/statistics', [OrderController::class, 'getStatistics']);
         
+        // Customer management
+        Route::get('/customers', [CustomerApiController::class, 'index']);
+        Route::get('/customers/search', [CustomerApiController::class, 'search']);
+        Route::get('/customers/{customer}', [CustomerApiController::class, 'show']);
+        Route::post('/customers', [CustomerApiController::class, 'store']);
+        Route::put('/customers/{customer}', [CustomerApiController::class, 'update']);
+        Route::get('/customers/{customer}/purchase-history', [CustomerApiController::class, 'purchaseHistory']);
+        
+        // Dashboard
+        Route::get('/dashboard', [DashboardApiController::class, 'index']);
+        Route::get('/dashboard/sales-chart', [DashboardApiController::class, 'salesChart']);
+        
+        // Branch information
+        Route::get('/branch/current', [BranchApiController::class, 'current']);
+        Route::get('/branch/statistics', [BranchApiController::class, 'statistics']);
     });
     
     // Common routes for all authenticated users

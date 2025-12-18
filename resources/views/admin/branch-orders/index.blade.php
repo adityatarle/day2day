@@ -162,8 +162,9 @@
     <!-- Branch Orders Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         @if($branchOrders->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="table">
+            <!-- Responsive table wrapper with comfortable padding -->
+            <div class="table-container overflow-x-auto px-4 py-3 md:px-6 md:py-4">
+                <table class="data-table min-w-max w-full text-sm">
                     <thead>
                         <tr>
                             <th>Order Number</th>
@@ -180,7 +181,7 @@
                     </thead>
                     <tbody>
                         @foreach($branchOrders as $order)
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 align-top">
                                 <td>
                                     <a href="{{ route('admin.branch-orders.show', $order) }}" class="text-blue-600 hover:text-blue-800 font-semibold">
                                         {{ $order->po_number }}

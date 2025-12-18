@@ -27,9 +27,12 @@ class EnhancedPurchaseEntryController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
-            abort(403, 'Access denied. Branch managers only.');
+        $isBranchManager = $user->hasRole('branch_manager') && $user->branch_id;
+        $isAdminOrSuperAdmin = $user->hasRole('admin') || $user->hasRole('super_admin');
+
+        // Branch managers (with a branch) can see their data; admins/super admins have read-only access
+        if (! $isBranchManager && ! $isAdminOrSuperAdmin) {
+            abort(403, 'Access denied.');
         }
 
         // Get purchase orders with their entries and detailed tracking
@@ -41,10 +44,14 @@ class EnhancedPurchaseEntryController extends Controller
                     $q->orderBy('entry_date', 'desc');
                 },
                 'purchaseEntries.purchaseEntryItems.product'
-            ])
-            ->where('branch_id', $user->branch_id)
-            ->where('order_type', 'branch_request')
-            ->whereIn('status', ['sent', 'confirmed', 'fulfilled', 'received']);
+            ]);
+
+        if ($isBranchManager) {
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $query->where('order_type', 'branch_request')
+              ->whereIn('status', ['sent', 'confirmed', 'fulfilled', 'received']);
 
         // Filter by status
         if ($request->has('status') && $request->status !== '') {
@@ -85,26 +92,22 @@ class EnhancedPurchaseEntryController extends Controller
         });
 
         // Calculate overall statistics
+        // Stats: branch-scoped for managers, global for admins/super admins
+        $poStats = PurchaseOrder::query()->where('order_type', 'branch_request');
+        $peStats = PurchaseEntry::query();
+
+        if ($isBranchManager) {
+            $poStats->where('branch_id', $user->branch_id);
+            $peStats->where('branch_id', $user->branch_id);
+        }
+
         $stats = [
-            'total_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
-                ->where('order_type', 'branch_request')
-                ->count(),
-            'pending_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
-                ->where('order_type', 'branch_request')
-                ->whereIn('receive_status', ['not_received', 'partial'])
-                ->count(),
-            'complete_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
-                ->where('order_type', 'branch_request')
-                ->where('receive_status', 'complete')
-                ->count(),
-            'partial_orders' => PurchaseOrder::where('branch_id', $user->branch_id)
-                ->where('order_type', 'branch_request')
-                ->where('receive_status', 'partial')
-                ->count(),
-            'total_entries' => PurchaseEntry::where('branch_id', $user->branch_id)->count(),
-            'this_month_entries' => PurchaseEntry::where('branch_id', $user->branch_id)
-                ->whereMonth('entry_date', now()->month)
-                ->count(),
+            'total_orders'        => (clone $poStats)->count(),
+            'pending_orders'      => (clone $poStats)->whereIn('receive_status', ['not_received', 'partial'])->count(),
+            'complete_orders'     => (clone $poStats)->where('receive_status', 'complete')->count(),
+            'partial_orders'      => (clone $poStats)->where('receive_status', 'partial')->count(),
+            'total_entries'       => (clone $peStats)->count(),
+            'this_month_entries'  => (clone $peStats)->whereMonth('entry_date', now()->month)->count(),
         ];
 
         return view('branch.enhanced-purchase-entries.index', compact('purchaseOrders', 'stats'));
@@ -116,8 +119,15 @@ class EnhancedPurchaseEntryController extends Controller
     public function show(PurchaseOrder $purchaseOrder)
     {
         $user = Auth::user();
-        
-        if (!$user->hasRole('branch_manager') || $purchaseOrder->branch_id !== $user->branch_id) {
+        $isBranchManager = $user->hasRole('branch_manager');
+        $isAdminOrSuperAdmin = $user->hasRole('admin') || $user->hasRole('super_admin');
+
+        // Branch managers must be restricted to their branch; admins/super admins can view any order
+        if ($isBranchManager) {
+            if (! $user->branch_id || $purchaseOrder->branch_id !== $user->branch_id) {
+                abort(403, 'Access denied.');
+            }
+        } elseif (! $isAdminOrSuperAdmin) {
             abort(403, 'Access denied.');
         }
 
@@ -467,8 +477,15 @@ class EnhancedPurchaseEntryController extends Controller
     public function showEntry(PurchaseEntry $purchaseEntry)
     {
         $user = Auth::user();
-        
-        if (!$user->hasRole('branch_manager') || $purchaseEntry->branch_id !== $user->branch_id) {
+        $isBranchManager = $user->hasRole('branch_manager');
+        $isAdminOrSuperAdmin = $user->hasRole('admin') || $user->hasRole('super_admin');
+
+        // Branch managers must only see their own branch; admins / super admins can view any entry
+        if ($isBranchManager) {
+            if (! $user->branch_id || $purchaseEntry->branch_id !== $user->branch_id) {
+                abort(403, 'Access denied.');
+            }
+        } elseif (! $isAdminOrSuperAdmin) {
             abort(403, 'Access denied.');
         }
 
@@ -488,9 +505,11 @@ class EnhancedPurchaseEntryController extends Controller
     public function report(Request $request)
     {
         $user = Auth::user();
-        
-        if (!$user->hasRole('branch_manager') || !$user->branch_id) {
-            abort(403, 'Access denied. Branch managers only.');
+        $isBranchManager = $user->hasRole('branch_manager') && $user->branch_id;
+        $isAdminOrSuperAdmin = $user->hasRole('admin') || $user->hasRole('super_admin');
+
+        if (! $isBranchManager && ! $isAdminOrSuperAdmin) {
+            abort(403, 'Access denied.');
         }
 
         $query = PurchaseEntry::with([
@@ -498,7 +517,9 @@ class EnhancedPurchaseEntryController extends Controller
                 'purchaseEntryItems.product',
                 'user'
             ])
-            ->where('branch_id', $user->branch_id);
+            ->when($isBranchManager, function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
+            });
 
         // Date range filter
         if ($request->has('date_from') && $request->date_from !== '') {

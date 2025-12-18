@@ -364,7 +364,7 @@
                     <h2 class="text-lg font-semibold text-gray-900">Receipt/Invoice</h2>
                 </div>
                 <div class="p-6">
-                    <a href="{{ Storage::url($localPurchase->receipt_path) }}" target="_blank" 
+                    <a href="{{ route('admin.local-purchases.receipt', $localPurchase) }}" target="_blank" 
                        class="w-full inline-flex justify-center items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         <i class="fas fa-file-invoice mr-2"></i>View Receipt
                     </a>

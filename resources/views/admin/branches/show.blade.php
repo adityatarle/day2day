@@ -359,8 +359,8 @@ function closeAddStaffModal() {
 }
 
 function editStaff(userId) {
-    // Implement edit staff functionality
-    alert('Edit staff functionality - User ID: ' + userId);
+    // Redirect to the central admin user edit page
+    window.location.href = `/admin/users/${userId}/edit`;
 }
 
 function resetPassword(userId) {

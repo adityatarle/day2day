@@ -37,16 +37,23 @@ use App\Http\Controllers\Web\BranchPurchaseEntryController;
 use App\Http\Controllers\Web\EnhancedPurchaseEntryController;
 use App\Http\Controllers\Web\OrderWorkflowController;
 use App\Http\Controllers\LocalPurchaseController;
+use App\Http\Controllers\Web\CustomerHomeController;
 
-// Home page - redirects to login if not authenticated
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect('/dashboard');
-    }
-    return redirect('/login');
-});
+// Customer-facing home page (public)
+Route::get('/', [CustomerHomeController::class, 'index'])->name('home');
+Route::get('/store/{branch}', [CustomerHomeController::class, 'showStore'])->name('store.show');
+Route::get('/store/{branch}/products', [CustomerHomeController::class, 'showProducts'])->name('store.products');
+Route::get('/api/store/{branch}/products', [CustomerHomeController::class, 'getProducts'])->name('api.store.products');
 
-// Authentication routes
+// Customer checkout flow
+Route::match(['get', 'post'], '/order/checkout', [CustomerHomeController::class, 'showCheckout'])->name('order.checkout');
+Route::post('/order/place', [CustomerHomeController::class, 'placeOrder'])->name('order.place');
+Route::get('/order/confirm/{order}', [CustomerHomeController::class, 'orderConfirmation'])->name('order.confirm');
+
+// Staff login route (separate from customer home)
+Route::get('/staff/login', [WebAuthController::class, 'showLoginForm'])->name('staff.login');
+
+// Staff authentication routes (separate from customer home)
 Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login']);
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
@@ -334,13 +341,14 @@ Route::middleware('auth')->group(function () {
         // Local Purchases management for admin
         Route::get('/admin/local-purchases', [LocalPurchaseController::class, 'index'])->name('admin.local-purchases.index');
         Route::get('/admin/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'show'])->name('admin.local-purchases.show');
+        Route::get('/admin/local-purchases/{localPurchase}/receipt', [LocalPurchaseController::class, 'showReceipt'])->name('admin.local-purchases.receipt');
         Route::post('/admin/local-purchases/{localPurchase}/approve', [LocalPurchaseController::class, 'approve'])->name('admin.local-purchases.approve');
         Route::post('/admin/local-purchases/{localPurchase}/reject', [LocalPurchaseController::class, 'reject'])->name('admin.local-purchases.reject');
         Route::get('/admin/local-purchases-export', [LocalPurchaseController::class, 'export'])->name('admin.local-purchases.export');
     });
 
-    // Branch Manager specific routes
-    Route::middleware('role:branch_manager')->group(function () {
+    // Branch Manager specific routes (also visible to admins for review)
+    Route::middleware('role:super_admin,admin,branch_manager')->group(function () {
         // Branch Staff Management
         Route::resource('branch/staff', BranchStaffController::class)->names([
             'index' => 'branch.staff.index',
@@ -379,6 +387,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/branch/local-purchases/create', [LocalPurchaseController::class, 'create'])->name('branch.local-purchases.create');
         Route::post('/branch/local-purchases', [LocalPurchaseController::class, 'store'])->name('branch.local-purchases.store');
         Route::get('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'show'])->name('branch.local-purchases.show');
+        Route::get('/branch/local-purchases/{localPurchase}/receipt', [LocalPurchaseController::class, 'showReceipt'])->name('branch.local-purchases.receipt');
         Route::get('/branch/local-purchases/{localPurchase}/edit', [LocalPurchaseController::class, 'edit'])->name('branch.local-purchases.edit');
         Route::put('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'update'])->name('branch.local-purchases.update');
         Route::delete('/branch/local-purchases/{localPurchase}', [LocalPurchaseController::class, 'destroy'])->name('branch.local-purchases.destroy');

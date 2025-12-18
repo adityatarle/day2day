@@ -232,10 +232,10 @@
 
     <!-- Purchase Order Items -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">Order Items</h2>
+        <h2 class="text-xl,font-semibold text-gray-900 mb-6">Order Items</h2>
         
-        <div class="overflow-x-auto">
-            <table class="table">
+        <div class="table-container overflow-x-auto">
+            <table class="data-table min-w-max w-full text-sm">
                 <thead>
                     <tr>
                         <th>Product</th>
@@ -251,7 +251,7 @@
                 </thead>
                 <tbody>
                     @foreach($purchaseOrder->purchaseOrderItems as $item)
-                        <tr>
+                        <tr class="align-top">
                             <td>
                                 <div class="font-medium text-gray-900">{{ $item->product->name }}</div>
                                 <div class="text-sm text-gray-600">{{ $item->product->unit }}</div>
@@ -292,7 +292,7 @@
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr class="border-t-2 border-gray-300">
+                    <tr class="border-t-2 border-gray-200">
                         <td colspan="{{ ($purchaseOrder->isConfirmed() || $purchaseOrder->isReceived()) ? '6' : '4' }}" class="text-right font-semibold">Total:</td>
                         <td class="font-bold text-green-600">₹{{ number_format($purchaseOrder->subtotal, 2) }}</td>
                     </tr>
@@ -306,8 +306,8 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-8">
         <h2 class="text-xl font-semibold text-gray-900 mb-6">Purchase Entries (Receipt History)</h2>
         
-        <div class="overflow-x-auto">
-            <table class="table">
+        <div class="table-container overflow-x-auto">
+            <table class="data-table min-w-max w-full text-sm">
                 <thead>
                     <tr>
                         <th>Entry Number</th>
@@ -322,7 +322,7 @@
                 </thead>
                 <tbody>
                     @foreach($purchaseOrder->purchaseEntries as $entry)
-                        <tr>
+                        <tr class="align-top">
                             <td class="font-medium">{{ $entry->entry_number }}</td>
                             <td>{{ $entry->entry_date->format('M d, Y') }}</td>
                             <td>{{ $entry->user->name }}</td>
@@ -337,7 +337,7 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('branch.enhanced-purchase-entries.show', $entry) }}" 
+                                <a href="{{ route('enhanced-purchase-entries.entry', $entry) }}" 
                                    class="text-blue-600 hover:text-blue-800 font-medium">
                                     View Details →
                                 </a>
@@ -346,7 +346,7 @@
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr class="border-t-2 border-gray-300">
+                    <tr class="border-t-2 border-gray-200">
                         <td colspan="3" class="text-right font-semibold">Total:</td>
                         <td class="font-bold">{{ number_format($purchaseOrder->purchaseEntries->sum('total_received_quantity'), 2) }}</td>
                         <td class="font-bold text-red-600">{{ number_format($purchaseOrder->purchaseEntries->sum('total_spoiled_quantity') + $purchaseOrder->purchaseEntries->sum('total_damaged_quantity'), 2) }}</td>

@@ -250,6 +250,27 @@ class LocalPurchaseController extends Controller
     }
 
     /**
+     * Display or download the receipt file for a local purchase.
+     */
+    public function showReceipt(LocalPurchase $localPurchase)
+    {
+        $user = auth()->user();
+
+        // Same authorization rules as show()
+        if ($user->isBranchManager() && $localPurchase->branch_id !== $user->branch_id) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if (! $localPurchase->receipt_path || ! Storage::disk('public')->exists($localPurchase->receipt_path)) {
+            abort(404, 'Receipt not found');
+        }
+
+        $path = Storage::disk('public')->path($localPurchase->receipt_path);
+
+        return response()->file($path);
+    }
+
+    /**
      * Show the form for editing the local purchase.
      */
     public function edit(LocalPurchase $localPurchase)
